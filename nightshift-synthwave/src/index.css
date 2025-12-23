@@ -1,0 +1,42 @@
+@import "tailwindcss";
+@import url('https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&display=swap');
+
+@theme {
+  --color-retro-dark: #200D3A;
+  --color-retro-space: #292651;
+  --color-retro-blue: #2E4770;
+  --color-retro-pink: #CE5E82;
+  --color-retro-orange: #ECA089;
+  --color-retro-sand: #ECC6A2;
+  --color-retro-cyan: #00ffff;
+
+  --font-retro: "Space Grotesk", sans-serif;
+
+  --animate-pulse-slow: pulse 4s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+}
+
+@layer base {
+  body {
+    background-color: var(--color-retro-dark);
+    color: var(--color-retro-sand);
+    font-family: var(--font-retro);
+  }
+}
+
+/* Custom Scrollbar */
+::-webkit-scrollbar {
+  width: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: var(--color-retro-dark);
+}
+
+::-webkit-scrollbar-thumb {
+  background: var(--color-retro-space);
+  border-radius: 0;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: var(--color-retro-blue);
+}
