@@ -108,60 +108,15 @@ const calculateTrustSignal = (fixes?: TacticalFix[]) => {
 
 
 
-// NEW: Client-Side PSI Fetch Hook
+// Client-Side PSI Fetch Hook - DISABLED
+// Reason: Cannot securely pass API key to client without exposing it.
+// The server-side /api/audit route already fetches PSI data with the API key in deep mode.
 const useClientSidePerformance = (url: string, trigger: boolean) => {
     const [metrics, setMetrics] = useState<PerformanceMetrics | null>(null);
     const [loading, setLoading] = useState(false);
-    const attemptRef = useRef(0);
 
-    useEffect(() => {
-        if (!trigger || !url || metrics || attemptRef.current > 0) return;
-
-        const fetchPSI = async () => {
-            setLoading(true);
-            attemptRef.current++;
-            try {
-                // Determine strategy (using public quota to avoid key exposure on client)
-                const apiUrl = `https://www.googleapis.com/pagespeedonline/v5/runPagespeed?url=${encodeURIComponent(url)}&strategy=mobile`;
-                const res = await fetch(apiUrl);
-
-                if (!res.ok) {
-                    const errorData = await res.json().catch(() => null);
-                    console.error(`PSI API Error (${res.status}):`, errorData);
-                    // Quota exceeded or other API error - fail silently
-                    if (res.status === 429) {
-                        console.warn('⚠️ PSI API quota exceeded. Performance data unavailable.');
-                    }
-                    return;
-                }
-
-                const data = await res.json();
-
-                if (data.error) {
-                    console.error("PSI API Error:", data.error);
-                    return; // Fail gracefully without setting metrics
-                }
-
-                const score = data.lighthouseResult?.categories?.performance?.score * 100 || 0;
-                const aud = data.lighthouseResult?.audits || {};
-
-                setMetrics({
-                    lighthouseScore: Math.round(score),
-                    lcp: aud['largest-contentful-paint']?.displayValue || 'N/A',
-                    inp: aud['interaction-to-next-paint']?.displayValue || 'N/A',
-                    cls: aud['cumulative-layout-shift']?.displayValue || 'N/A',
-                    speedIndex: aud['speed-index']?.displayValue || 'N/A'
-                });
-            } catch (e: any) {
-                console.warn("Client-side PSI failed:", e?.message || e);
-                // Don't throw - just fail silently and show "Data Unavailable" in UI
-            } finally {
-                setLoading(false);
-            }
-        };
-
-        fetchPSI();
-    }, [url, trigger, metrics]);
+    // Disabled: Client cannot securely access GOOGLE_PSI_API_KEY
+    // All PSI data is now fetched server-side in /api/audit
 
     return { metrics, loading };
 };
