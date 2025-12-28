@@ -11,6 +11,7 @@ import {
 import clsx from 'clsx';
 import IntelligentTypewriter from '../components/IntelligentTypewriter';
 import ThinkingLog, { Milestone } from '../components/ThinkingLog';
+import { DeepAnalysisReveal } from '../components/DeepAnalysisReveal';
 
 // --- TYPES ---
 interface PerformanceMetrics {
@@ -594,156 +595,141 @@ export default function Dashboard() {
                                         </div>
                                     </section>
 
-                                    {/* MAIN CONTENT GRID */}
-                                    <div className="grid grid-cols-1 xl:grid-cols-4 gap-12">
+                                    {/* MAIN CONTENT GRID - WRAPPED IN PROGRESSIVE REVEAL */}
+                                    <DeepAnalysisReveal status={status} className="mt-8">
+                                        <div className="grid grid-cols-1 xl:grid-cols-4 gap-12">
 
-                                        {/* TACTICAL PLAN (LEFT COL) */}
-                                        <div className="xl:col-span-3 space-y-8">
-                                            <div className="flex items-center justify-between border-b border-white/[0.06] pb-4">
-                                                <h3 className="font-bold text-white flex items-center gap-2">
-                                                    Tactical Execution Plan
-                                                    <span className="text-[#64748B] font-normal text-sm">({report.tacticalFixes?.length || 0} items)</span>
-                                                </h3>
+                                            {/* TACTICAL PLAN (LEFT COL) */}
+                                            <div className="xl:col-span-3 space-y-8">
+                                                <div className="flex items-center justify-between border-b border-white/[0.06] pb-4">
+                                                    <h3 className="font-bold text-white flex items-center gap-2">
+                                                        Tactical Execution Plan
+                                                        <span className="text-[#64748B] font-normal text-sm">({report.tacticalFixes?.length || 0} items)</span>
+                                                    </h3>
 
-                                                <div className="flex items-center gap-2 bg-[#1A1E26]/80 px-3 py-1.5 rounded-full border border-white/[0.06]">
-                                                    <div className={clsx("w-2 h-2 rounded-full shadow-[0_0_8px]", trustSignal > 80 ? "bg-emerald-500 shadow-emerald-500/50" : trustSignal > 50 ? "bg-amber-500 shadow-amber-500/50" : "bg-slate-500")} />
-                                                    <span className="text-xs font-semibold text-[#CBD5E1]">
-                                                        {trustSignal}% Verified by Data
-                                                    </span>
-                                                </div>
-                                            </div>
-
-                                            <div className="space-y-12">
-                                                {/* IN FAST MODE, IF NO FIXES YET, SHOW LOADING SKELETON */}
-                                                {!report.tacticalFixes && (
-                                                    <div className="animate-pulse space-y-8">
-                                                        {[1, 2, 3].map(i => (
-                                                            <div key={i} className="h-40 bg-[#1A1E26]/50 rounded-lg border border-white/[0.04]" />
-                                                        ))}
+                                                    <div className="flex items-center gap-2 bg-[#1A1E26]/80 px-3 py-1.5 rounded-full border border-white/[0.06]">
+                                                        <div className={clsx("w-2 h-2 rounded-full shadow-[0_0_8px]", trustSignal > 80 ? "bg-emerald-500 shadow-emerald-500/50" : trustSignal > 50 ? "bg-amber-500 shadow-amber-500/50" : "bg-slate-500")} />
+                                                        <span className="text-xs font-semibold text-[#CBD5E1]">
+                                                            {trustSignal}% Verified by Data
+                                                        </span>
                                                     </div>
-                                                )}
+                                                </div>
 
-                                                {report.tacticalFixes?.map((fix) => (
-                                                    <div key={fix.id} className="grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-12 group">
-                                                        <div className="lg:col-span-7 space-y-5">
-                                                            <div className="flex items-start justify-between">
-                                                                <div className="space-y-1.5">
-                                                                    <div className="flex items-center gap-3">
-                                                                        <span className={clsx("text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded border", getImpactColor(fix.impact))}>
-                                                                            {fix.impact} Priority
-                                                                        </span>
-                                                                        <span className="text-[10px] font-bold text-[#64748B] uppercase tracking-wider">{fix.category}</span>
+                                                <div className="space-y-12">
+                                                    {report.tacticalFixes?.map((fix) => (
+                                                        <div key={fix.id} className="grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-12 group">
+                                                            <div className="lg:col-span-7 space-y-5">
+                                                                <div className="flex items-start justify-between">
+                                                                    <div className="space-y-1.5">
+                                                                        <div className="flex items-center gap-3">
+                                                                            <span className={clsx("text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded border", getImpactColor(fix.impact))}>
+                                                                                {fix.impact} Priority
+                                                                            </span>
+                                                                            <span className="text-[10px] font-bold text-[#64748B] uppercase tracking-wider">{fix.category}</span>
+                                                                        </div>
+                                                                        <h4 className="font-bold text-white text-lg leading-snug">{fix.title}</h4>
                                                                     </div>
-                                                                    <h4 className="font-bold text-white text-lg leading-snug">{fix.title}</h4>
+                                                                </div>
+                                                                <div className="space-y-4">
+                                                                    <div className="bg-[#1A1E26]/30 border-l-2 border-[#475569] pl-4 py-3 rounded-r-lg">
+                                                                        <p className="text-sm text-[#E2E8F0] leading-relaxed font-medium">
+                                                                            <span className="text-[#64748B] uppercase text-[10px] font-bold block mb-1">Observation</span>
+                                                                            {fix.problem}
+                                                                        </p>
+                                                                    </div>
+                                                                    <div className="pl-4 py-1">
+                                                                        <p className="text-sm text-[#94A3B8] leading-relaxed">
+                                                                            <span className="text-[#38BDF8] uppercase text-[10px] font-bold block mb-1">Strategic Recommendation</span>
+                                                                            {fix.recommendation}
+                                                                        </p>
+                                                                    </div>
+                                                                    <div className="flex items-center gap-4 text-xs text-[#64748B] font-medium pl-4 pt-2">
+                                                                        <span className="flex items-center gap-1.5"><Target className="w-3.5 h-3.5 text-[#475569]" /> {fix.expectedOutcome}</span>
+                                                                        <span className="text-[#334155]">|</span>
+                                                                        <span>{fix.effortHours}h Effort</span>
+                                                                    </div>
                                                                 </div>
                                                             </div>
-                                                            <div className="space-y-4">
-                                                                <div className="bg-[#1A1E26]/30 border-l-2 border-[#475569] pl-4 py-3 rounded-r-lg">
-                                                                    <p className="text-sm text-[#E2E8F0] leading-relaxed font-medium">
-                                                                        <span className="text-[#64748B] uppercase text-[10px] font-bold block mb-1">Observation</span>
-                                                                        {fix.problem}
-                                                                    </p>
-                                                                </div>
-                                                                <div className="pl-4 py-1">
-                                                                    <p className="text-sm text-[#94A3B8] leading-relaxed">
-                                                                        <span className="text-[#38BDF8] uppercase text-[10px] font-bold block mb-1">Strategic Recommendation</span>
-                                                                        {fix.recommendation}
-                                                                    </p>
-                                                                </div>
-                                                                <div className="flex items-center gap-4 text-xs text-[#64748B] font-medium pl-4 pt-2">
-                                                                    <span className="flex items-center gap-1.5"><Target className="w-3.5 h-3.5 text-[#475569]" /> {fix.expectedOutcome}</span>
-                                                                    <span className="text-[#334155]">|</span>
-                                                                    <span>{fix.effortHours}h Effort</span>
-                                                                </div>
-                                                            </div>
-                                                        </div>
-                                                        <div className="lg:col-span-5 flex flex-col h-full">
-                                                            <div className="bg-[#0B0D11] rounded-lg border border-white/[0.08] overflow-hidden flex-1 flex flex-col shadow-inner">
-                                                                <div className="bg-[#151921] px-4 py-2 border-b border-white/[0.06] flex items-center justify-between">
-                                                                    <span className="text-[10px] font-bold text-[#64748B] uppercase tracking-widest flex items-center gap-1.5">
-                                                                        <Microscope className="w-3 h-3" /> Data Signal
-                                                                    </span>
-                                                                </div>
-                                                                <div className="p-4 space-y-4 flex-1">
-                                                                    {fix.evidence && fix.evidence.length > 0 ? (
-                                                                        <ul className="space-y-3">
-                                                                            {fix.evidence.map((ev, i) => (
-                                                                                <li key={i} className="text-xs flex flex-col gap-1.5">
-                                                                                    <span className="text-[10px] font-bold text-[#475569] uppercase tracking-wide">{ev.label}</span>
-                                                                                    <span className="font-mono text-[#E2E8F0] bg-[#1A1E26] border border-white/[0.05] rounded px-3 py-2 break-all leading-relaxed block">
-                                                                                        {ev.value}
-                                                                                    </span>
-                                                                                </li>
-                                                                            ))}
-                                                                        </ul>
-                                                                    ) : (
-                                                                        <div className="h-full flex flex-col items-center justify-center text-center p-4 opacity-50">
-                                                                            <ShieldCheck className="w-8 h-8 text-[#334155] mb-2" />
-                                                                            <p className="text-xs text-[#64748B] italic">
-                                                                                Pattern-based heuristic finding.<br />No direct DOM signal extracted.
+                                                            <div className="lg:col-span-5 flex flex-col h-full">
+                                                                <div className="bg-[#0B0D11] rounded-lg border border-white/[0.08] overflow-hidden flex-1 flex flex-col shadow-inner">
+                                                                    <div className="bg-[#151921] px-4 py-2 border-b border-white/[0.06] flex items-center justify-between">
+                                                                        <span className="text-[10px] font-bold text-[#64748B] uppercase tracking-widest flex items-center gap-1.5">
+                                                                            <Microscope className="w-3 h-3" /> Data Signal
+                                                                        </span>
+                                                                    </div>
+                                                                    <div className="p-4 space-y-4 flex-1">
+                                                                        {fix.evidence && fix.evidence.length > 0 ? (
+                                                                            <ul className="space-y-3">
+                                                                                {fix.evidence.map((ev, i) => (
+                                                                                    <li key={i} className="text-xs flex flex-col gap-1.5">
+                                                                                        <span className="text-[10px] font-bold text-[#475569] uppercase tracking-wide">{ev.label}</span>
+                                                                                        <span className="font-mono text-[#E2E8F0] bg-[#1A1E26] border border-white/[0.05] rounded px-3 py-2 break-all leading-relaxed block">
+                                                                                            {ev.value}
+                                                                                        </span>
+                                                                                    </li>
+                                                                                ))}
+                                                                            </ul>
+                                                                        ) : (
+                                                                            <div className="h-full flex flex-col items-center justify-center text-center p-4 opacity-50">
+                                                                                <ShieldCheck className="w-8 h-8 text-[#334155] mb-2" />
+                                                                                <p className="text-xs text-[#64748B] italic">
+                                                                                    Pattern-based heuristic finding.<br />No direct DOM signal extracted.
+                                                                                </p>
+                                                                            </div>
+                                                                        )}
+                                                                    </div>
+                                                                    {fix.validationCriteria && (
+                                                                        <div className="bg-[#151921]/50 border-t border-white/[0.06] p-4">
+                                                                            <div className="text-[10px] font-bold text-[#38BDF8] uppercase tracking-widest mb-2 flex items-center gap-1.5">
+                                                                                <ShieldCheck className="w-3 h-3" /> Validation Criteria
+                                                                            </div>
+                                                                            <p className="text-xs text-[#94A3B8] leading-relaxed font-medium">
+                                                                                {fix.validationCriteria}
                                                                             </p>
                                                                         </div>
                                                                     )}
                                                                 </div>
-                                                                {fix.validationCriteria && (
-                                                                    <div className="bg-[#151921]/50 border-t border-white/[0.06] p-4">
-                                                                        <div className="text-[10px] font-bold text-[#38BDF8] uppercase tracking-widest mb-2 flex items-center gap-1.5">
-                                                                            <ShieldCheck className="w-3 h-3" /> Validation Criteria
-                                                                        </div>
-                                                                        <p className="text-xs text-[#94A3B8] leading-relaxed font-medium">
-                                                                            {fix.validationCriteria}
-                                                                        </p>
-                                                                    </div>
-                                                                )}
                                                             </div>
-                                                        </div>
-                                                        <div className="col-span-1 lg:col-span-12 h-px bg-white/[0.04] w-full mt-4" />
-                                                    </div>
-                                                ))}
-                                            </div>
-                                        </div>
-
-                                        {/* STRATEGIC ROADMAP (RIGHT SIDEBAR) */}
-                                        <div className="xl:col-span-1 space-y-8 h-fit sticky top-24">
-                                            <div className="border-b border-white/[0.06] pb-4">
-                                                <h3 className="font-bold text-white">Strategic Roadmap</h3>
-                                            </div>
-
-                                            {/* SKELETON FOR FAST MODE */}
-                                            {!report.strategicIntelligence && (
-                                                <div className="space-y-6 animate-pulse">
-                                                    <div className="h-32 bg-[#1A1E26]/50 rounded-lg" />
-                                                    <div className="h-32 bg-[#1A1E26]/50 rounded-lg" />
-                                                </div>
-                                            )}
-
-                                            {report.strategicIntelligence && (
-                                                <div className="space-y-8 relative pl-2">
-                                                    <div className="absolute left-0 top-2 bottom-2 w-px bg-white/[0.06]" />
-                                                    {[
-                                                        { title: "On-Site Optimization", data: report.strategicIntelligence.onSiteStrategy, color: "bg-white border-white" },
-                                                        { title: "Off-Site Authority", data: report.strategicIntelligence.offSiteGrowth, color: "bg-[#38BDF8] border-[#38BDF8]" },
-                                                        { title: "AI & Automation", data: report.strategicIntelligence.aiOpportunities, color: "bg-emerald-500 border-emerald-500" }
-                                                    ].map((section, idx) => (
-                                                        <div key={idx} className="relative pl-6">
-                                                            <div className={clsx("absolute left-[-4px] top-1.5 w-2 h-2 rounded-full border shadow-[0_0_10px_rgba(255,255,255,0.2)]", section.color)} />
-                                                            <h4 className="text-xs font-bold text-white uppercase tracking-wider mb-2">{section.title}</h4>
-                                                            <p className="text-xs text-[#94A3B8] leading-relaxed mb-3 font-medium">
-                                                                {section.data?.summary || 'No data available.'}
-                                                            </p>
-                                                            <ul className="space-y-2">
-                                                                {section.data?.actions?.map((action, i) => (
-                                                                    <li key={i} className="flex items-start gap-2 text-xs text-[#64748B]">
-                                                                        <span className="text-[#334155] mt-[3px]">•</span> {action}
-                                                                    </li>
-                                                                ))}
-                                                            </ul>
+                                                            <div className="col-span-1 lg:col-span-12 h-px bg-white/[0.04] w-full mt-4" />
                                                         </div>
                                                     ))}
                                                 </div>
-                                            )}
+                                            </div>
+
+                                            {/* STRATEGIC ROADMAP (RIGHT SIDEBAR) */}
+                                            <div className="xl:col-span-1 space-y-8 h-fit sticky top-24">
+                                                <div className="border-b border-white/[0.06] pb-4">
+                                                    <h3 className="font-bold text-white">Strategic Roadmap</h3>
+                                                </div>
+
+                                                {report.strategicIntelligence && (
+                                                    <div className="space-y-8 relative pl-2">
+                                                        <div className="absolute left-0 top-2 bottom-2 w-px bg-white/[0.06]" />
+                                                        {[
+                                                            { title: "On-Site Optimization", data: report.strategicIntelligence.onSiteStrategy, color: "bg-white border-white" },
+                                                            { title: "Off-Site Authority", data: report.strategicIntelligence.offSiteGrowth, color: "bg-[#38BDF8] border-[#38BDF8]" },
+                                                            { title: "AI & Automation", data: report.strategicIntelligence.aiOpportunities, color: "bg-emerald-500 border-emerald-500" }
+                                                        ].map((section, idx) => (
+                                                            <div key={idx} className="relative pl-6">
+                                                                <div className={clsx("absolute left-[-4px] top-1.5 w-2 h-2 rounded-full border shadow-[0_0_10px_rgba(255,255,255,0.2)]", section.color)} />
+                                                                <h4 className="text-xs font-bold text-white uppercase tracking-wider mb-2">{section.title}</h4>
+                                                                <p className="text-xs text-[#94A3B8] leading-relaxed mb-3 font-medium">
+                                                                    {section.data?.summary || 'No data available.'}
+                                                                </p>
+                                                                <ul className="space-y-2">
+                                                                    {section.data?.actions?.map((action, i) => (
+                                                                        <li key={i} className="flex items-start gap-2 text-xs text-[#64748B]">
+                                                                            <span className="text-[#334155] mt-[3px]">•</span> {action}
+                                                                        </li>
+                                                                    ))}
+                                                                </ul>
+                                                            </div>
+                                                        ))}
+                                                    </div>
+                                                )}
+                                            </div>
                                         </div>
-                                    </div>
+                                    </DeepAnalysisReveal>
                                 </motion.div>
                             )}
                         </AnimatePresence>
