@@ -5,13 +5,12 @@ import Image from 'next/image';
 import Link from 'next/link';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
-    Search, Loader2, ArrowRight, Activity, Target, Share2,
-    LayoutTemplate, Globe, ChevronRight, CheckCircle2, AlertTriangle, Settings,
-    RefreshCw, ShieldCheck, Microscope, X, Maximize2, Zap, Gauge, Sparkles
+    Search, Loader2, Activity, Settings, Target, LayoutTemplate, Share2, RefreshCw,
+    Microscope, ShieldCheck, X, Maximize2, Zap, AlertTriangle, Info
 } from 'lucide-react';
 import clsx from 'clsx';
 import IntelligentTypewriter from '../components/IntelligentTypewriter';
-import ThinkingLog from '../components/ThinkingLog';
+import ThinkingLog, { Milestone } from '../components/ThinkingLog';
 
 // --- TYPES ---
 interface PerformanceMetrics {
@@ -159,6 +158,7 @@ export default function Dashboard() {
     const [url, setUrl] = useState('');
     const [status, setStatus] = useState<'idle' | 'scouting' | 'analyzing_deep' | 'complete'>('idle');
     const [scanStatusMessage, setScanStatusMessage] = useState('Initializing Flux Engine...');
+    const [milestones, setMilestones] = useState<Milestone[]>([]);
     const [report, setReport] = useState<AnalysisReport | null>(null);
     const [error, setError] = useState<string | null>(null);
     const [activeView, setActiveView] = useState<'audit' | 'monitor' | 'strategy' | 'settings'>('audit');
@@ -174,11 +174,9 @@ export default function Dashboard() {
     const displayPerformance = report?.meta?.performance || clientMetrics;
 
     // Persistence: Load report from localStorage on mount
-    // Persistence: Load report from localStorage on mount
     useEffect(() => {
         if (typeof window !== 'undefined') {
             const saved = localStorage.getItem('flux_audit_report');
-            const savedUrl = localStorage.getItem('flux_audit_url');
             if (saved) {
                 try {
                     setReport(JSON.parse(saved));
@@ -187,7 +185,8 @@ export default function Dashboard() {
                     console.error("Failed to load saved report", e);
                 }
             }
-            if (savedUrl) setUrl(savedUrl);
+            // Clean up any corrupted URL localStorage
+            localStorage.removeItem('flux_audit_url');
         }
     }, []);
 
@@ -240,9 +239,23 @@ export default function Dashboard() {
         handleSetReport(null);
         setActiveView('audit');
 
-        if (typeof window !== 'undefined') localStorage.setItem('flux_audit_url', url);
+        // Initialize milestones
+        setMilestones([
+            { id: 'init', message: 'Initializing Flux Engine...', status: 'active', timestamp: Date.now() },
+            { id: 'dns', message: 'Resolving domain...', status: 'pending' },
+            { id: 'scrape', message: 'Extracting website data...', status: 'pending' },
+            { id: 'analyze', message: 'Running AI analysis...', status: 'pending' },
+            { id: 'complete', message: 'Generating report...', status: 'pending' }
+        ]);
 
         try {
+            // Update: DNS resolved
+            setMilestones(m => m.map(mile =>
+                mile.id === 'init' ? { ...mile, status: 'complete' } :
+                    mile.id === 'dns' ? { ...mile, status: 'active', timestamp: Date.now() } :
+                        mile
+            ));
+
             // PHASE 1: FAST PASS (Vibe Check)
             let fastRes;
 
@@ -258,8 +271,22 @@ export default function Dashboard() {
                 });
             }
 
+            // Update: Scraped
+            setMilestones(m => m.map(mile =>
+                mile.id === 'dns' ? { ...mile, status: 'complete' } :
+                    mile.id === 'scrape' ? { ...mile, status: 'active', timestamp: Date.now(), detail: 'Parsing HTML, extracting metadata...' } :
+                        mile
+            ));
+
             const fastData = await fastRes.json();
             if (!fastRes.ok) throw new Error(fastData.error || 'Initial scan failed');
+
+            // Update: Analyzed
+            setMilestones(m => m.map(mile =>
+                mile.id === 'scrape' ? { ...mile, status: 'complete' } :
+                    mile.id === 'analyze' ? { ...mile, status: 'active', timestamp: Date.now() } :
+                        mile
+            ));
 
             // Render Fast Results Immediately
             handleSetReport(fastData);
@@ -274,6 +301,13 @@ export default function Dashboard() {
 
             const deepData = await deepRes.json();
             if (!deepRes.ok) throw new Error(deepData.error || 'Deep analysis failed');
+
+            // Update: Complete
+            setMilestones(m => m.map(mile =>
+                mile.id === 'analyze' ? { ...mile, status: 'complete' } :
+                    mile.id === 'complete' ? { ...mile, status: 'complete', timestamp: Date.now() } :
+                        mile
+            ));
 
             // Upgrade to Full Report
             handleSetReport(deepData);
@@ -416,7 +450,7 @@ export default function Dashboard() {
                                     </div>
 
                                     {/* Thinking Stream */}
-                                    <ThinkingLog status={status} />
+                                    <ThinkingLog milestones={milestones} showTimestamps={false} />
 
                                 </motion.div>
                             )}
@@ -456,8 +490,27 @@ export default function Dashboard() {
                                     {/* TOP METRICS GRID */}
                                     <section className="grid grid-cols-1 md:grid-cols-4 gap-8">
                                         {/* 1. STRATEGIC INDEX */}
-                                        <div className="p-6 rounded-xl bg-[#1A1E26]/50 border border-white/[0.06]">
-                                            <div className="text-sm font-medium text-[#94A3B8] mb-1">Strategic Index</div>
+                                        <div className="p-6 rounded-xl bg-[#1A1E26]/50 border border-white/[0.06] relative group">
+                                            <div className="flex items-center justify-between mb-1">
+                                                <div className="text-sm font-medium text-[#94A3B8]">Strategic Index</div>
+                                                <div className="relative">
+                                                    <Info className="w-4 h-4 text-[#64748B] hover:text-[#94A3B8] cursor-help transition-colors" />
+                                                    {/* Tooltip positioned to the left to avoid cutoff */}
+                                                    <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-3 w-72 p-4 bg-[#0F1115] border border-white/[0.15] rounded-lg shadow-2xl opacity-0 pointer-events-none group-hover:opacity-100 group-hover:pointer-events-auto transition-opacity z-50">
+                                                        <div className="absolute -bottom-2 left-1/2 -translate-x-1/2 w-4 h-4 bg-[#0F1115] border-r border-b border-white/[0.15] rotate-45"></div>
+                                                        <p className="text-xs text-[#CBD5E1] leading-relaxed relative z-10">
+                                                            <span className="font-bold text-white block mb-2">What is this?</span>
+                                                            Composite score measuring digital presence quality based on brand clarity, message-market fit, visual coherence, and conversion potential.
+                                                        </p>
+                                                        <div className="mt-3 space-y-1 text-[10px] text-[#94A3B8] relative z-10">
+                                                            <div className="flex justify-between"><span>90-100</span><span className="text-emerald-400 font-semibold">Market Leader</span></div>
+                                                            <div className="flex justify-between"><span>70-89</span><span className="text-blue-400 font-semibold">Strong Presence</span></div>
+                                                            <div className="flex justify-between"><span>50-69</span><span className="text-amber-400 font-semibold">Needs Work</span></div>
+                                                            <div className="flex justify-between"><span>&lt;50</span><span className="text-red-400 font-semibold">Critical</span></div>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </div>
                                             <div className="flex items-baseline gap-2">
                                                 <span className="text-4xl font-bold text-white">{report.coreSignals?.vibeScore?.score || '-'}</span>
                                                 <span className="text-sm text-[#64748B]">/100</span>

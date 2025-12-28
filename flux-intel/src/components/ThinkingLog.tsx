@@ -1,116 +1,101 @@
 "use client";
 
-import React, { useState, useEffect, useRef } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
-import clsx from 'clsx';
-import { Terminal, ShieldCheck, Microscope, Zap, Database, Globe, Search, Lock, Cpu, Target, AlertTriangle, FileText, CheckCircle2, Accessibility } from 'lucide-react';
+import { motion, AnimatePresence } from "framer-motion";
+import { CheckCircle2, Loader2, XCircle, Clock } from "lucide-react";
+import clsx from "clsx";
 
-interface ThinkingLogProps {
-    status: 'idle' | 'scouting' | 'analyzing_deep' | 'complete';
+export type MilestoneStatus = 'pending' | 'active' | 'complete' | 'error';
+
+export interface Milestone {
+    id: string;
+    message: string;
+    status: MilestoneStatus;
+    timestamp?: number;
+    detail?: string; // Optional additional info
 }
 
-const SCOUTING_LOGS = [
-    { text: "Initializing Flux Engine v2.4...", icon: Terminal },
-    { text: "Resolving target host DNS...", icon: Globe },
-    { text: "Establishing secure handshake...", icon: Lock },
-    { text: "Bypassing edge cache...", icon: Zap },
-    { text: "Downloading raw HTML document...", icon: Database },
-    { text: "Parsing DOM tree structure...", icon: Search },
-    { text: "Extracting meta tags and schema...", icon: Microscope },
-    { text: "Identifying primary content blocks...", icon: Cpu },
-    { text: "Detecting navigation architecture...", icon: Search },
-    { text: "Analyzing header hierarchy (H1-H6)...", icon: Search },
-    { text: "Isolating conversion elements (CTA)...", icon: Target },
-];
+interface ThinkingLogProps {
+    milestones: Milestone[];
+    showTimestamps?: boolean;
+}
 
-const DEEP_ANALYSIS_LOGS = [
-    { text: "Injecting strategic analysis agents...", icon: ShieldCheck },
-    { text: "Querying Google PageSpeed Insights API...", icon: Zap },
-    { text: "Simulating mobile 4G network latency...", icon: Globe },
-    { text: "Measuring Largest Contentful Paint (LCP)...", icon: Zap },
-    { text: "Calculating Cumulative Layout Shift (CLS)...", icon: Zap },
-    { text: "Evaluating visual hierarchy balance...", icon: Microscope },
-    { text: "Detecting semantic disconnects...", icon: AlertTriangle },
-    { text: "Cross-referencing SEO best practices...", icon: Search },
-    { text: "Analyzing accessibility tokens...", icon: Accessibility },
-    { text: "Synthesizing tactical execution plan...", icon: Cpu },
-    { text: "Formatting final evidence report...", icon: FileText },
-    { text: "Finalizing strategic roadmap...", icon: CheckCircle2 },
-];
-
-const ThinkingLog: React.FC<ThinkingLogProps> = ({ status }) => {
-    const [logs, setLogs] = useState<typeof SCOUTING_LOGS>([]);
-    const [currentPool, setCurrentPool] = useState<typeof SCOUTING_LOGS>([]);
-
-    // Reset when status changes
-    useEffect(() => {
-        if (status === 'scouting') {
-            setLogs([]);
-            setCurrentPool(SCOUTING_LOGS);
-        } else if (status === 'analyzing_deep') {
-            setCurrentPool(DEEP_ANALYSIS_LOGS);
-        }
-    }, [status]);
-
-    // Stream logs
-    useEffect(() => {
-        if (status === 'idle' || status === 'complete') return;
-
-        let index = 0;
-        const interval = setInterval(() => {
-            if (index < currentPool.length) {
-                setLogs(prev => {
-                    const newLogs = [...prev, currentPool[index]];
-                    // Keep only last 4 logs to prevent overflow/clutter
-                    if (newLogs.length > 5) return newLogs.slice(newLogs.length - 5);
-                    return newLogs;
-                });
-                index++;
-            }
-        }, 800); // Add a new log every 800ms
-
-        return () => clearInterval(interval);
-    }, [currentPool, status]);
-
-    return (
-        <div className="w-full max-w-md mx-auto mt-8 font-mono text-sm h-[160px] relative overflow-hidden mask-linear-gradient-to-t">
-            {/* Fade out top */}
-            <div className="absolute top-0 left-0 right-0 h-12 bg-gradient-to-b from-[#0B0F14] to-transparent z-10 pointer-events-none" />
-
-            <div className="flex flex-col justify-end h-full pb-2 space-y-2">
-                <AnimatePresence mode='popLayout'>
-                    {logs.map((log, i) => {
-                        const Icon = log.icon;
-                        const isLast = i === logs.length - 1;
-
-                        return (
-                            <motion.div
-                                key={`${log.text}-${i}`}
-                                initial={{ opacity: 0, x: -20, height: 0 }}
-                                animate={{
-                                    opacity: isLast ? 1 : 0.4, // Dim older logs
-                                    x: 0,
-                                    height: 'auto',
-                                    scale: isLast ? 1 : 0.98
-                                }}
-                                exit={{ opacity: 0, height: 0 }}
-                                transition={{ duration: 0.3 }}
-                                className={clsx(
-                                    "flex items-center gap-3 px-4 py-1.5 rounded-full border w-fit mx-auto transition-colors duration-500",
-                                    isLast
-                                        ? "bg-[#1A1E26] border-emerald-500/30 text-emerald-400 shadow-[0_0_15px_rgba(16,185,129,0.1)]"
-                                        : "bg-transparent border-transparent text-[#64748B]"
-                                )}
-                            >
-                                <Icon className={clsx("w-3.5 h-3.5", isLast ? "animate-pulse" : "opacity-50")} />
-                                <span className="tracking-tight">{log.text}</span>
-                            </motion.div>
-                        );
-                    })}
-                </AnimatePresence>
-            </div>
-        </div>
-    );
+const StatusIcon = ({ status }: { status: MilestoneStatus }) => {
+    switch (status) {
+        case 'pending':
+            return <Clock className="w-4 h-4 text-gray-500" />;
+        case 'active':
+            return (
+                <motion.div
+                    animate={{ rotate: 360 }}
+                    transition={{ duration: 1, repeat: Infinity, ease: "linear" }}
+                >
+                    <Loader2 className="w-4 h-4 text-blue-500" />
+                </motion.div>
+            );
+        case 'complete':
+            return <CheckCircle2 className="w-4 h-4 text-green-500" />;
+        case 'error':
+            return <XCircle className="w-4 h-4 text-red-500" />;
+    }
 };
 
-export default ThinkingLog;
+const formatTimestamp = (timestamp?: number) => {
+    if (!timestamp) return '';
+    const seconds = Math.floor((Date.now() - timestamp) / 1000);
+    if (seconds < 60) return `${seconds}s ago`;
+    return `${Math.floor(seconds / 60)}m ago`;
+};
+
+export default function ThinkingLog({ milestones, showTimestamps = false }: ThinkingLogProps) {
+    if (milestones.length === 0) return null;
+
+    return (
+        <div className="space-y-3">
+            <AnimatePresence mode="popLayout">
+                {milestones.map((milestone, index) => (
+                    <motion.div
+                        key={milestone.id}
+                        initial={{ opacity: 0, x: -20 }}
+                        animate={{ opacity: 1, x: 0 }}
+                        exit={{ opacity: 0, x: 20 }}
+                        transition={{ duration: 0.3, delay: index * 0.05 }}
+                        className={clsx(
+                            "flex items-start gap-3 p-4 rounded-lg border transition-all",
+                            milestone.status === 'active' && "bg-blue-500/5 border-blue-500/20",
+                            milestone.status === 'complete' && "bg-green-500/5 border-green-500/20",
+                            milestone.status === 'error' && "bg-red-500/5 border-red-500/20",
+                            milestone.status === 'pending' && "bg-gray-500/5 border-gray-500/10"
+                        )}
+                    >
+                        <div className="flex items-center justify-center w-4 h-4 mt-0.5">
+                            <StatusIcon status={milestone.status} />
+                        </div>
+                        <div className="flex-1 min-w-0">
+                            <div className="flex items-start justify-between gap-2">
+                                <p className={clsx(
+                                    "text-sm font-medium",
+                                    milestone.status === 'active' && "text-blue-400",
+                                    milestone.status === 'complete' && "text-green-400",
+                                    milestone.status === 'error' && "text-red-400",
+                                    milestone.status === 'pending' && "text-gray-500"
+                                )}>
+                                    {milestone.message}
+                                </p>
+                                {showTimestamps && milestone.timestamp && (
+                                    <span className="text-xs text-gray-500 font-mono whitespace-nowrap">
+                                        {formatTimestamp(milestone.timestamp)}
+                                    </span>
+                                )}
+                            </div>
+                            {milestone.detail && (
+                                <p className="text-xs text-gray-400 mt-1">
+                                    {milestone.detail}
+                                </p>
+                            )}
+                        </div>
+                    </motion.div>
+                ))}
+            </AnimatePresence>
+        </div>
+    );
+}
