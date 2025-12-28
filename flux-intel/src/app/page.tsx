@@ -142,29 +142,15 @@ export default function Dashboard() {
     // Merge client metrics if available
     const displayPerformance = report?.meta?.performance || clientMetrics;
 
-    // Persistence: Load report from localStorage on mount
+    // Persistence: Clean up legacy URL storage
     useEffect(() => {
         if (typeof window !== 'undefined') {
-            const saved = localStorage.getItem('flux_audit_report');
-            if (saved) {
-                try {
-                    setReport(JSON.parse(saved));
-                    setStatus('complete');
-                } catch (e) {
-                    console.error("Failed to load saved report", e);
-                }
-            }
-            // Clean up any corrupted URL localStorage
             localStorage.removeItem('flux_audit_url');
         }
     }, []);
 
     const handleSetReport = (newReport: AnalysisReport | null) => {
         setReport(newReport);
-        if (typeof window !== 'undefined') {
-            if (newReport) localStorage.setItem('flux_audit_report', JSON.stringify(newReport));
-            else localStorage.removeItem('flux_audit_report');
-        }
     };
 
 
