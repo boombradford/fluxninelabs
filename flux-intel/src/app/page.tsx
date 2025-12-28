@@ -248,11 +248,15 @@ export default function Dashboard() {
             setStatus('analyzing_deep');
 
             // PHASE 2: DEEP PASS (Background Strategy)
-            const deepRes = await fetch('/api/audit', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ url, mode: 'deep', forceRefresh }), // Pass refresh flag
-            });
+            // Force a minimum animation time for "cinematic" feel
+            const [deepRes] = await Promise.all([
+                fetch('/api/audit', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ url, mode: 'deep', forceRefresh }),
+                }),
+                new Promise(resolve => setTimeout(resolve, 4000)) // 4s cinematic delay
+            ]);
 
             const deepData = await deepRes.json();
             if (!deepRes.ok) throw new Error(deepData.error || 'Deep analysis failed');
