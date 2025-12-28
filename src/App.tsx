@@ -1,9 +1,120 @@
-import { useState, useEffect } from "react"
+import { useState, useEffect, useRef } from "react"
+import { motion, useInView } from "framer-motion"
 import { Button } from "@/components/ui/button"
-import { ArrowRight } from "lucide-react"
+import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet"
+import { ArrowRight, Menu } from "lucide-react"
+import { FaYoutube, FaXTwitter, FaInstagram } from 'react-icons/fa6';
+import { MagneticButton } from "@/components/MagneticButton"
+import { ParallaxImage } from "@/components/ParallaxImage"
+import { LiveContentGrid } from "@/components/LiveContentGrid"
+import { Section, Container } from "@/components/system/Layout"
+import { H2, Text, Label } from "@/components/system/Typography"
+import { Card } from "@/components/system/Card"
+import { fetchChannelStats } from "@/services/youtube"
+
+// Animation configurations
+const FADE_UP = {
+  initial: { opacity: 0, y: 20 },
+  animate: { opacity: 1, y: 0 },
+  transition: { duration: 0.5, ease: [0.22, 1, 0.36, 1] as any }
+}
+
+const NAV_LINKS = [
+  { href: "#work", label: "Work" },
+  { href: "#capabilities", label: "Capabilities" },
+  { href: "#about", label: "About" },
+]
+
+const FOOTER_LINKS = [
+  { href: "#", label: "Privacy Policy" },
+  { href: "#", label: "Terms of Service" },
+  { href: "#", label: "Contact" },
+]
+
+const SOCIAL_LINKS = [
+  { icon: FaYoutube, href: "https://www.youtube.com/channel/UC23OIrDByxQWNPRlNAEE4Jw", label: "YouTube" },
+  { icon: FaXTwitter, href: "http://www.twitter.com/wave_react", label: "X (Twitter)" },
+  { icon: FaInstagram, href: "http://www.instagram.com/wave_react", label: "Instagram" },
+]
+
+// Helper for formatting large numbers (e.g. 1.2K, 3.5M)
+const formatCompactNumber = (number: number) => {
+  return new Intl.NumberFormat('en-US', {
+    notation: "compact",
+    maximumFractionDigits: 1
+  }).format(number);
+}
 
 export default function App() {
   const [scrollY, setScrollY] = useState(0)
+  const [networkStats, setNetworkStats] = useState({
+    subscribers: 0,
+    views: 0,
+    videos: 0,
+    loaded: false
+  })
+
+  const aboutRef = useRef(null)
+  const workRef = useRef(null)
+
+  const aboutInView = useInView(aboutRef, { once: true, margin: "-100px" })
+  const workInView = useInView(workRef, { once: true, margin: "-100px" })
+
+  // Channel IDs for aggregation
+  const CHANNEL_IDS = ['UC23OIrDByxQWNPRlNAEE4Jw', 'UC0lHFeAnmmur94LWBNumBUg'];
+
+  // Always scroll to top on mount and disable scroll restoration
+  useEffect(() => {
+    // Disable browser scroll restoration
+    if ('scrollRestoration' in window.history) {
+      window.history.scrollRestoration = 'manual'
+    }
+
+    // Force immediate scroll to top
+    window.scrollTo({ top: 0, left: 0, behavior: 'instant' })
+
+    // Backup scroll to top after a brief delay
+    setTimeout(() => {
+      window.scrollTo({ top: 0, left: 0, behavior: 'instant' })
+    }, 0)
+  }, [])
+
+  useEffect(() => {
+    const loadStats = async () => {
+      const apiKey = import.meta.env.VITE_YOUTUBE_API_KEY;
+      if (!apiKey) return;
+
+      try {
+        const promises = CHANNEL_IDS.map(id => fetchChannelStats(id, apiKey));
+        const results = await Promise.all(promises);
+
+        const aggregated = results.reduce((acc, curr) => {
+          if (!curr) return acc;
+          return {
+            subscribers: acc.subscribers + parseInt(curr.subscriberCount),
+            views: acc.views + parseInt(curr.viewCount),
+            videos: acc.videos + parseInt(curr.videoCount)
+          };
+        }, { subscribers: 0, views: 0, videos: 0 });
+
+        // If we got zeros (API error or empty), use fallback
+        if (aggregated.subscribers === 0) throw new Error("API returned empty data");
+
+        setNetworkStats({ ...aggregated, loaded: true });
+      } catch (error) {
+        console.warn("Failed to load live network stats, using fallback", error);
+        // Fallback to "last known good" values so UI never breaks
+        setNetworkStats({
+          subscribers: 98500,
+          views: 3200000,
+          videos: 320,
+          loaded: true
+        });
+      }
+    };
+
+    loadStats();
+  }, []);
 
   useEffect(() => {
     const handleScroll = () => setScrollY(window.scrollY)
@@ -12,79 +123,127 @@ export default function App() {
   }, [])
 
   return (
-    <div className="bg-[#000000] text-white min-h-screen font-sans">
-      <nav className={`fixed top-0 left-0 right-0 z-50 transition-all duration-300 ${scrollY > 20 ? 'bg-[#000000]/80 backdrop-blur-xl border-b border-white/10' : 'bg-transparent border-transparent'}`}>
-        <div className="max-w-[980px] mx-auto px-6">
-          <div className="flex items-center justify-between h-[52px]">
-            <div className="flex items-center gap-2 cursor-pointer">
-              <img src="https://dxzigvsnwmwhwgwg.public.blob.vercel-storage.com/flux-logo-rounded.webp" alt="Flux Nine Labs" className="h-7 w-7 rounded-lg shadow-sm" />
-              <span className="text-[17px] font-extrabold tracking-tight">Flux Nine Labs</span>
-            </div>
-            <div className="hidden md:flex items-center gap-8 text-[14px] font-bold">
-              <a href="#work" className="hover:text-white/60 transition-colors">
-                Work
-              </a>
-              <a href="#services" className="hover:text-white/60 transition-colors">
-                Services
-              </a>
-              <a href="#about" className="hover:text-white/60 transition-colors">
-                About
-              </a>
-              <Button
-                size="sm"
-                className="bg-white text-black hover:bg-white/90 font-semibold rounded-full px-4 h-8 text-[12px] transition-all focus-apple"
+    <div className="bg-[var(--bg-primary)] text-[var(--text-primary)] min-h-screen font-sans selection:bg-white/20">
+      {/* Navigation */}
+      <nav
+        className={`fixed top-0 left-0 right-0 z-50 transition-all duration-300 ${scrollY > 20
+          ? 'bg-black/70 backdrop-blur-xl border-b border-[var(--border-subtle)]'
+          : 'bg-transparent backdrop-blur-sm'
+          }`}
+        role="navigation"
+        aria-label="Main navigation"
+      >
+        <div className="max-w-[1400px] mx-auto px-6 md:px-12 flex items-center justify-between h-16">
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ duration: 0.4, ease: [0.22, 1, 0.36, 1] }}
+          >
+            <a
+              href="#"
+              className="flex items-center gap-3 group focus-visible:outline-2 focus-visible:outline-[var(--accent-primary)] rounded-md"
+              aria-label="Flux Nine Labs home"
+            >
+              <img
+                src="https://dxzigvsnwmwhwgwg.public.blob.vercel-storage.com/flux-logo-rounded.webp"
+                alt=""
+                className="h-8 w-8 rounded transition-transform duration-300 group-hover:scale-105"
+                aria-hidden="true"
+              />
+              <span className="text-[15px] font-bold tracking-[0.03em]">FLUX NINE LABS</span>
+            </a>
+          </motion.div>
+
+          {/* Desktop Nav */}
+          <motion.div
+            className="hidden md:flex items-center gap-8"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ duration: 0.4, delay: 0.12, ease: [0.22, 1, 0.36, 1] }}
+          >
+            {NAV_LINKS.map((link) => (
+              <a
+                key={link.href}
+                href={link.href}
+                className="text-[14px] font-semibold tracking-[0.01em] transition-opacity duration-200 hover:opacity-60"
               >
-                Get in Touch
+                {link.label}
+              </a>
+            ))}
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              transition={{ duration: 0.4, delay: 0.24, ease: [0.22, 1, 0.36, 1] }}
+            >
+              <MagneticButton
+                size="sm"
+                className="header-cta bg-white text-black hover:bg-white/95 rounded-full px-5 h-9 text-[13px] font-bold shadow-[inset_0_1px_0_rgba(255,255,255,0.3)]"
+              >
+                Contact
+              </MagneticButton>
+            </motion.div>
+          </motion.div>
+
+          {/* Mobile Menu Button */}
+          <Sheet>
+            <SheetTrigger asChild>
+              <Button
+                variant="ghost"
+                size="icon"
+                className="md:hidden text-white hover:bg-white/10 focus-visible:ring-2 focus-visible:ring-[var(--accent-primary)]"
+                aria-label="Open menu"
+              >
+                <Menu className="h-6 w-6" />
               </Button>
-            </div>
-          </div>
+            </SheetTrigger>
+            <SheetContent side="right" className="bg-black border-white/10 w-[300px]">
+              <div className="flex flex-col gap-6 mt-8">
+                {NAV_LINKS.map((link) => (
+                  <a
+                    key={link.href}
+                    href={link.href}
+                    className="text-lg font-semibold text-white hover:text-white/70 transition-colors focus-visible:outline-2 focus-visible:outline-[var(--accent-primary)] rounded-md"
+                  >
+                    {link.label}
+                  </a>
+                ))}
+              </div>
+            </SheetContent>
+          </Sheet>
         </div>
+
+
       </nav>
 
-      <section className="relative min-h-screen flex items-center justify-center overflow-hidden pt-[52px]">
-        <div className="absolute inset-0 z-0">
-          <video autoPlay loop muted playsInline className="w-full h-full object-cover opacity-40">
-            <source src="https://dxzigvsnwmwhwgwg.public.blob.vercel-storage.com/grok-video-929da915-4b03-4fd3-b03e-8652f392d36d%20%281%29.mp4" type="video/mp4" />
-          </video>
-          <div className="absolute inset-0 bg-gradient-to-b from-black/60 via-black/40 to-black" />
+      {/* Hero - Text with Cinematic Background */}
+      <section className="relative w-full py-32 md:py-40 lg:py-48 overflow-hidden" role="banner">
+        {/* Tier 3 Abstract Cinematic Background */}
+        <div className="absolute inset-0 z-0" aria-hidden="true">
+          <div className="absolute inset-0 bg-[radial-gradient(ellipse_80%_80%_at_50%_-20%,rgba(120,119,198,0.07),transparent)] animate-pulse-slow" />
+          <div className="absolute inset-0 bg-[radial-gradient(circle_at_80%_80%,rgba(77,208,225,0.04),transparent)] animate-drift" />
         </div>
-        <div className="relative z-10 text-center px-6 max-w-[980px] py-32">
-          <h1 className="text-[48px] md:text-[64px] lg:text-[80px] font-bold mb-6 leading-[1.05] tracking-[-0.015em] text-balance">
-            Stories that move the world
-          </h1>
-          <p className="text-[21px] md:text-[24px] text-white/70 max-w-[600px] mx-auto leading-[1.4] font-normal mb-12">
-            We create cinematic experiences that captivate audiences and elevate brands.
-          </p>
-          <div className="flex items-center justify-center">
-            <Button
-              size="lg"
-              className="bg-white text-black hover:bg-white/90 rounded-full px-6 text-[17px] font-medium h-12 transition-all focus-apple"
-              asChild
-            >
-              <a href="http://www.youtube.com/@wavereact" target="_blank" rel="noopener noreferrer">
-                View Our Work
-              </a>
-            </Button>
-          </div>
-        </div>
-      </section>
 
-      <div className="max-w-[980px] mx-auto px-6">
-        <div className="h-px bg-white/10" />
-      </div>
-
-      <section id="work" className="py-16 px-6">
-        <div className="max-w-[980px] mx-auto">
-          <div className="mb-16">
-            <p className="text-[12px] text-white/50 font-semibold mb-3 tracking-wide uppercase">Featured Work</p>
-            <h2 className="text-[40px] md:text-[48px] font-bold tracking-[-0.015em] mb-4">Our Best Work</h2>
-            <p className="text-[19px] md:text-[21px] text-white/70 max-w-[600px] leading-[1.4]">
-              Award-winning projects showcasing exceptional storytelling.
+        <Container className="relative z-10">
+          <div className="max-w-4xl">
+            <h1 className="text-[clamp(2.5rem,7vw,4.5rem)] font-bold leading-[1.1] tracking-[-0.03em] text-[var(--text-primary)] mb-6">
+              Creators of <span className="text-[var(--accent-primary)]">WaveReact</span> and <span className="text-[var(--accent-primary)]">After The Midnight</span>.
+            </h1>
+            <p className="text-[clamp(1.125rem,2vw,1.375rem)] leading-[1.5] text-[var(--text-secondary)] max-w-2xl">
+              A deeper look at how music is made.
             </p>
           </div>
+        </Container>
+      </section>
 
-          <div className="grid gap-6">
-            <div className="group relative aspect-[16/9] rounded-2xl overflow-hidden bg-white/5 border border-white/10">
+      {/* Featured Work (Single Focus) */}
+      <Section id="work" spacing="lg" ref={workRef}>
+        <Container>
+          <motion.div
+            {...FADE_UP}
+            animate={workInView ? FADE_UP.animate : FADE_UP.initial}
+          >
+            {/* Removed border-[var(--border-subtle)] for a cleaner, frameless look */}
+            <Card className="aspect-[16/9] mb-8 overflow-hidden bg-black/40 shadow-2xl">
               <iframe
                 className="w-full h-full"
                 src="https://www.youtube.com/embed/xCdDZfRVKzw"
@@ -92,169 +251,147 @@ export default function App() {
                 allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
                 allowFullScreen
               />
+            </Card>
+
+            {/* Latest Videos Grid */}
+            <div className="mt-16">
+              <LiveContentGrid handles={['UC23OIrDByxQWNPRlNAEE4Jw', 'UC0lHFeAnmmur94LWBNumBUg']} />
             </div>
 
-            <div className="grid md:grid-cols-2 gap-6">
-              <div className="group relative rounded-2xl overflow-hidden bg-white/5 border border-white/10 transition-all hover:border-white/20">
-                <div className="aspect-[4/3] overflow-hidden">
-                  <iframe
-                    className="w-full h-full"
-                    src="https://www.youtube.com/embed/9GpNL7HS_qQ"
-                    title="Recent Work"
-                    allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-                    allowFullScreen
-                  />
+            {/* Network Stats - Quiet Context */}
+            <div className="mt-20 pt-12 border-t border-[var(--border-subtle)]">
+              <div className="grid grid-cols-3 gap-8 max-w-2xl mx-auto">
+                <div className="text-center">
+                  <motion.div
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: networkStats.loaded ? 1 : 0 }}
+                    className="text-[32px] font-bold tabular-nums text-[var(--text-primary)] mb-1"
+                  >
+                    {networkStats.loaded ? formatCompactNumber(networkStats.subscribers) : "-"}
+                  </motion.div>
+                  <div className="text-[11px] uppercase tracking-wider text-[var(--text-tertiary)] opacity-60">Subscribers</div>
                 </div>
-                <div className="p-6">
-                  <p className="text-[12px] font-semibold text-white/50 uppercase mb-2">Recent</p>
-                  <h3 className="text-[24px] font-semibold tracking-[-0.01em] mb-2">Latest Project</h3>
-                  <p className="text-[15px] text-white/60">Showcasing our newest work</p>
+                <div className="text-center">
+                  <motion.div
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: networkStats.loaded ? 1 : 0 }}
+                    className="text-[32px] font-bold tabular-nums text-[var(--text-primary)] mb-1"
+                  >
+                    {networkStats.loaded ? formatCompactNumber(networkStats.views) : "-"}
+                  </motion.div>
+                  <div className="text-[11px] uppercase tracking-wider text-[var(--text-tertiary)] opacity-60">Views</div>
                 </div>
-              </div>
-
-              <div className="group relative rounded-2xl overflow-hidden bg-white/5 border border-white/10 transition-all hover:border-white/20">
-                <div className="aspect-[4/3] overflow-hidden">
-                  <iframe
-                    className="w-full h-full"
-                    src="https://www.youtube.com/embed/uQWPKNEUN_U"
-                    title="Client Work"
-                    allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-                    allowFullScreen
-                  />
-                </div>
-                <div className="p-6">
-                  <p className="text-[12px] font-semibold text-white/50 uppercase mb-2">Portfolio</p>
-                  <h3 className="text-[24px] font-semibold tracking-[-0.01em] mb-2">Client Work</h3>
-                  <p className="text-[15px] text-white/60">Trusted by leading brands</p>
+                <div className="text-center">
+                  <motion.div
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: networkStats.loaded ? 1 : 0 }}
+                    className="text-[32px] font-bold tabular-nums text-[var(--text-primary)] mb-1"
+                  >
+                    {networkStats.loaded ? formatCompactNumber(networkStats.videos) : "-"}
+                  </motion.div>
+                  <div className="text-[11px] uppercase tracking-wider text-[var(--text-tertiary)] opacity-60">Videos</div>
                 </div>
               </div>
             </div>
-          </div>
-        </div>
-      </section>
+          </motion.div>
+        </Container>
+      </Section>
 
-      <div className="max-w-[980px] mx-auto px-6">
-        <div className="h-px bg-white/10" />
-      </div>
 
-      <section id="services" className="py-16 px-6">
-        <div className="max-w-[980px] mx-auto">
-          <div className="mb-16">
-            <p className="text-[12px] text-white/50 font-semibold mb-3 tracking-wide uppercase">What We Do</p>
-            <h2 className="text-[40px] md:text-[48px] font-bold tracking-[-0.015em] mb-4">Our Services</h2>
-            <p className="text-[19px] md:text-[21px] text-white/70 max-w-[600px] leading-[1.4]">
-              Comprehensive video production services tailored to your vision.
-            </p>
-          </div>
 
-          <div className="grid md:grid-cols-3 gap-6">
-            {[
-              {
-                title: "Commercial Production",
-                desc: "High-end video content for brands that demand excellence.",
-              },
-              {
-                title: "Brand Storytelling",
-                desc: "Narrative-driven films that connect emotionally with audiences.",
-              },
-              {
-                title: "Post-Production",
-                desc: "Masterful editing and color grading that elevates your content.",
-              },
-            ].map((service, i) => (
-              <div
-                key={i}
-                className="group cursor-pointer bg-white/[0.03] rounded-2xl p-8 border border-white/10 hover:border-white/20 transition-all"
-              >
-                <h3 className="text-[24px] font-semibold mb-4 tracking-[-0.01em]">{service.title}</h3>
-                <p className="text-[17px] text-white/70 leading-[1.4]">{service.desc}</p>
-              </div>
-            ))}
-          </div>
-        </div>
-      </section>
+      <Container>
+        <div className="divider my-10 md:my-12" />
+      </Container>
 
-      <div className="max-w-[980px] mx-auto px-6">
-        <div className="h-px bg-white/10" />
-      </div>
-
-      <section id="about" className="py-16 px-6">
-        <div className="max-w-[980px] mx-auto">
+      {/* About Section */}
+      <Section id="about" spacing="lg" ref={aboutRef}>
+        <Container>
           <div className="grid md:grid-cols-2 gap-16 items-center">
-            <div>
-              <p className="text-[12px] text-white/50 font-semibold mb-3 tracking-wide uppercase">About Us</p>
-              <h2 className="text-[40px] md:text-[48px] font-bold tracking-[-0.015em] mb-6">
+            <motion.div
+              {...FADE_UP}
+              animate={aboutInView ? FADE_UP.animate : FADE_UP.initial}
+            >
+              <Label>About Us</Label>
+              <H2 className="mb-3">
                 Crafting Stories That Matter
-              </h2>
-              <div className="space-y-6 text-[17px] md:text-[19px] text-white/70 leading-[1.5]">
-                <p>
-                  We are a collective of filmmakers and creative visionaries dedicated to pushing the boundaries of
-                  visual storytelling.
-                </p>
-                <p>
+              </H2>
+              <div className="space-y-6">
+                <Text>
+                  We are a collective of filmmakers and creative visionaries dedicated to pushing the boundaries of visual storytelling.
+                </Text>
+                <Text>
                   With over a decade of experience, we bring technical excellence and artistic vision to every project.
-                </p>
+                </Text>
               </div>
-              <Button
+              <MagneticButton
                 size="lg"
-                className="mt-8 bg-white text-black hover:bg-white/90 rounded-full px-6 text-[17px] font-medium h-12 transition-all focus-apple"
+                className="mt-4 bg-white text-black hover:bg-white/90 hover:shadow-[0_8px_24px_rgba(255,255,255,0.15)] rounded-full px-6 text-[17px] font-bold h-12 transition-all focus-visible:ring-2 focus-visible:ring-white focus-visible:ring-offset-2 focus-visible:ring-offset-black"
               >
                 Let's Collaborate
                 <ArrowRight className="w-4 h-4 ml-2" />
-              </Button>
-            </div>
-            <div className="relative aspect-[3/4] rounded-2xl overflow-hidden border border-white/10 bg-white/5">
-              {/* Fallback image */}
-              <div className="w-full h-full bg-gradient-to-tr from-gray-800 to-gray-900" />
-              {/* <img
-                src="/cinematic-film-production-behind-the-scenes-profes.jpg"
-                alt="Behind the scenes"
-                className="w-full h-full object-cover"
-              /> */}
-            </div>
+              </MagneticButton>
+            </motion.div>
+
+            <motion.div
+              {...FADE_UP}
+              animate={aboutInView ? FADE_UP.animate : FADE_UP.initial}
+              transition={{ ...FADE_UP.transition, delay: 0.2 }}
+            >
+              <Card hoverEffect className="aspect-[3/4] border-[var(--border-subtle)]">
+                <ParallaxImage
+                  src="/studio-setup.jpg"
+                  alt="Behind the scenes at Flux Nine Labs studio"
+                  className="w-full h-full group-hover:scale-105 transition-transform duration-700"
+                />
+              </Card>
+            </motion.div>
           </div>
-        </div>
-      </section>
+        </Container>
+      </Section>
 
-      <section className="py-16 px-6">
-        <div className="max-w-[692px] mx-auto text-center">
-          <h2 className="text-[40px] md:text-[56px] font-bold tracking-[-0.015em] mb-6 text-balance">
-            Ready to Create Something Extraordinary?
-          </h2>
-          <p className="text-[19px] md:text-[21px] text-white/70 mb-12 leading-[1.4]">
-            Let's bring your vision to life with compelling storytelling.
-          </p>
-          <Button
-            size="lg"
-            className="bg-white text-black hover:bg-white/90 rounded-full px-8 text-[17px] font-medium h-12 transition-all focus-apple"
-          >
-            Start Your Project
-            <ArrowRight className="w-4 h-4 ml-2" />
-          </Button>
-        </div>
-      </section>
-
-      <footer className="border-t border-white/10 py-12 px-6">
+      {/* Footer */}
+      <footer className="border-t border-[var(--border-subtle)] py-12 px-6 bg-[var(--bg-primary)]" role="contentinfo">
         <div className="max-w-[980px] mx-auto">
-          <div className="flex flex-col md:flex-row items-center justify-between gap-6 text-[12px] text-white/50">
+          <div className="flex flex-col md:flex-row items-center justify-between gap-6 text-[12px] text-[var(--text-tertiary)]">
             <div className="flex items-center gap-2">
-              <img src="https://dxzigvsnwmwhwgwg.public.blob.vercel-storage.com/flux-logo-rounded.webp" alt="Flux Nine Labs" className="h-5 w-5 rounded" />
-              <span>© 2025 Flux Nine Labs. All rights reserved.</span>
+              <img
+                src="https://dxzigvsnwmwhwgwg.public.blob.vercel-storage.com/flux-logo-rounded.webp"
+                alt=""
+                className="h-5 w-5 rounded"
+                aria-hidden="true"
+              />
+              <span>© {new Date().getFullYear()} Flux Nine Labs. All rights reserved.</span>
             </div>
-            <div className="flex items-center gap-6">
-              <a href="#" className="hover:text-white transition-colors">
-                Privacy Policy
-              </a>
-              <a href="#" className="hover:text-white transition-colors">
-                Terms of Service
-              </a>
-              <a href="#" className="hover:text-white transition-colors">
-                Contact
-              </a>
+            <div className="flex flex-col md:flex-row items-center gap-8">
+              <nav className="flex items-center gap-6" aria-label="Footer navigation">
+                {FOOTER_LINKS.map((link) => (
+                  <a
+                    key={link.href}
+                    href={link.href}
+                    className="hover:text-[var(--text-primary)] transition-colors focus-visible:outline-2 focus-visible:outline-[var(--accent-primary)] rounded-md"
+                  >
+                    {link.label}
+                  </a>
+                ))}
+              </nav>
+              <div className="flex items-center gap-4 text-[var(--text-tertiary)]">
+                {SOCIAL_LINKS.map((social) => (
+                  <a
+                    key={social.label}
+                    href={social.href}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="hover:text-[var(--text-primary)] transition-colors p-2 hover:bg-white/5 rounded-full duration-300 focus-visible:outline-2 focus-visible:outline-[var(--accent-primary)]"
+                    aria-label={`Visit our ${social.label} page`}
+                  >
+                    <social.icon size={18} />
+                  </a>
+                ))}
+              </div>
             </div>
           </div>
         </div>
       </footer>
-    </div>
+    </div >
   )
 }

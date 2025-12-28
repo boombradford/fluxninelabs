@@ -16,28 +16,27 @@ export interface YouTubeVideo {
     viewCount: string;
 }
 
-export const fetchChannelStats = async (channelHandle: string, apiKey: string): Promise<ChannelStats | null> => {
+export const fetchChannelStats = async (channelIdentifier: string, apiKey: string): Promise<ChannelStats | null> => {
     try {
-        console.log('[YouTube API] Fetching channel stats for:', channelHandle);
+        console.log('[YouTube API] Fetching channel stats for:', channelIdentifier);
 
-        // 1. Get Channel ID from Handle
-        const searchUrl = `${BASE_URL}/search?part=snippet&type=channel&q=${channelHandle}&key=${apiKey}`;
-        console.log('[YouTube API] Search URL:', searchUrl);
-        const searchRes = await fetch(searchUrl);
-        const searchData = await searchRes.json();
-        console.log('[YouTube API] Search response:', searchData);
+        let channelId = channelIdentifier;
 
-        if (searchData.error) {
-            console.error('[YouTube API] Error:', searchData.error);
-            return null;
+        // 1. Get Channel ID from Handle (only if not already an ID)
+        if (!channelIdentifier.startsWith('UC')) {
+            const searchUrl = `${BASE_URL}/search?part=snippet&type=channel&q=${channelIdentifier}&key=${apiKey}`;
+            console.log('[YouTube API] Search URL:', searchUrl);
+            const searchRes = await fetch(searchUrl);
+            const searchData = await searchRes.json();
+
+            if (searchData.error || !searchData.items?.[0]?.id?.channelId) {
+                console.warn('[YouTube API] Channel search failed for', channelIdentifier);
+                return null;
+            }
+            channelId = searchData.items[0].id.channelId;
         }
 
-        if (!searchData.items?.[0]?.id?.channelId) {
-            console.warn('[YouTube API] No channel found');
-            return null;
-        }
-        const channelId = searchData.items[0].id.channelId;
-        console.log('[YouTube API] Found channel ID:', channelId);
+        console.log('[YouTube API] Using channel ID:', channelId);
 
         // 2. Get Channel Stats
         const statsUrl = `${BASE_URL}/channels?part=statistics&id=${channelId}&key=${apiKey}`;
@@ -52,15 +51,19 @@ export const fetchChannelStats = async (channelHandle: string, apiKey: string): 
     }
 };
 
-export const fetchRecentVideos = async (channelHandle: string, apiKey: string): Promise<YouTubeVideo[]> => {
+export const fetchRecentVideos = async (channelIdentifier: string, apiKey: string): Promise<YouTubeVideo[]> => {
     try {
-        // 1. Get Channel ID (Duplicate logic, could be optimized but keeping simple for now)
-        const searchUrl = `${BASE_URL}/search?part=snippet&type=channel&q=${channelHandle}&key=${apiKey}`;
-        const searchRes = await fetch(searchUrl);
-        const searchData = await searchRes.json();
+        let channelId = channelIdentifier;
 
-        if (!searchData.items?.[0]?.id?.channelId) return [];
-        const channelId = searchData.items[0].id.channelId;
+        // 1. Get Channel ID (only if not already an ID)
+        if (!channelIdentifier.startsWith('UC')) {
+            const searchUrl = `${BASE_URL}/search?part=snippet&type=channel&q=${channelIdentifier}&key=${apiKey}`;
+            const searchRes = await fetch(searchUrl);
+            const searchData = await searchRes.json();
+
+            if (!searchData.items?.[0]?.id?.channelId) return [];
+            channelId = searchData.items[0].id.channelId;
+        }
 
         // 2. Get Recent Videos (Uploads Playlist)
         // First get the "uploads" playlist ID
