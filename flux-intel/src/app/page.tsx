@@ -21,6 +21,9 @@ interface PerformanceMetrics {
     inp: string;
     cls: string;
     speedIndex: string;
+    fcp?: string;
+    fid?: string;
+    tti?: string;
     isEstimate?: boolean; // NEW: Flag to indicate heuristic data
 }
 
@@ -117,8 +120,38 @@ const useClientSidePerformance = (url: string, trigger: boolean) => {
     const [metrics, setMetrics] = useState<PerformanceMetrics | null>(null);
     const [loading, setLoading] = useState(false);
 
-    // Disabled: Client cannot securely access GOOGLE_PSI_API_KEY
-    // All PSI data is now fetched server-side in /api/audit
+    useEffect(() => {
+        if (!trigger || !url) return;
+
+        const fetchMetrics = async () => {
+            setLoading(true);
+            try {
+                // Fallback to public quota (no key)
+                const res = await fetch(`https://www.googleapis.com/pagespeedonline/v5/runPagespeed?url=${encodeURIComponent(url)}&strategy=mobile`);
+                const data = await res.json();
+
+                if (data.error) throw new Error(data.error.message);
+
+                const aud = data.lighthouseResult?.audits || {};
+                setMetrics({
+                    lighthouseScore: (data.lighthouseResult?.categories?.performance?.score * 100) || 0,
+                    lcp: aud['largest-contentful-paint']?.displayValue || 'N/A',
+                    cls: aud['cumulative-layout-shift']?.displayValue || 'N/A',
+                    speedIndex: aud['speed-index']?.displayValue || 'N/A',
+                    inp: aud['interaction-to-next-paint']?.displayValue || 'N/A',
+                    fcp: aud['first-contentful-paint']?.displayValue || 'N/A',
+                    fid: aud['max-potential-fid']?.displayValue || 'N/A',
+                    tti: aud['interactive']?.displayValue || 'N/A'
+                });
+            } catch (err) {
+                console.warn("[Flux Client Fallback] Failed to fetch PSI", err);
+            } finally {
+                setLoading(false);
+            }
+        };
+
+        fetchMetrics();
+    }, [url, trigger]);
 
     return { metrics, loading };
 };

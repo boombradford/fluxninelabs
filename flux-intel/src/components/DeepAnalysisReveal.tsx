@@ -49,7 +49,7 @@ export const DeepAnalysisReveal = ({ status, children, className }: DeepAnalysis
             {/* 1. BLURRED/PROCESSING OVERLAY */}
             <div
                 className={clsx(
-                    "absolute inset-0 z-20 flex flex-col items-center justify-center transition-opacity duration-700 ease-in-out",
+                    "absolute inset-0 z-50 flex flex-col items-center justify-center transition-opacity duration-700 ease-in-out",
                     isReady ? "opacity-0 pointer-events-none" : "opacity-100"
                 )}
             >
