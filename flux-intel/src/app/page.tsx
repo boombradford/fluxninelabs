@@ -12,6 +12,7 @@ import clsx from 'clsx';
 import IntelligentTypewriter from '../components/IntelligentTypewriter';
 import ThinkingLog, { Milestone } from '../components/ThinkingLog';
 import { DeepAnalysisReveal } from '../components/DeepAnalysisReveal';
+import { MonitorView } from '../components/MonitorView';
 
 // --- TYPES ---
 interface PerformanceMetrics {
@@ -810,7 +811,9 @@ export default function Dashboard() {
                     </AnimatePresence>
 
                     {/* MONITOR / STRATEGY PLACEHOLDERS */}
-                    {(activeView === 'monitor' || activeView === 'strategy' || activeView === 'settings') && (
+                    {activeView === 'monitor' && <MonitorView />}
+
+                    {(activeView === 'strategy' || activeView === 'settings') && (
                         <div className="max-w-4xl mx-auto py-12 text-center text-[#64748B]">
                             <Settings className="w-12 h-12 mx-auto text-[#334155] mb-4" />
                             <h2 className="text-lg font-semibold text-white">System View</h2>
