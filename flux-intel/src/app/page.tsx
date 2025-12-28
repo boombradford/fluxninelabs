@@ -124,11 +124,22 @@ const useClientSidePerformance = (url: string, trigger: boolean) => {
                 // Determine strategy (using public quota to avoid key exposure on client)
                 const apiUrl = `https://www.googleapis.com/pagespeedonline/v5/runPagespeed?url=${encodeURIComponent(url)}&strategy=mobile`;
                 const res = await fetch(apiUrl);
+
+                if (!res.ok) {
+                    const errorData = await res.json().catch(() => null);
+                    console.error(`PSI API Error (${res.status}):`, errorData);
+                    // Quota exceeded or other API error - fail silently
+                    if (res.status === 429) {
+                        console.warn('⚠️ PSI API quota exceeded. Performance data unavailable.');
+                    }
+                    return;
+                }
+
                 const data = await res.json();
 
                 if (data.error) {
                     console.error("PSI API Error:", data.error);
-                    throw new Error(data.error.message);
+                    return; // Fail gracefully without setting metrics
                 }
 
                 const score = data.lighthouseResult?.categories?.performance?.score * 100 || 0;
@@ -141,8 +152,9 @@ const useClientSidePerformance = (url: string, trigger: boolean) => {
                     cls: aud['cumulative-layout-shift']?.displayValue || 'N/A',
                     speedIndex: aud['speed-index']?.displayValue || 'N/A'
                 });
-            } catch (e) {
-                console.warn("Client-side PSI failed", e);
+            } catch (e: any) {
+                console.warn("Client-side PSI failed:", e?.message || e);
+                // Don't throw - just fail silently and show "Data Unavailable" in UI
             } finally {
                 setLoading(false);
             }
