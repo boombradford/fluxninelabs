@@ -188,13 +188,19 @@ export const MonitorView = () => {
 
     const addTarget = (e: React.FormEvent) => {
         e.preventDefault();
-        if (!newUrl) return;
+
+        let targetUrl = newUrl.trim();
+        if (targetUrl && !/^https?:\/\//i.test(targetUrl)) {
+            targetUrl = `https://${targetUrl}`;
+        }
+
+        if (!targetUrl) return;
 
         // Create new mock target
         const baseScore = Math.floor(Math.random() * 40) + 60; // Random 60-100
         const newTarget: MonitoredTarget = {
             id: Date.now().toString(),
-            url: newUrl,
+            url: targetUrl,
             frequency: 'daily',
             status: baseScore > 80 ? 'healthy' : baseScore < 50 ? 'critical' : 'warning',
             lastScan: Date.now(),
@@ -281,7 +287,7 @@ export const MonitorView = () => {
                                 <div>
                                     <label className="block text-xs font-bold text-[#64748B] uppercase tracking-wider mb-2">Target URL</label>
                                     <input
-                                        type="url"
+                                        type="text"
                                         required
                                         placeholder="https://example.com"
                                         value={newUrl}

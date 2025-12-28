@@ -220,7 +220,15 @@ export default function Dashboard() {
 
     const runAudit = async (e?: React.FormEvent, forceRefresh = false) => {
         if (e) e.preventDefault();
-        if (!url) return;
+
+        // Normalize URL (User convenience: allow "example.com")
+        let targetUrl = url.trim();
+        if (!/^https?:\/\//i.test(targetUrl)) {
+            targetUrl = `https://${targetUrl}`;
+            setUrl(targetUrl); // Update UI
+        }
+
+        if (!targetUrl) return;
 
         setStatus('scouting');
         setError(null);
@@ -255,7 +263,7 @@ export default function Dashboard() {
                 fastRes = await fetch('/api/audit', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ url, mode: 'fast', forceRefresh }), // Pass refresh flag
+                    body: JSON.stringify({ url: targetUrl, mode: 'fast', forceRefresh }), // Pass refresh flag
                 });
             }
 
@@ -286,7 +294,7 @@ export default function Dashboard() {
                 fetch('/api/audit', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ url, mode: 'deep', forceRefresh }),
+                    body: JSON.stringify({ url: targetUrl, mode: 'deep', forceRefresh }),
                 }),
                 new Promise(resolve => setTimeout(resolve, 4000)) // 4s cinematic delay
             ]);
@@ -367,7 +375,7 @@ export default function Dashboard() {
                         <div className="relative flex items-center group" onMouseEnter={prefetchAudit}>
                             <Search className="absolute left-3 w-4 h-4 text-[#64748B] group-focus-within:text-[#94A3B8] transition-colors" />
                             <input
-                                type="url"
+                                type="text"
                                 value={url}
                                 onChange={(e) => setUrl(e.target.value)}
                                 placeholder="Enter domain to analyze..."
