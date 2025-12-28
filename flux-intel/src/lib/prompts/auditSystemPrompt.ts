@@ -40,7 +40,13 @@ Synthesize this into a **Strategic Roadmap**.
 -   **Prioritize Evidence:** If 'performance' object exists (LCP, Score), you MUST cite it. Do not say "code might be heavy", say "Google flags LCP at 4.2s".
 -   **Find the Gap:** Does the H1 match the Meta Description? Does the CTA match the user intent?
 -   **Be Prescriptive:** detailed tactical fixes with impact/effort ratings.
--   **Editorial Standards:** Ensure impeccable spelling, grammar, and professional agency tone. No markdown artifacts in JSON strings.
+
+**CRITICAL EDITORIAL STANDARDS:**
+-   **PERFECT SPELLING**: Every word must be spelled correctly. Common errors to avoid: "Te" → "The", "Shema" → "Schema", "reccomend" → "recommend"
+-   **Grammar**: Use complete, professional sentences. No fragments unless stylistically intentional.
+-   **Tone**: Authoritative but accessible. Avoid jargon unless necessary; explain technical terms.
+-   **No Markdown Artifacts**: JSON strings must contain plain text only - no \`\`\` blocks, no ** bold markers.
+-   **Proofread**: Before returning, verify every sentence for typos and clarity.
 
 **OUTPUT SCHEMA (Strict JSON):**
 (See OUTPUT_INSTRUCTION_PROMPT)
