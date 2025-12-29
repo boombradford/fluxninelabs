@@ -1051,7 +1051,7 @@ export default function Dashboard() {
 
                                     {/* MAIN CONTENT GRID - STANDARD MODE */}
                                     {!isVsMode && (
-                                        <DeepAnalysisReveal status={status} className="mt-8">
+                                        <div className="mt-8">
 
                                             {/* SPLIT HERO: VISUAL + SCORE */}
                                             <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 mb-16">
@@ -1099,118 +1099,120 @@ export default function Dashboard() {
                                                 </div>
                                             </div>
 
-                                            <div className="grid grid-cols-1 xl:grid-cols-4 gap-12">
+                                            <DeepAnalysisReveal status={status}>
+                                                <div className="grid grid-cols-1 xl:grid-cols-4 gap-12">
 
-                                                {/* TACTICAL EXECUTION PLAN - TERMINAL STYLE */}
-                                                <div className="xl:col-span-3 space-y-12">
-                                                    <div className="flex items-center justify-between border-b border-white/[0.1] pb-6">
-                                                        <h3 className="text-xl font-light text-white uppercase tracking-tight">
-                                                            <TextDecode text="Priority Action Plan" />
-                                                            <span className="text-[#64748B] font-mono text-sm ml-4 normal-case">/ {report.tacticalFixes?.length || 0} ITEMS</span>
-                                                        </h3>
-                                                        <div className="text-xs font-mono text-[#64748B]">
-                                                            Evidence Confidence: <span className={clsx("text-white", trustSignal > 80 ? "text-emerald-400" : "text-amber-400")}>{trustSignal}%</span>
+                                                    {/* TACTICAL EXECUTION PLAN - TERMINAL STYLE */}
+                                                    <div className="xl:col-span-3 space-y-12">
+                                                        <div className="flex items-center justify-between border-b border-white/[0.1] pb-6">
+                                                            <h3 className="text-xl font-light text-white uppercase tracking-tight">
+                                                                <TextDecode text="Priority Action Plan" />
+                                                                <span className="text-[#64748B] font-mono text-sm ml-4 normal-case">/ {report.tacticalFixes?.length || 0} ITEMS</span>
+                                                            </h3>
+                                                            <div className="text-xs font-mono text-[#64748B]">
+                                                                Evidence Confidence: <span className={clsx("text-white", trustSignal > 80 ? "text-emerald-400" : "text-amber-400")}>{trustSignal}%</span>
+                                                            </div>
                                                         </div>
+
+                                                        <motion.div
+                                                            initial={{ opacity: 0 }}
+                                                            animate={{ opacity: 1 }}
+                                                            transition={{ duration: 0.5, delay: 0.2 }}
+                                                            className="divide-y divide-white/[0.1]"
+                                                        >
+                                                            {report.tacticalFixes?.map((fix, idx) => (
+                                                                <motion.div
+                                                                    key={fix.id || idx}
+                                                                    className="grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-16 py-12 group first:pt-0"
+                                                                >
+                                                                    {/* LEFT: CAUSE & ACTION */}
+                                                                    <div className="lg:col-span-7 space-y-6">
+                                                                        <div className="flex items-start justify-between">
+                                                                            <div className="space-y-2">
+                                                                                <div className="flex items-center gap-3">
+                                                                                    <span className={clsx("text-[10px] font-mono font-bold uppercase tracking-widest", getImpactColor(fix.impact))}>
+                                                                                        {fix.impact} Priority
+                                                                                    </span>
+                                                                                    <span className="text-[10px] font-mono font-bold text-[#64748B] uppercase tracking-widest">
+                                                                                    // {fix.category}
+                                                                                    </span>
+                                                                                </div>
+                                                                                <h4 className="text-2xl font-light text-white leading-tight">{fix.title}</h4>
+                                                                            </div>
+                                                                        </div>
+
+                                                                        <div className="grid grid-cols-1 gap-6">
+                                                                            <div className="pl-4 border-l border-white/[0.1]">
+                                                                                <span className="text-[#64748B] uppercase text-[10px] font-mono font-bold block mb-2">Observation</span>
+                                                                                <p className="text-sm text-[#94A3B8] leading-relaxed">
+                                                                                    {fix.problem}
+                                                                                </p>
+                                                                            </div>
+                                                                            <div className="pl-4 border-l border-[#38BDF8]">
+                                                                                <span className="text-[#38BDF8] uppercase text-[10px] font-mono font-bold block mb-2">Recommendation</span>
+                                                                                <p className="text-sm text-[#E2E8F0] leading-relaxed font-medium">
+                                                                                    {fix.recommendation}
+                                                                                </p>
+                                                                            </div>
+                                                                        </div>
+
+                                                                        <div className="flex items-center gap-6 pt-2">
+                                                                            <div className="text-xs font-mono text-[#64748B]">
+                                                                                EFFORT: <span className="text-white">{fix.effortHours}h</span>
+                                                                            </div>
+                                                                            <div className="text-xs font-mono text-[#64748B]">
+                                                                                OUTCOME: <span className="text-emerald-400">{fix.expectedOutcome}</span>
+                                                                            </div>
+                                                                        </div>
+                                                                    </div>
+
+                                                                    {/* RIGHT: EVIDENCE DATA */}
+                                                                    <div className="lg:col-span-5">
+                                                                        <div className="h-full pl-6 border-l border-white/[0.1]">
+                                                                            <div className="text-[10px] font-mono font-bold text-[#64748B] uppercase tracking-widest mb-6 flex items-center gap-2">
+                                                                                <Microscope className="w-3 h-3" /> Supporting Data
+                                                                            </div>
+
+                                                                            {fix.evidence && fix.evidence.length > 0 ? (
+                                                                                <ul className="space-y-4">
+                                                                                    {fix.evidence.map((ev, i) => (
+                                                                                        <li key={i} className="flex flex-col gap-1">
+                                                                                            <span className="text-[10px] text-[#64748B] uppercase tracking-wide font-mono">{ev.label}</span>
+                                                                                            <span className="text-xs font-mono text-[#E2E8F0] break-all border-b border-white/[0.1] pb-1 inline-block">
+                                                                                                {ev.value}
+                                                                                            </span>
+                                                                                        </li>
+                                                                                    ))}
+                                                                                </ul>
+                                                                            ) : (
+                                                                                <div className="h-full flex flex-col items-center justify-center text-center opacity-50">
+                                                                                    <span className="text-xs font-mono text-[#64748B]">No Evidence</span>
+                                                                                </div>
+                                                                            )}
+                                                                        </div>
+                                                                    </div>
+                                                                </motion.div>
+                                                            ))}
+                                                        </motion.div>
                                                     </div>
 
-                                                    <motion.div
-                                                        initial={{ opacity: 0 }}
-                                                        animate={{ opacity: 1 }}
-                                                        transition={{ duration: 0.5, delay: 0.2 }}
-                                                        className="divide-y divide-white/[0.1]"
-                                                    >
-                                                        {report.tacticalFixes?.map((fix, idx) => (
-                                                            <motion.div
-                                                                key={fix.id || idx}
-                                                                className="grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-16 py-12 group first:pt-0"
-                                                            >
-                                                                {/* LEFT: CAUSE & ACTION */}
-                                                                <div className="lg:col-span-7 space-y-6">
-                                                                    <div className="flex items-start justify-between">
-                                                                        <div className="space-y-2">
-                                                                            <div className="flex items-center gap-3">
-                                                                                <span className={clsx("text-[10px] font-mono font-bold uppercase tracking-widest", getImpactColor(fix.impact))}>
-                                                                                    {fix.impact} Priority
-                                                                                </span>
-                                                                                <span className="text-[10px] font-mono font-bold text-[#64748B] uppercase tracking-widest">
-                                                                                    // {fix.category}
-                                                                                </span>
-                                                                            </div>
-                                                                            <h4 className="text-2xl font-light text-white leading-tight">{fix.title}</h4>
-                                                                        </div>
-                                                                    </div>
+                                                    {/* CTA - TERMINAL STYLE */}
+                                                    <div className="col-span-full mt-24 border-t border-white/[0.1] pt-12 text-center">
+                                                        <h3 className="text-xl font-light text-white mb-4">Implementation Support</h3>
+                                                        <p className="text-sm text-[#94A3B8] max-w-lg mx-auto mb-8 leading-relaxed">
+                                                            Systems optimization requires precision execution. Schedule a brief with our principal strategist.
+                                                        </p>
+                                                        <a
+                                                            href="mailto:madebyskovie@gmail.com?subject=Flux%20Intelligence%20Briefing%20Request"
+                                                            className="inline-flex items-center gap-2 px-8 py-3 bg-white text-black text-sm font-bold uppercase tracking-widest hover:bg-[#38BDF8] hover:text-white transition-colors"
+                                                        >
+                                                            Initialize Contact <Target className="w-4 h-4" />
+                                                        </a>
+                                                    </div>
 
-                                                                    <div className="grid grid-cols-1 gap-6">
-                                                                        <div className="pl-4 border-l border-white/[0.1]">
-                                                                            <span className="text-[#64748B] uppercase text-[10px] font-mono font-bold block mb-2">Observation</span>
-                                                                            <p className="text-sm text-[#94A3B8] leading-relaxed">
-                                                                                {fix.problem}
-                                                                            </p>
-                                                                        </div>
-                                                                        <div className="pl-4 border-l border-[#38BDF8]">
-                                                                            <span className="text-[#38BDF8] uppercase text-[10px] font-mono font-bold block mb-2">Recommendation</span>
-                                                                            <p className="text-sm text-[#E2E8F0] leading-relaxed font-medium">
-                                                                                {fix.recommendation}
-                                                                            </p>
-                                                                        </div>
-                                                                    </div>
-
-                                                                    <div className="flex items-center gap-6 pt-2">
-                                                                        <div className="text-xs font-mono text-[#64748B]">
-                                                                            EFFORT: <span className="text-white">{fix.effortHours}h</span>
-                                                                        </div>
-                                                                        <div className="text-xs font-mono text-[#64748B]">
-                                                                            OUTCOME: <span className="text-emerald-400">{fix.expectedOutcome}</span>
-                                                                        </div>
-                                                                    </div>
-                                                                </div>
-
-                                                                {/* RIGHT: EVIDENCE DATA */}
-                                                                <div className="lg:col-span-5">
-                                                                    <div className="h-full pl-6 border-l border-white/[0.1]">
-                                                                        <div className="text-[10px] font-mono font-bold text-[#64748B] uppercase tracking-widest mb-6 flex items-center gap-2">
-                                                                            <Microscope className="w-3 h-3" /> Supporting Data
-                                                                        </div>
-
-                                                                        {fix.evidence && fix.evidence.length > 0 ? (
-                                                                            <ul className="space-y-4">
-                                                                                {fix.evidence.map((ev, i) => (
-                                                                                    <li key={i} className="flex flex-col gap-1">
-                                                                                        <span className="text-[10px] text-[#64748B] uppercase tracking-wide font-mono">{ev.label}</span>
-                                                                                        <span className="text-xs font-mono text-[#E2E8F0] break-all border-b border-white/[0.1] pb-1 inline-block">
-                                                                                            {ev.value}
-                                                                                        </span>
-                                                                                    </li>
-                                                                                ))}
-                                                                            </ul>
-                                                                        ) : (
-                                                                            <div className="h-full flex flex-col items-center justify-center text-center opacity-50">
-                                                                                <span className="text-xs font-mono text-[#64748B]">No Evidence</span>
-                                                                            </div>
-                                                                        )}
-                                                                    </div>
-                                                                </div>
-                                                            </motion.div>
-                                                        ))}
-                                                    </motion.div>
                                                 </div>
-
-                                                {/* CTA - TERMINAL STYLE */}
-                                                <div className="col-span-full mt-24 border-t border-white/[0.1] pt-12 text-center">
-                                                    <h3 className="text-xl font-light text-white mb-4">Implementation Support</h3>
-                                                    <p className="text-sm text-[#94A3B8] max-w-lg mx-auto mb-8 leading-relaxed">
-                                                        Systems optimization requires precision execution. Schedule a brief with our principal strategist.
-                                                    </p>
-                                                    <a
-                                                        href="mailto:madebyskovie@gmail.com?subject=Flux%20Intelligence%20Briefing%20Request"
-                                                        className="inline-flex items-center gap-2 px-8 py-3 bg-white text-black text-sm font-bold uppercase tracking-widest hover:bg-[#38BDF8] hover:text-white transition-colors"
-                                                    >
-                                                        Initialize Contact <Target className="w-4 h-4" />
-                                                    </a>
-                                                </div>
-
-                                            </div>
-                                        </DeepAnalysisReveal>
+                                            </DeepAnalysisReveal>
+                                        </div>
                                     )}
 
                                 </motion.div>

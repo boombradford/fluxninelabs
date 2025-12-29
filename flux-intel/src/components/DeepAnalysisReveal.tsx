@@ -2,8 +2,8 @@
 
 import { motion, AnimatePresence } from 'framer-motion';
 import { clsx } from 'clsx';
-import { Loader2, Sparkles, BrainCircuit } from 'lucide-react';
-import React from 'react';
+import { Loader2 } from 'lucide-react';
+import React, { useState, useEffect } from 'react';
 
 interface DeepAnalysisRevealProps {
     status: 'idle' | 'scouting' | 'analyzing_deep' | 'complete';
@@ -15,58 +15,15 @@ export const DeepAnalysisReveal = ({ status, children, className }: DeepAnalysis
     const isReady = status === 'complete';
     const isProcessing = status === 'analyzing_deep';
 
-    // SKELETON PLACEHOLDER (Blur Target)
-    // We render a fake version of the tactical plan to blur
-    const SkeletonPlaceholder = () => (
-        <div className="space-y-12 opacity-50 pointer-events-none select-none grayscale">
-            <div className="flex items-center justify-between border-b border-white/[0.06] pb-4">
-                <div className="h-8 w-64 bg-white/10 rounded-none animate-pulse" />
-                <div className="h-8 w-32 bg-white/10 rounded-none animate-pulse" />
-            </div>
+    // Internal state for progressive disclosure simulation
+    const [progress, setProgress] = useState(0);
 
-            <div className="space-y-8">
-                {[1, 2, 3].map((i) => (
-                    <div key={i} className="grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-16 border-b border-white/[0.05] pb-12 last:border-0">
-                        {/* LEFT MOCK */}
-                        <div className="lg:col-span-7 space-y-5">
-                            <div className="flex items-center gap-3 mb-2">
-                                <div className="h-3 w-16 bg-white/20 rounded-none animate-pulse" />
-                                <div className="h-3 w-24 bg-white/10 rounded-none animate-pulse" />
-                            </div>
-                            <div className="h-8 w-3/4 bg-white/10 rounded-none animate-pulse" />
-
-                            <div className="grid grid-cols-1 gap-6 mt-6">
-                                <div className="pl-4 border-l border-white/[0.1]">
-                                    <div className="h-2 w-16 bg-white/10 mb-2 rounded-none" />
-                                    <div className="space-y-2">
-                                        <div className="h-3 w-full bg-white/5 rounded-none animate-pulse" />
-                                        <div className="h-3 w-5/6 bg-white/5 rounded-none animate-pulse" />
-                                    </div>
-                                </div>
-                                <div className="pl-4 border-l border-[#38BDF8]/30">
-                                    <div className="h-2 w-24 bg-[#38BDF8]/20 mb-2 rounded-none" />
-                                    <div className="space-y-2">
-                                        <div className="h-3 w-full bg-white/5 rounded-none animate-pulse" />
-                                        <div className="h-3 w-5/6 bg-white/5 rounded-none animate-pulse" />
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-
-                        {/* RIGHT MOCK */}
-                        <div className="lg:col-span-5 pl-6 border-l border-white/[0.05]">
-                            <div className="h-3 w-32 bg-white/20 rounded-none animate-pulse mb-6" />
-                            <div className="space-y-3">
-                                <div className="h-10 w-full border-b border-white/[0.05] animate-pulse" />
-                                <div className="h-10 w-full border-b border-white/[0.05] animate-pulse" />
-                                <div className="h-10 w-full border-b border-white/[0.05] animate-pulse" />
-                            </div>
-                        </div>
-                    </div>
-                ))}
-            </div>
-        </div>
-    );
+    // Reset progress when analysis starts
+    useEffect(() => {
+        if (status === 'analyzing_deep') {
+            setProgress(0);
+        }
+    }, [status]);
 
     return (
         <div className={clsx("relative min-h-[400px]", className)}>
@@ -84,32 +41,36 @@ export const DeepAnalysisReveal = ({ status, children, className }: DeepAnalysis
                     isReady ? "backdrop-blur-none" : "backdrop-blur-[8px]"
                 )} />
 
-                {/* SCANNER UI */}
-                <div className="relative z-30 flex flex-col items-center text-center p-8">
-                    <div className="relative mb-6">
-                        <div className="absolute inset-0 bg-blue-500/20 blur-[30px] rounded-full animate-pulse" />
-                        <div className="relative h-16 w-16 bg-[#0F172A] border border-blue-500/30 rounded-2xl flex items-center justify-center shadow-2xl">
-                            <BrainCircuit className="w-8 h-8 text-blue-400 animate-pulse" />
+                {/* PREMIUM LOADER UI */}
+                <div className="relative z-30 flex flex-col items-center text-center p-8 max-w-md w-full">
+                    {/* Spinner */}
+                    <div className="relative mb-8">
+                        <div className="absolute inset-0 bg-blue-500/10 blur-[40px] rounded-full" />
+                        <div className="relative h-16 w-16 bg-white/[0.03] border border-white/[0.08] rounded-2xl flex items-center justify-center shadow-2xl backdrop-blur-sm">
+                            <motion.div
+                                animate={{ rotate: 360 }}
+                                transition={{ duration: 3, repeat: Infinity, ease: "linear" }}
+                            >
+                                <Loader2 className="w-6 h-6 text-blue-400/80" />
+                            </motion.div>
                         </div>
-                        {/* Scanning Line Animation */}
-                        <motion.div
-                            className="absolute top-0 left-[-20%] right-[-20%] h-[2px] bg-gradient-to-r from-transparent via-blue-400 to-transparent shadow-[0_0_15px_rgba(59,130,246,0.6)]"
-                            animate={{ top: ["0%", "100%", "0%"] }}
-                            transition={{ duration: 3, repeat: Infinity, ease: "linear" }}
-                        />
                     </div>
 
-                    <h3 className="text-xl font-bold text-white mb-2 tracking-tight">
+                    <h3 className="text-xl font-semibold text-white mb-6 tracking-tight">
                         Analyzing Your Marketing Strategy
                     </h3>
-                    <p className="text-sm text-blue-200/60 font-mono tracking-wide max-w-xs">
-                        Building your customer acquisition plan...
-                    </p>
-                </div>
 
+                    {/* PROGRESS MILESTONES (Simulated) */}
+                    <div className="w-full space-y-3">
+                        <ProgressStep label="Crawling page architecture" delay={0} />
+                        <ProgressStep label="Measuring Core Web Vitals" delay={1.5} />
+                        <ProgressStep label="Evaluating SEO signals" delay={3.0} />
+                        <ProgressStep label="Synthesizing strategic recommendations" delay={5.5} />
+                    </div>
+                </div>
             </div>
 
-            {/* 2. CONTENT LAYER (Always Rendered, but Skeleton if inactive) */}
+            {/* 2. CONTENT LAYER (Always Rendered, but Skeleton/Hidden if inactive) */}
             <div
                 className={clsx(
                     "relative z-10 transition-all duration-700",
@@ -117,12 +78,37 @@ export const DeepAnalysisReveal = ({ status, children, className }: DeepAnalysis
                 )}
             >
                 {/* We render children BUT masks them with skeleton if not ready to avoid layout shift */}
-                {/* Actually for reveal, we want the real content to 'sharpen'. 
-                    So we render children but style it. 
-                    If children data is missing (undefined tactical fixes), we render Skeleton. 
-                */}
                 {children}
             </div>
         </div>
+    );
+};
+
+// Internal Progress Step Component
+const ProgressStep = ({ label, delay }: { label: string, delay: number }) => {
+    return (
+        <motion.div
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: delay, duration: 0.5 }}
+            className="flex items-center gap-3 text-sm"
+        >
+            <motion.div
+                initial={{ scale: 0.5, opacity: 0 }}
+                animate={{ scale: 1, opacity: 1 }}
+                transition={{ delay: delay, duration: 0.3 }}
+            >
+                {/* Animated status circle */}
+                <div className="w-4 h-4 rounded-full border border-blue-500/30 flex items-center justify-center">
+                    <motion.div
+                        initial={{ scale: 0 }}
+                        animate={{ scale: 1 }}
+                        transition={{ delay: delay + 1.5, type: "spring" }} // 'complete' after 1.5s
+                        className="w-1.5 h-1.5 bg-blue-400 rounded-full"
+                    />
+                </div>
+            </motion.div>
+            <span className="text-white/60 font-medium">{label}</span>
+        </motion.div>
     );
 };
