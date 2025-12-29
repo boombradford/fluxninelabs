@@ -1094,7 +1094,7 @@ export default function Dashboard() {
                                                                         <div className="space-y-2">
                                                                             <div className="flex items-center gap-3">
                                                                                 <span className={clsx("text-[10px] font-mono font-bold uppercase tracking-widest", getImpactColor(fix.impact))}>
-                                                                                    {fix.impact}_PRIORITY
+                                                                                    {fix.impact} Priority
                                                                                 </span>
                                                                                 <span className="text-[10px] font-mono font-bold text-[#64748B] uppercase tracking-widest">
                                                                                     // {fix.category}

@@ -154,10 +154,11 @@ RETURN ONLY JSON. NO MARKDOWN.
   "tacticalFixes": [
     {
       "id": "string (unique)",
-      "title": "Strict, command-line style action (e.g., 'EXECUTE_IMAGE_OPTIMIZATION')",
+      "title": "Clear, actionable title (e.g., 'Optimize Hero Image Loading')",
       "category": "performance" | "seo" | "accessibility" | "authority",
-      "impact": "high" | "medium" | "low",
+      "impact": "High" | "Medium" | "Low",
       "effort": "Low | Medium | High",
+      "effortHours": number,
       "problem": "The forensic evidence of failure (what is broken).",
       "recommendation": "The specific technical arbitrage to execute.",
       "expectedOutcome": "MEASURABLE BUSINESS IMPACT. (e.g. 'Reduces bounce likelihood by ~20% for mobile traffic.')",
