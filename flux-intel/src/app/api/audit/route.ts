@@ -66,6 +66,7 @@ interface PageSignals {
     imageFormats: string[]; // ['jpg', 'webp', 'avif']
     resourceHints: string[]; // ['preload', 'preconnect']
   };
+  navigation?: string[]; // Phase 3 (New)
 }
 
 // --- CONFIG ---
@@ -478,6 +479,22 @@ function auditResources(html: string, $: cheerio.CheerioAPI) {
   };
 }
 
+// --- NEW: Navigation Extraction (Phase 3) ---
+function extractNavigation($: cheerio.CheerioAPI): string[] {
+  const navItems = new Set<string>();
+
+  // Target common navigation containers
+  $('nav a, header a, footer a, [role="navigation"] a').each((_, el) => {
+    const text = $(el).text().trim();
+    // Filter for reasonably short, meaningful links
+    if (text && text.length < 25 && text.length > 2) {
+      navItems.add(text);
+    }
+  });
+
+  return Array.from(navItems).slice(0, 15); // Top 15 items to avoid token bloat
+}
+
 async function analyzePage(url: string, includePerformance = false): Promise<PageSignals> {
   try {
     // Parallel Extraction: Cheat code for speed. fetch HTML and PSI at same time if needed.
@@ -509,6 +526,7 @@ async function analyzePage(url: string, includePerformance = false): Promise<Pag
     const metaGovernance = detectMetaGovernance($);
     const accessibility = assessAccessibility($);
     const resources = auditResources(html, $);
+    const navigation = extractNavigation($); // Phase 3
 
     return {
       url,
@@ -529,7 +547,8 @@ async function analyzePage(url: string, includePerformance = false): Promise<Pag
       authority, // NEW Phase 2
       metaGovernance, // NEW Phase 3
       accessibility, // NEW Phase 3
-      resources // NEW Phase 3
+      resources, // Phase 3
+      navigation // Phase 3
     };
   } catch (e: any) {
     console.error(`[Flux Analyze] Failed ${url}: ${e.message}`);
@@ -592,7 +611,8 @@ async function generateAuditReport(pages: PageSignals[], domain: string, mode: '
       authority: p.authority, // Phase 2
       metaGovernance: p.metaGovernance, // Phase 3
       accessibility: p.accessibility, // Phase 3
-      resources: p.resources // Phase 3
+      resources: p.resources, // Phase 3
+      navigation: p.navigation // Phase 3 (New)
     },
     // INJECT TRUTH: If available, AI sees real speed.
     performance: p.performance ? {
@@ -602,6 +622,39 @@ async function generateAuditReport(pages: PageSignals[], domain: string, mode: '
     } : undefined,
     contentSnippet: p.primaryContentSnippet ? p.primaryContentSnippet.substring(0, isFast ? 1000 : 2500) + '...' : 'No content extracted'
   }));
+
+  // CALCULATE DETERMINISTIC VIBE SCORE (Homepage)
+  const homepage = dataset[0];
+  let calculatedScore = 50; // Baseline
+  if (homepage) {
+    // 1. Performance (Max 25)
+    const perfScore = homepage.performance?.score || 0;
+    if (perfScore >= 90) calculatedScore += 25;
+    else if (perfScore >= 70) calculatedScore += 15;
+    else if (perfScore >= 50) calculatedScore += 5;
+
+    // 2. SEO Basics (Max 15)
+    if (homepage.structure.h1 && homepage.structure.h1.length > 0) calculatedScore += 5;
+    if (homepage.meta.title) calculatedScore += 5;
+    if (homepage.meta.description) calculatedScore += 5;
+
+    // 3. Tech Maturity (Max 10)
+    const techCount = (homepage.signals.techStack?.cms?.length || 0) +
+      (homepage.signals.techStack?.analytics?.length || 0) +
+      (homepage.signals.techStack?.marketing?.length || 0);
+    if (techCount > 0) calculatedScore += 5;
+    if (techCount > 3) calculatedScore += 5;
+
+    // 4. Content Depth (Max 10)
+    if ((homepage.structure.wordCount || 0) > 500) calculatedScore += 10;
+    else if ((homepage.structure.wordCount || 0) > 200) calculatedScore += 5;
+
+    // 5. Authority/Socials (Max 10)
+    if ((homepage.signals.authority?.socials?.length || 0) > 0) calculatedScore += 10;
+
+    // Cap at 98
+    calculatedScore = Math.min(calculatedScore, 98);
+  }
 
   // Build specific, forceful instruction for Claude
   const userInstruction = isFast
@@ -626,14 +679,20 @@ BANNED PHRASES (if you use these, START OVER):
 - "improve SEO" (without specifics)
 - "enhance metadata" (without quoting current tags)
 
-ACTUAL SITE DATA:
-- Homepage H1: "${dataset[0]?.structure?.h1 || 'not detected'}"
-- Homepage Title: "${dataset[0]?.meta?.title || 'not detected'}"
-- Homepage Meta Description: "${dataset[0]?.meta?.description || 'not detected'}"
-- Page Performance: ${dataset[0]?.performance ? `LCP ${dataset[0].performance.lcp}ms, Score: ${dataset[0].performance.score}` : 'not measured'}
-- Content Length: ${dataset[0]?.structure?.wordCount || 0} words
-- CTAs Found: ${dataset[0]?.signals?.ctas || 'none detected'}
-- Schema Found: ${dataset[0]?.signals?.schema?.join(', ') || 'none'}
+ACTUAL SITE DATA (Use this for "Observed Reality"):
+- Homepage H1: "${homepage?.structure?.h1?.join(' | ') || 'not detected'}"
+- Homepage Title: "${homepage?.meta?.title || 'not detected'}"
+- Homepage Meta Description: "${homepage?.meta?.description || 'not detected'}"
+- Page Performance: ${homepage?.performance ? `LCP ${homepage.performance.lcp}ms, Score: ${homepage.performance.score}` : 'not measured'}
+- Content Length: ${homepage?.structure?.wordCount || 0} words
+- CTAs Found: ${homepage?.signals?.ctas || 'none detected'}
+- Navigation Items: ${homepage?.signals?.navigation?.join(', ') || 'none detected'}
+- Tech Stack: ${JSON.stringify(homepage?.signals?.techStack)}
+- Socials: ${JSON.stringify(homepage?.signals?.authority?.socials)}
+
+MANDATORY SCORE:
+The Calculated Vibe Score is: ${calculatedScore}/100.
+Use this score. Do not invent a new one. Explain WHY this score was given based on the data above.
 
 USE THIS DATA in your analysis. Quote it. Reference the exact numbers.`,
       outputRequirement: OUTPUT_INSTRUCTION_PROMPT,
