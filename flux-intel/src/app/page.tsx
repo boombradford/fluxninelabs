@@ -5,7 +5,7 @@ import Image from 'next/image';
 import Link from 'next/link';
 import { AnimatePresence, motion } from 'framer-motion';
 import {
-    Share2, Search, Zap, Globe, Gauge, Activity, Target, ArrowRight, Settings, AlertTriangle, Monitor, Database, Lock, Loader2, Microscope, Maximize2, X, Trophy, LayoutTemplate, RefreshCw, ShieldCheck, Info, Printer
+    Share2, Search, Zap, Globe, Gauge, Activity, Target, ArrowRight, Settings, AlertTriangle, Monitor, Database, Lock, Loader2, Microscope, Maximize2, X, Trophy, LayoutTemplate, RefreshCw, ShieldCheck, Info, Printer, Check
 } from 'lucide-react';
 import { TextDecode } from "../components/ui/TextDecode";
 import clsx from 'clsx';
@@ -704,143 +704,91 @@ export default function Dashboard() {
                                     </div>
                                 </motion.div>
                             )}
-
                             {/* HERO SECTION / INPUT */}
                             {status === 'idle' && !report && !error && (
-                                <div className="max-w-3xl mx-auto w-full space-y-10 mt-16 px-4">
+                                <div className="max-w-2xl mx-auto w-full space-y-8 mt-24 px-4">
 
-                                    {/* HEADLINE - Premium SaaS Style */}
-                                    <div className="text-center space-y-5">
-                                        <h1 className="text-4xl md:text-6xl font-semibold tracking-tight text-white leading-[1.1]">
-                                            Website Performance
-                                            <br />
-                                            <span className="bg-gradient-to-r from-[#38BDF8] to-[#818CF8] bg-clip-text text-transparent">Intelligence</span>
+                                    {/* HEADLINE - Clean & Distinctive */}
+                                    <div className="text-center space-y-4">
+                                        <h1 className="text-3xl md:text-5xl font-medium tracking-tight text-white leading-tight">
+                                            Audit any website
                                         </h1>
-                                        <p className="text-lg text-[#94A3B8] max-w-lg mx-auto leading-relaxed">
-                                            Analyze any website's performance, SEO health, and competitive positioning in seconds.
+                                        <p className="text-base text-[#64748B] max-w-md mx-auto">
+                                            Performance metrics, SEO signals, and actionable insights — in one scan.
                                         </p>
                                     </div>
 
-                                    {/* MODE TOGGLE - Clean Pill Style */}
-                                    <div className="flex justify-center">
-                                        <div className="inline-flex items-center bg-[#1E293B] rounded-full p-1">
+                                    {/* INPUT - Minimal Style */}
+                                    <form onSubmit={(e) => runAudit(e)} className="space-y-4">
+                                        <div className="flex items-center bg-[#0F172A] border border-[#1E293B] rounded-lg overflow-hidden focus-within:border-[#334155] transition-colors">
+                                            <input
+                                                type="text"
+                                                value={url}
+                                                onChange={(e) => setUrl(e.target.value)}
+                                                placeholder="https://example.com"
+                                                className="w-full bg-transparent text-white px-4 py-4 focus:ring-0 focus:outline-none placeholder:text-[#475569] text-base"
+                                                autoFocus
+                                            />
                                             <button
-                                                onClick={() => setIsVsMode(false)}
-                                                className={clsx(
-                                                    "px-5 py-2 rounded-full text-sm font-medium transition-all duration-200",
-                                                    !isVsMode
-                                                        ? "bg-white text-[#0F172A] shadow-sm"
-                                                        : "text-[#94A3B8] hover:text-white"
-                                                )}
+                                                type="submit"
+                                                disabled={!url.trim()}
+                                                className="px-6 py-3 m-1.5 bg-white text-[#0F172A] font-medium text-sm rounded-md hover:bg-[#E2E8F0] transition-colors disabled:opacity-30 disabled:cursor-not-allowed whitespace-nowrap"
                                             >
-                                                Single Audit
-                                            </button>
-                                            <button
-                                                onClick={() => setIsVsMode(true)}
-                                                className={clsx(
-                                                    "px-5 py-2 rounded-full text-sm font-medium transition-all duration-200",
-                                                    isVsMode
-                                                        ? "bg-white text-[#0F172A] shadow-sm"
-                                                        : "text-[#94A3B8] hover:text-white"
-                                                )}
-                                            >
-                                                Compare Sites
+                                                Run Audit
                                             </button>
                                         </div>
-                                    </div>
 
-                                    {/* INPUT FORM - Premium Card Style */}
-                                    <motion.form
-                                        initial={false}
-                                        animate={isVsMode ? { maxWidth: "100%" } : { maxWidth: "36rem" }}
-                                        transition={{ duration: 0.3, ease: "easeOut" }}
-                                        onSubmit={(e) => runAudit(e)}
-                                        className={clsx(
-                                            "mx-auto transition-all duration-300",
-                                            isVsMode ? "grid grid-cols-1 md:grid-cols-2 gap-4" : "block"
-                                        )}
-                                    >
-                                        {/* PRIMARY URL INPUT */}
-                                        <div className="relative">
-                                            {isVsMode && (
-                                                <label className="block text-xs font-medium text-[#64748B] mb-2 uppercase tracking-wide">
-                                                    Your Website
-                                                </label>
-                                            )}
-                                            <div className="flex items-center bg-[#1E293B] border border-[#334155] rounded-xl overflow-hidden focus-within:border-[#38BDF8] focus-within:ring-1 focus-within:ring-[#38BDF8]/20 transition-all">
-                                                <Globe className="w-5 h-5 text-[#64748B] ml-4" />
-                                                <input
-                                                    type="text"
-                                                    value={url}
-                                                    onChange={(e) => setUrl(e.target.value)}
-                                                    placeholder={isVsMode ? "https://yoursite.com" : "Enter any website URL..."}
-                                                    className="w-full bg-transparent text-white px-3 py-4 focus:ring-0 focus:outline-none placeholder:text-[#64748B] text-sm"
-                                                    autoFocus
-                                                />
-                                                {!isVsMode && (
-                                                    <button
-                                                        type="submit"
-                                                        disabled={!url.trim()}
-                                                        className="px-6 py-3 m-1 bg-[#38BDF8] text-[#0F172A] font-semibold text-sm rounded-lg hover:bg-[#7DD3FC] transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
-                                                    >
-                                                        Analyze
-                                                    </button>
-                                                )}
-                                            </div>
+                                        {/* COMPARE TOGGLE */}
+                                        <div className="flex items-center justify-center gap-3">
+                                            <button
+                                                type="button"
+                                                onClick={() => setIsVsMode(!isVsMode)}
+                                                className="text-sm text-[#64748B] hover:text-white transition-colors flex items-center gap-2"
+                                            >
+                                                <div className={clsx(
+                                                    "w-4 h-4 rounded border transition-colors flex items-center justify-center",
+                                                    isVsMode ? "bg-[#38BDF8] border-[#38BDF8]" : "border-[#475569]"
+                                                )}>
+                                                    {isVsMode && <Check className="w-3 h-3 text-[#0F172A]" />}
+                                                </div>
+                                                Compare with competitor
+                                            </button>
                                         </div>
 
-                                        {/* COMPETITOR URL (Compare Mode) */}
+                                        {/* COMPETITOR INPUT (when enabled) */}
                                         {isVsMode && (
                                             <motion.div
-                                                initial={{ opacity: 0, x: 10 }}
-                                                animate={{ opacity: 1, x: 0 }}
-                                                className="relative"
+                                                initial={{ opacity: 0, height: 0 }}
+                                                animate={{ opacity: 1, height: "auto" }}
+                                                exit={{ opacity: 0, height: 0 }}
+                                                className="overflow-hidden"
                                             >
-                                                <label className="block text-xs font-medium text-[#64748B] mb-2 uppercase tracking-wide">
-                                                    Competitor Website
-                                                </label>
-                                                <div className="flex items-center bg-[#1E293B] border border-[#334155] rounded-xl overflow-hidden focus-within:border-[#818CF8] focus-within:ring-1 focus-within:ring-[#818CF8]/20 transition-all">
-                                                    <Target className="w-5 h-5 text-[#64748B] ml-4" />
+                                                <div className="flex items-center bg-[#0F172A] border border-[#1E293B] rounded-lg overflow-hidden focus-within:border-[#334155] transition-colors">
                                                     <input
                                                         type="text"
                                                         value={enemyUrl}
                                                         onChange={(e) => setEnemyUrl(e.target.value)}
                                                         placeholder="https://competitor.com"
-                                                        className="w-full bg-transparent text-white px-3 py-4 focus:ring-0 focus:outline-none placeholder:text-[#64748B] text-sm"
+                                                        className="w-full bg-transparent text-white px-4 py-4 focus:ring-0 focus:outline-none placeholder:text-[#475569] text-base"
                                                     />
                                                 </div>
                                             </motion.div>
                                         )}
+                                    </form>
 
-                                        {/* COMPARE SUBMIT BUTTON */}
-                                        {isVsMode && (
-                                            <div className="md:col-span-2 mt-2">
-                                                <button
-                                                    type="submit"
-                                                    disabled={!url.trim() || !enemyUrl.trim()}
-                                                    className="w-full py-4 bg-gradient-to-r from-[#38BDF8] to-[#818CF8] text-white font-semibold text-sm rounded-xl hover:opacity-90 transition-opacity disabled:opacity-40 disabled:cursor-not-allowed"
-                                                >
-                                                    Compare Websites
-                                                </button>
-                                            </div>
-                                        )}
-                                    </motion.form>
-
-                                    {/* QUICK SUGGESTIONS - Subtle */}
-                                    {!isVsMode && (
-                                        <div className="flex flex-wrap justify-center gap-3 text-sm text-[#64748B]">
-                                            <span>Try:</span>
-                                            {['stripe.com', 'linear.app', 'vercel.com'].map((domain) => (
-                                                <button
-                                                    key={domain}
-                                                    onClick={() => { setUrl(`https://${domain}`); prefetchAudit(); }}
-                                                    className="text-[#94A3B8] hover:text-[#38BDF8] transition-colors"
-                                                >
-                                                    {domain}
-                                                </button>
-                                            ))}
-                                        </div>
-                                    )}
+                                    {/* EXAMPLES */}
+                                    <div className="flex flex-wrap justify-center gap-2 text-sm">
+                                        <span className="text-[#475569]">Try:</span>
+                                        {['stripe.com', 'linear.app', 'vercel.com'].map((domain) => (
+                                            <button
+                                                key={domain}
+                                                onClick={() => setUrl(`https://${domain}`)}
+                                                className="text-[#64748B] hover:text-white transition-colors underline underline-offset-2"
+                                            >
+                                                {domain}
+                                            </button>
+                                        ))}
+                                    </div>
 
                                 </div>
                             )}
@@ -858,7 +806,7 @@ export default function Dashboard() {
                                     className="h-full flex flex-col items-center justify-center relative"
                                 >
                                     <div className="scale-125 mb-8">
-                                        <CyberLoader text="ESTABLISHING_LINK" />
+                                        <CyberLoader text="Connecting" />
                                     </div>
 
                                     <div className="absolute bottom-12 left-0 right-0 text-center">
@@ -1162,7 +1110,7 @@ export default function Dashboard() {
                                                             <span className="text-[#64748B] font-mono text-sm ml-4 normal-case">/ {report.tacticalFixes?.length || 0} ITEMS</span>
                                                         </h3>
                                                         <div className="text-xs font-mono text-[#64748B]">
-                                                            EVIDENCE_CONFIDENCE: <span className={clsx("text-white", trustSignal > 80 ? "text-emerald-400" : "text-amber-400")}>{trustSignal}%</span>
+                                                            Evidence Confidence: <span className={clsx("text-white", trustSignal > 80 ? "text-emerald-400" : "text-amber-400")}>{trustSignal}%</span>
                                                         </div>
                                                     </div>
 
@@ -1238,7 +1186,7 @@ export default function Dashboard() {
                                                                             </ul>
                                                                         ) : (
                                                                             <div className="h-full flex flex-col items-center justify-center text-center opacity-50">
-                                                                                <span className="text-xs font-mono text-[#64748B]">NO_DOM_SIGNAL</span>
+                                                                                <span className="text-xs font-mono text-[#64748B]">No Evidence</span>
                                                                             </div>
                                                                         )}
                                                                     </div>
@@ -1326,7 +1274,7 @@ export default function Dashboard() {
                                                         onClick={generateReport}
                                                         className="text-xs font-mono font-bold text-white hover:underline transition-all flex items-center gap-2 mt-4"
                                                     >
-                                                        [DOWNLOAD_FULL_REPORT] <Share2 className="w-3.5 h-3.5" />
+                                                        Download Report <Share2 className="w-3.5 h-3.5" />
                                                     </button>
                                                 )}
                                             </div>
