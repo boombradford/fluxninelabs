@@ -21,6 +21,7 @@ import { CyberLoader } from '../components/ui/CyberLoader';
 import { MonitorView } from '../components/MonitorView';
 import { CountUp } from '../components/CountUp';
 import { WarRoomView } from '../components/WarRoomView';
+import { TacticalVision } from '../components/TacticalVision';
 
 // --- TYPES ---
 interface PerformanceMetrics {
@@ -902,10 +903,23 @@ export default function Dashboard() {
                                                     </p>
                                                     <ul className="space-y-4">
                                                         {report.strategicIntelligence.onSiteStrategy?.actions?.map((action, i) => (
-                                                            <li key={i} className="text-sm text-[#E2E8F0] leading-relaxed flex items-start gap-3">
-                                                                <span className="text-[#64748B] font-mono select-none">0{i + 1}</span>
+                                                            <button
+                                                                key={i}
+                                                                onClick={() => setSelectedSignal({
+                                                                    title: 'STRATEGIC PROTOCOL: ON-SITE',
+                                                                    data: {
+                                                                        summary: action,
+                                                                        grade: 'PRIORITY',
+                                                                        whyItMatters: "Direct impact on technical foundation and user conversion.",
+                                                                        rationale: "This tactical maneuver strengthens the core digital infrastructure.",
+                                                                        quickWin: "Execute this protocol immediately."
+                                                                    }
+                                                                })}
+                                                                className="w-full text-left text-sm text-[#E2E8F0] leading-relaxed flex items-start gap-3 hover:text-[#38BDF8] transition-colors group p-2 -ml-2 rounded hover:bg-white/[0.05]"
+                                                            >
+                                                                <span className="text-[#64748B] font-mono select-none group-hover:text-[#38BDF8]">0{i + 1}</span>
                                                                 <span>{action}</span>
-                                                            </li>
+                                                            </button>
                                                         ))}
                                                     </ul>
                                                 </div>
@@ -918,10 +932,23 @@ export default function Dashboard() {
                                                     </p>
                                                     <ul className="space-y-4">
                                                         {report.strategicIntelligence.offSiteGrowth?.actions?.map((action, i) => (
-                                                            <li key={i} className="text-sm text-[#E2E8F0] leading-relaxed flex items-start gap-3">
-                                                                <span className="text-[#64748B] font-mono select-none">0{i + 1}</span>
+                                                            <button
+                                                                key={i}
+                                                                onClick={() => setSelectedSignal({
+                                                                    title: 'STRATEGIC PROTOCOL: OFF-SITE',
+                                                                    data: {
+                                                                        summary: action,
+                                                                        grade: 'GROWTH',
+                                                                        whyItMatters: "Expands domain authority and market reach.",
+                                                                        rationale: "External validation signals are critical for competitive positioning.",
+                                                                        quickWin: "Initiate outreach or configuration."
+                                                                    }
+                                                                })}
+                                                                className="w-full text-left text-sm text-[#E2E8F0] leading-relaxed flex items-start gap-3 hover:text-[#A855F7] transition-colors group p-2 -ml-2 rounded hover:bg-white/[0.05]"
+                                                            >
+                                                                <span className="text-[#64748B] font-mono select-none group-hover:text-[#A855F7]">0{i + 1}</span>
                                                                 <span>{action}</span>
-                                                            </li>
+                                                            </button>
                                                         ))}
                                                     </ul>
                                                 </div>
@@ -934,10 +961,23 @@ export default function Dashboard() {
                                                     </p>
                                                     <ul className="space-y-4">
                                                         {report.strategicIntelligence.aiOpportunities?.actions?.map((action, i) => (
-                                                            <li key={i} className="text-sm text-[#E2E8F0] leading-relaxed flex items-start gap-3">
-                                                                <span className="text-[#64748B] font-mono select-none">0{i + 1}</span>
+                                                            <button
+                                                                key={i}
+                                                                onClick={() => setSelectedSignal({
+                                                                    title: 'STRATEGIC PROTOCOL: AI-OPS',
+                                                                    data: {
+                                                                        summary: action,
+                                                                        grade: 'AUTOMATE',
+                                                                        whyItMatters: "Leverages machine intelligence for scale and efficiency.",
+                                                                        rationale: "Automation provides asymmetric advantage against manual competitors.",
+                                                                        quickWin: "Deploy automated agent or script."
+                                                                    }
+                                                                })}
+                                                                className="w-full text-left text-sm text-[#E2E8F0] leading-relaxed flex items-start gap-3 hover:text-[#10B981] transition-colors group p-2 -ml-2 rounded hover:bg-white/[0.05]"
+                                                            >
+                                                                <span className="text-[#64748B] font-mono select-none group-hover:text-[#10B981]">0{i + 1}</span>
                                                                 <span>{action}</span>
-                                                            </li>
+                                                            </button>
                                                         ))}
                                                     </ul>
                                                 </div>
@@ -975,152 +1015,7 @@ export default function Dashboard() {
                                         </div>
                                     </div>
 
-                                    {/* CORE METRICS - GRID STYLE (NO CARDS) */}
-                                    <section className="border-b border-white/[0.1] mb-12">
-                                        <div className="grid grid-cols-1 md:grid-cols-3 divide-y md:divide-y-0 md:divide-x divide-white/[0.1]">
 
-                                            {/* Headline Signal */}
-                                            <div className="py-6 md:pr-6">
-                                                <div className="flex items-center justify-between mb-4">
-                                                    <span className="text-xs font-mono text-[#64748B] uppercase tracking-widest">
-                                                        Headline_Signal
-                                                    </span>
-                                                    {report.coreSignals?.headlineSignal?.grade ? (
-                                                        <span className={clsx("text-xl font-bold font-mono", getGradeColor(report.coreSignals?.headlineSignal?.grade))}>
-                                                            {report.coreSignals?.headlineSignal?.grade}
-                                                        </span>
-                                                    ) : (
-                                                        <span className="h-6 w-8 bg-white/10 animate-pulse" />
-                                                    )}
-                                                </div>
-                                                <div className="text-sm text-[#E2E8F0] leading-relaxed">
-                                                    {report.coreSignals?.headlineSignal?.summary || (
-                                                        <div className="space-y-2">
-                                                            <div className="h-3 w-3/4 bg-white/10 animate-pulse" />
-                                                            <div className="h-3 w-1/2 bg-white/10 animate-pulse" />
-                                                        </div>
-                                                    )}
-                                                </div>
-                                            </div>
-
-                                            {/* Visual Architecture */}
-                                            <div className="py-6 md:px-6">
-                                                <div className="flex items-center justify-between mb-4">
-                                                    <span className="text-xs font-mono text-[#64748B] uppercase tracking-widest">
-                                                        Visual_Architecture
-                                                    </span>
-                                                    {report.coreSignals?.visualArchitecture?.grade ? (
-                                                        <span className={clsx("text-xl font-bold font-mono", getGradeColor(report.coreSignals?.visualArchitecture?.grade))}>
-                                                            {report.coreSignals?.visualArchitecture?.grade}
-                                                        </span>
-                                                    ) : (
-                                                        <span className="h-6 w-8 bg-white/10 animate-pulse" />
-                                                    )}
-                                                </div>
-                                                <div className="text-sm text-[#E2E8F0] leading-relaxed">
-                                                    {report.coreSignals?.visualArchitecture?.summary || (
-                                                        <div className="space-y-2">
-                                                            <div className="h-3 w-3/4 bg-white/10 animate-pulse" />
-                                                            <div className="h-3 w-1/2 bg-white/10 animate-pulse" />
-                                                        </div>
-                                                    )}
-                                                </div>
-                                            </div>
-
-                                            {/* Domain Integrity */}
-                                            <button
-                                                onClick={() => safety && setSelectedSignal({
-                                                    title: 'Domain Integrity Protocol',
-                                                    data: {
-                                                        summary: safety.isSafe ? 'Google Safe Browsing: Verified' : 'Threats Detected',
-                                                        grade: safety.isSafe ? 'PASS' : 'FAIL',
-                                                        whyItMatters: "Search engines allow 'Zero Tolerance' for malware. If Google detects a threat, the site is immediately de-indexed or flagged with a full-screen warning, killing organic traffic instantly.",
-                                                        rationale: safety.isSafe
-                                                            ? "We queried the Google Safe Browsing API against your domain. No matches were found in the Malware, Social Engineering, or Unwanted Software threat lists."
-                                                            : `Threats detected: ${safety.threats.join(', ')}. Immediate action required to restore domain reputation.`,
-                                                        quickWin: safety.isSafe ? "Continue monitoring monthly. Attacks can happen via compromised plugins." : "Request a review in Google Search Console immediately after cleaning the site."
-                                                    }
-                                                })}
-                                                disabled={!safety}
-                                                className="py-6 md:pl-6 text-left w-full hover:bg-white/[0.02] transition-colors"
-                                            >
-                                                <div className="flex items-center justify-between mb-4">
-                                                    <span className="text-xs font-mono text-[#64748B] uppercase tracking-widest">
-                                                        Domain_Integrity
-                                                    </span>
-                                                    {safety && (
-                                                        <span className={clsx("text-xl font-bold font-mono", safety.isSafe ? "text-[#EDEEF2]" : "text-red-400")}>
-                                                            {safety.isSafe ? "PASS" : "FAIL"}
-                                                        </span>
-                                                    )}
-                                                </div>
-
-                                                {safety ? (
-                                                    <div className="text-sm text-[#E2E8F0] leading-relaxed">
-                                                        {safety.isSafe ? "No active malware or social threats." : `${safety.threats.length} active threat(s) detected.`}
-                                                        <div className="flex items-center gap-2 mt-2">
-                                                            <div className={clsx(
-                                                                "w-1.5 h-1.5 rounded-full",
-                                                                safety.isSafe ? "bg-emerald-500" : "bg-red-500"
-                                                            )} />
-                                                            <span className="text-xs text-[#64748B] font-mono">Google Safe Browsing API</span>
-                                                        </div>
-                                                    </div>
-                                                ) : (
-                                                    <div className="space-y-2">
-                                                        <div className="h-3 w-3/4 bg-white/10 animate-pulse" />
-                                                        <div className="h-3 w-1/2 bg-white/10 animate-pulse" />
-                                                    </div>
-                                                )}
-                                            </button>
-                                        </div>
-                                    </section>
-
-                                    {/* CORE WEB VITALS - TERMINAL STYLE */}
-                                    <div className="mb-16">
-                                        <div className="flex items-center gap-4 mb-6 opacity-90">
-                                            <TechIcon icon={Zap} isActive={true} color="text-[#38BDF8]" />
-                                            <span className="text-xs font-mono text-[#64748B] uppercase tracking-widest">Core_Web_Vitals (Mobile)</span>
-                                        </div>
-
-                                        {displayPerformance ? (
-                                            <div className="grid grid-cols-2 md:grid-cols-5 gap-8 py-8 border-y border-white/[0.1]">
-                                                {/* CWV: Lighthouse */}
-                                                <div className="col-span-1 md:col-span-1 border-r border-white/[0.1] pr-4">
-                                                    <div className="text-[10px] text-[#64748B] uppercase tracking-wider mb-2 font-mono">Performance_Score</div>
-                                                    <div className={clsx(
-                                                        "text-4xl font-light tracking-tighter",
-                                                        getPerformanceColor(displayPerformance.lighthouseScore)
-                                                    )}>
-                                                        <CountUp value={displayPerformance.lighthouseScore} />
-                                                    </div>
-                                                </div>
-
-                                                {/* CWV: Metrics */}
-                                                <div className="col-span-1 md:col-span-1">
-                                                    <div className="text-[10px] text-[#64748B] uppercase tracking-wider mb-2 font-mono">LCP (Load)</div>
-                                                    <div className="text-xl text-white font-mono">{displayPerformance.lcp}</div>
-                                                </div>
-                                                <div className="col-span-1 md:col-span-1">
-                                                    <div className="text-[10px] text-[#64748B] uppercase tracking-wider mb-2 font-mono">INP (Interact)</div>
-                                                    <div className="text-xl text-white font-mono">{displayPerformance.inp}</div>
-                                                </div>
-                                                <div className="col-span-1 md:col-span-1">
-                                                    <div className="text-[10px] text-[#64748B] uppercase tracking-wider mb-2 font-mono">CLS (Stable)</div>
-                                                    <div className="text-xl text-white font-mono">{displayPerformance.cls}</div>
-                                                </div>
-                                                <div className="col-span-1 md:col-span-1">
-                                                    <div className="text-[10px] text-[#64748B] uppercase tracking-wider mb-2 font-mono">Speed_Index</div>
-                                                    <div className="text-xl text-white font-mono">{displayPerformance.speedIndex}</div>
-                                                </div>
-                                            </div>
-                                        ) : (
-                                            <div className="py-12 border-y border-white/[0.1] text-center">
-                                                <Loader2 className="w-5 h-5 text-[#38BDF8] animate-spin mx-auto mb-3" />
-                                                <span className="text-xs font-mono text-[#64748B]">MEASURING_LATENCY...</span>
-                                            </div>
-                                        )}
-                                    </div>
 
                                     {/* MAIN CONTENT GRID - WAR ROOM MODE */}
                                     {isVsMode && enemyReport && (
@@ -1132,6 +1027,19 @@ export default function Dashboard() {
                                     {/* MAIN CONTENT GRID - STANDARD MODE */}
                                     {!isVsMode && (
                                         <DeepAnalysisReveal status={status} className="mt-8">
+
+                                            {/* VISUAL FORENSICS HERO */}
+                                            <div className="mb-16">
+                                                <h3 className="text-xs font-mono text-[#64748B] uppercase tracking-widest mb-4 flex items-center gap-2">
+                                                    <Target className="w-3 h-3" /> Visual_Intelligence_Layer
+                                                </h3>
+                                                <TacticalVision
+                                                    url={report.meta.url}
+                                                    fixes={report.tacticalFixes}
+                                                    isScanning={status !== 'complete'}
+                                                />
+                                            </div>
+
                                             <div className="grid grid-cols-1 xl:grid-cols-4 gap-12">
 
                                                 {/* TACTICAL EXECUTION PLAN - TERMINAL STYLE */}
@@ -1242,8 +1150,105 @@ export default function Dashboard() {
                                                     </a>
                                                 </div>
 
+                                                {/* SIDEBAR: ACTIVE INTELLIGENCE & SIGNALS */}
+                                                <div className="xl:col-span-1 space-y-8">
 
+                                                    {/* HEADER */}
+                                                    <div className="flex items-center gap-2 mb-6 border-b border-white/[0.1] pb-2">
+                                                        <TechIcon icon={Zap} isActive={true} color="text-[#38BDF8]" size={16} />
+                                                        <span className="text-xs font-mono text-[#64748B] uppercase tracking-widest">Active_Signals</span>
+                                                    </div>
 
+                                                    {/* 1. HEADLINE SIGNAL */}
+                                                    <button
+                                                        onClick={() => setSelectedSignal({
+                                                            title: 'Headline Signal Strength',
+                                                            data: report.coreSignals?.headlineSignal || { grade: 'N/A', summary: 'No data available' }
+                                                        })}
+                                                        className="w-full text-left p-6 border border-white/[0.05] bg-white/[0.02] hover:bg-white/[0.05] hover:border-[#38BDF8]/30 transition-all group relative overflow-hidden"
+                                                    >
+                                                        <div className="absolute top-0 right-0 p-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                                                            <Maximize2 className="w-3 h-3 text-[#38BDF8]" />
+                                                        </div>
+                                                        <div className="text-[10px] font-mono text-[#64748B] uppercase tracking-widest mb-2">Headline_Signal</div>
+                                                        <div className={clsx("text-3xl font-bold font-mono", getGradeColor(report.coreSignals?.headlineSignal?.grade))}>
+                                                            {report.coreSignals?.headlineSignal?.grade || "-"}
+                                                        </div>
+                                                    </button>
+
+                                                    {/* 2. VISUAL ARCHITECTURE */}
+                                                    <button
+                                                        onClick={() => setSelectedSignal({
+                                                            title: 'Visual Architecture Quality',
+                                                            data: report.coreSignals?.visualArchitecture || { grade: 'N/A', summary: 'No data available' }
+                                                        })}
+                                                        className="w-full text-left p-6 border border-white/[0.05] bg-white/[0.02] hover:bg-white/[0.05] hover:border-[#38BDF8]/30 transition-all group relative overflow-hidden"
+                                                    >
+                                                        <div className="absolute top-0 right-0 p-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                                                            <Maximize2 className="w-3 h-3 text-[#38BDF8]" />
+                                                        </div>
+                                                        <div className="text-[10px] font-mono text-[#64748B] uppercase tracking-widest mb-2">Visual_Architecture</div>
+                                                        <div className={clsx("text-3xl font-bold font-mono", getGradeColor(report.coreSignals?.visualArchitecture?.grade))}>
+                                                            {report.coreSignals?.visualArchitecture?.grade || "-"}
+                                                        </div>
+                                                    </button>
+
+                                                    {/* 3. DOMAIN INTEGRITY */}
+                                                    <button
+                                                        onClick={() => safety && setSelectedSignal({
+                                                            title: 'Domain Integrity Protocol',
+                                                            data: {
+                                                                summary: safety.isSafe ? 'Google Safe Browsing: Verified' : 'Threats Detected',
+                                                                grade: safety.isSafe ? 'PASS' : 'FAIL',
+                                                                whyItMatters: "Search engines allow 'Zero Tolerance' for malware.",
+                                                                rationale: safety.isSafe ? "No threats detected by Google Safe Browsing API." : `Threats: ${safety.threats.join(', ')}`,
+                                                                quickWin: safety.isSafe ? "Continue monitoring." : "Immediate malware removal required."
+                                                            }
+                                                        })}
+                                                        disabled={!safety}
+                                                        className="w-full text-left p-6 border border-white/[0.05] bg-white/[0.02] hover:bg-white/[0.05] hover:border-[#38BDF8]/30 transition-all group"
+                                                    >
+                                                        <div className="text-[10px] font-mono text-[#64748B] uppercase tracking-widest mb-2">Domain_Integrity</div>
+                                                        {safety && (
+                                                            <div className={clsx("text-xl font-bold font-mono flex items-center gap-2", safety.isSafe ? "text-[#EDEEF2]" : "text-red-400")}>
+                                                                {safety.isSafe ? "PASS" : "FAIL"}
+                                                                <div className={clsx("w-2 h-2 rounded-full", safety.isSafe ? "bg-emerald-500" : "bg-red-500")} />
+                                                            </div>
+                                                        )}
+                                                    </button>
+
+                                                    {/* 4. WEB VITALS (COMPACT) */}
+                                                    <div className="p-6 border border-white/[0.05] bg-white/[0.02]">
+                                                        <div className="text-[10px] font-mono text-[#64748B] uppercase tracking-widest mb-4">Core_Web_Vitals</div>
+                                                        {displayPerformance ? (
+                                                            <div className="space-y-4">
+                                                                <div className="flex justify-between items-center">
+                                                                    <span className="text-xs text-[#94A3B8] font-mono">LCP (Load)</span>
+                                                                    <span className="text-sm text-white font-mono">{displayPerformance.lcp}</span>
+                                                                </div>
+                                                                <div className="flex justify-between items-center">
+                                                                    <span className="text-xs text-[#94A3B8] font-mono">INP (Interact)</span>
+                                                                    <span className="text-sm text-white font-mono">{displayPerformance.inp}</span>
+                                                                </div>
+                                                                <div className="flex justify-between items-center">
+                                                                    <span className="text-xs text-[#94A3B8] font-mono">CLS (Stable)</span>
+                                                                    <span className="text-sm text-white font-mono">{displayPerformance.cls}</span>
+                                                                </div>
+                                                                <div className="pt-4 border-t border-white/10 flex justify-between items-center">
+                                                                    <span className="text-xs text-[#38BDF8] font-mono">Performance_Score</span>
+                                                                    <span className={clsx("text-xl font-bold", getPerformanceColor(displayPerformance.lighthouseScore))}>
+                                                                        {displayPerformance.lighthouseScore}
+                                                                    </span>
+                                                                </div>
+                                                            </div>
+                                                        ) : (
+                                                            <div className="flex items-center gap-2 text-xs text-[#64748B]">
+                                                                <Loader2 className="w-3 h-3 animate-spin" /> Measuring...
+                                                            </div>
+                                                        )}
+                                                    </div>
+
+                                                </div>
                                             </div>
                                         </DeepAnalysisReveal>
                                     )}
