@@ -711,11 +711,6 @@ export default function Dashboard() {
                                     <div className="space-y-6 max-w-2xl mx-auto text-center">
                                         {/* HEADLINE */}
                                         <div className="space-y-4">
-                                            <div className="flex justify-center mb-6">
-                                                <div className="px-3 py-1 bg-[#38BDF8]/10 text-[#38BDF8] rounded-full text-[10px] font-mono tracking-widest border border-[#38BDF8]/20 animate-pulse">
-                                                    ● SYSTEM_INITIAL
-                                                </div>
-                                            </div>
                                             <h2 className="text-5xl md:text-7xl font-bold tracking-tighter text-white mb-2 font-display">
                                                 Flux <span className="text-[#38BDF8] italic">Intelligence</span>
                                             </h2>
