@@ -38,8 +38,11 @@ const IntelligentTypewriter: React.FC<IntelligentTypewriterProps> = ({
 
             // Calculate Glitch Effect (Scramble leading text)
             // We simulate the "tip" of the typing stream being unstable
-            const scrambleDuration = 100; // ms
-            const scrambleInterval = 30; // ms per glitch frame
+            // Calculate Glitch Effect (Scramble leading text)
+            // We simulate the "tip" of the typing stream being unstable
+            // TONED DOWN: Reduced from 100ms to 0-10ms to make it much faster
+            const scrambleDuration = Math.random() > 0.8 ? 50 : 0; // Only glitch occasionally
+            const scrambleInterval = 25; // ms per glitch frame
             const scrambles = Math.floor(scrambleDuration / scrambleInterval);
 
             let scrambleCount = 0;
@@ -59,7 +62,7 @@ const IntelligentTypewriter: React.FC<IntelligentTypewriterProps> = ({
                     currentIndex++;
 
                     // Determine delay for next char
-                    let delay = Math.random() * (50 - 10) + 10; // 10ms to 50ms
+                    let delay = Math.random() * (20 - 5) + 5; // Much faster: 5ms to 20ms
 
                     // Pause on punctuation
                     if (['.', ',', '!', '?', ':'].includes(char)) {

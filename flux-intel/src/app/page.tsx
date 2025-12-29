@@ -6,13 +6,16 @@ import Link from 'next/link';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
     Search, Loader2, Activity, Settings, Target, LayoutTemplate, Share2, RefreshCw,
-    Microscope, ShieldCheck, X, Maximize2, Zap, AlertTriangle, Info
+    Microscope, ShieldCheck, X, Maximize2, Zap, AlertTriangle, Info, Globe, Printer,
+    TrendingUp, CheckCircle2, Sparkles
 } from 'lucide-react';
 import clsx from 'clsx';
 import IntelligentTypewriter from '../components/IntelligentTypewriter';
 import ThinkingLog, { Milestone } from '../components/ThinkingLog';
 import { DeepAnalysisReveal } from '../components/DeepAnalysisReveal';
+
 import { MonitorView } from '../components/MonitorView';
+import { CountUp } from '../components/CountUp';
 
 // --- TYPES ---
 interface PerformanceMetrics {
@@ -116,6 +119,7 @@ const calculateTrustSignal = (fixes?: TacticalFix[]) => {
 // Client-Side PSI Fetch Hook - DISABLED
 // Reason: Cannot securely pass API key to client without exposing it.
 // The server-side /api/audit route already fetches PSI data with the API key in deep mode.
+// Client-Side PSI Fetch Hook
 const useClientSidePerformance = (url: string, trigger: boolean) => {
     const [metrics, setMetrics] = useState<PerformanceMetrics | null>(null);
     const [loading, setLoading] = useState(false);
@@ -126,23 +130,13 @@ const useClientSidePerformance = (url: string, trigger: boolean) => {
         const fetchMetrics = async () => {
             setLoading(true);
             try {
-                // Fallback to public quota (no key)
-                const res = await fetch(`https://www.googleapis.com/pagespeedonline/v5/runPagespeed?url=${encodeURIComponent(url)}&strategy=mobile`);
+                // Use internal proxy to leverage server-side API key
+                const res = await fetch(`/api/performance?url=${encodeURIComponent(url)}`);
                 const data = await res.json();
 
-                if (data.error) throw new Error(data.error.message);
+                if (data.error) throw new Error(data.error);
 
-                const aud = data.lighthouseResult?.audits || {};
-                setMetrics({
-                    lighthouseScore: (data.lighthouseResult?.categories?.performance?.score * 100) || 0,
-                    lcp: aud['largest-contentful-paint']?.displayValue || 'N/A',
-                    cls: aud['cumulative-layout-shift']?.displayValue || 'N/A',
-                    speedIndex: aud['speed-index']?.displayValue || 'N/A',
-                    inp: aud['interaction-to-next-paint']?.displayValue || 'N/A',
-                    fcp: aud['first-contentful-paint']?.displayValue || 'N/A',
-                    fid: aud['max-potential-fid']?.displayValue || 'N/A',
-                    tti: aud['interactive']?.displayValue || 'N/A'
-                });
+                setMetrics(data); // API returns exact structure expected
             } catch (err) {
                 console.warn("[Flux Client Fallback] Failed to fetch PSI", err);
             } finally {
@@ -156,6 +150,95 @@ const useClientSidePerformance = (url: string, trigger: boolean) => {
     return { metrics, loading };
 };
 
+const useSafetyCheck = (url: string, trigger: boolean) => {
+    const [safety, setSafety] = useState<{ isSafe: boolean; threats: string[] } | null>(null);
+    const [loading, setLoading] = useState(false);
+    const [error, setError] = useState<string | null>(null);
+
+    useEffect(() => {
+        if (!trigger || !url) {
+            // Reset state if not triggering
+            setSafety(null);
+            setError(null);
+            return;
+        }
+        const checkSafety = async () => {
+            console.log("[Flux Safety] Triggering check for:", url);
+            setLoading(true);
+            setError(null);
+            setSafety(null); // Clear previous result before new fetch
+            try {
+                const res = await fetch('/api/safety', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ url })
+                });
+                const data = await res.json();
+                if (data.error) throw new Error(data.error);
+                console.log("[Flux Safety] Success:", data);
+                setSafety(data);
+            } catch (err: any) {
+                console.warn("[Flux Safety] Failed", err);
+                setError(err.message || "Unknown error");
+            } finally {
+                setLoading(false);
+            }
+        };
+        checkSafety();
+    }, [url, trigger]);
+    return { safety, loading, error };
+};
+
+// REMOVED: Brand Authority feature (Knowledge Graph data kept private)
+// const useBrandAuthority = (url: string, trigger: boolean) => {
+//     const [authority, setAuthority] = useState<{ found: boolean; entity?: any } | null>(null);
+//     const [loading, setLoading] = useState(false);
+//     const [error, setError] = useState<string | null>(null);
+
+//     useEffect(() => {
+//         if (!trigger || !url) {
+//             setAuthority(null);
+//             setError(null);
+//             return;
+//         }
+
+//         const checkAuthority = async () => {
+//             setLoading(true);
+//             setError(null);
+//             setAuthority(null);
+//             try {
+//                 // Extract hostname as query (e.g. "Nike" from "nike.com" or just send domain)
+//                 // For better results, let's try sending the hostname.
+//                 let query = url;
+//                 try {
+//                     const u = new URL(url.startsWith('http') ? url : `https://${url}`);
+//                     query = u.hostname.replace('www.', '').split('.')[0];
+//                 } catch (e) {
+//                     query = url;
+//                 }
+
+//                 console.log("[Flux Authority] Querying for:", query);
+
+//                 const res = await fetch('/api/authority', {
+//                     method: 'POST',
+//                     headers: { 'Content-Type': 'application/json' },
+//                     body: JSON.stringify({ query })
+//                 });
+//                 const data = await res.json();
+//                 if (data.error) throw new Error(data.error);
+//                 setAuthority(data);
+//             } catch (err: any) {
+//                 console.warn("[Flux Authority] Failed", err);
+//                 setError(err.message || "Unknown error");
+//             } finally {
+//                 setLoading(false);
+//             }
+//         };
+//         checkAuthority();
+//     }, [url, trigger]);
+//     return { authority, loading, error };
+// };
+
 export default function Dashboard() {
     const [url, setUrl] = useState('');
     const [status, setStatus] = useState<'idle' | 'scouting' | 'analyzing_deep' | 'complete'>('idle');
@@ -164,13 +247,28 @@ export default function Dashboard() {
     const [report, setReport] = useState<AnalysisReport | null>(null);
     const [error, setError] = useState<string | null>(null);
     const [activeView, setActiveView] = useState<'audit' | 'monitor' | 'strategy' | 'settings'>('audit');
-    const [selectedSignal, setSelectedSignal] = useState<{ title: string; data: CoreSignal } | null>(null);
+    const [selectedSignal, setSelectedSignal] = useState<{
+        title: string;
+        data: CoreSignal;
+        grade?: string;
+        summary?: string;
+        rationale?: string;
+        whyItMatters?: string;
+    } | null>(null);
 
     // Client-Side Performance Fetcher (Triggers when report is ready but missing performance)
     const { metrics: clientMetrics, loading: clientMetricsLoading } = useClientSidePerformance(
         report?.meta?.url || '',
         status === 'complete' && !report?.meta?.performance
     );
+
+    const { safety, loading: safetyLoading, error: safetyError } = useSafetyCheck(
+        url,
+        status !== 'idle'
+    );
+
+    // REMOVED: Brand Authority (keeping KG data private)
+    // const { authority, loading: authorityLoading, error: authorityError } = useBrandAuthority(url, status !== 'idle');
 
     // Merge client metrics if available
     const displayPerformance = report?.meta?.performance || clientMetrics;
@@ -329,75 +427,90 @@ export default function Dashboard() {
 
     const trustSignal = calculateTrustSignal(report?.tacticalFixes);
 
+    // Report Generation Function - Triggers Print Dialog for PDF Export
+    const generateReport = () => {
+        window.print();
+    };
+
     return (
         <div className="min-h-screen flex bg-[#0B0F14] text-[#E2E8F0] antialiased selection:bg-[#38BDF8]/30">
 
-            {/* SIDEBAR */}
-            <aside className="w-64 border-r border-white/[0.06] bg-[#0B0F14] hidden md:flex flex-col sticky top-0 h-screen z-20">
-                <div className="p-6 border-b border-white/[0.06]">
-                    <Link href="/" className="flex items-center gap-3 hover:opacity-80 transition-opacity">
-                        <div className="h-8 w-8 relative rounded-lg overflow-hidden shrink-0 border border-white/10">
-                            <Image src="/flux-logo.jpg" alt="Flux Logo" fill className="object-cover" />
-                        </div>
-                        <div>
-                            <div className="font-bold tracking-tight text-sm text-white">FLUX ENGINE</div>
-                            <div className="text-[10px] text-[#94A3B8] font-mono tracking-wide">STRATEGY PRO</div>
-                        </div>
-                    </Link>
-                </div>
-
-                <nav className="flex-1 p-4 space-y-1">
-                    {navItems.map((item) => (
-                        <button
-                            key={item.id}
-                            onClick={() => setActiveView(item.id)}
-                            className={clsx(
-                                "w-full flex items-center gap-3 px-3 py-2 text-sm rounded-lg transition-all font-medium",
-                                activeView === item.id
-                                    ? "bg-white/[0.06] text-white border border-white/[0.05]"
-                                    : "text-[#94A3B8] hover:bg-white/[0.03] hover:text-[#CBD5E1]"
-                            )}
-                        >
-                            <item.icon className="w-4 h-4 stroke-[1.5]" />
-                            {item.label}
-                        </button>
-                    ))}
-                </nav>
-            </aside>
+            {/* Skip to main content - for keyboard users */}
+            <a
+                href="#main-content"
+                className="sr-only focus:not-sr-only focus:absolute focus:top-4 focus:left-4 focus:z-50 focus:px-4 focus:py-2 focus:bg-[#38BDF8] focus:text-white focus:rounded-lg focus:shadow-lg"
+            >
+                Skip to main content
+            </a>
 
             {/* MAIN CONTENT */}
-            <main className="flex-1 flex flex-col min-w-0 bg-[#0B0F14] relative overflow-hidden">
-                <div className="absolute top-0 inset-x-0 h-96 bg-gradient-to-b from-[#1E293B]/20 to-transparent pointer-events-none" />
+            <main
+                className="flex-1 flex flex-col min-w-0 bg-[#0B0F14] relative overflow-hidden"
+                role="main"
+                aria-label="Analysis dashboard"
+            >
+                <div className="absolute top-0 inset-x-0 h-96 bg-gradient-to-b from-[#1E293B]/20 to-transparent pointer-events-none" aria-hidden="true" />
 
                 {/* HEADER */}
-                <header className="h-16 border-b border-white/[0.06] px-8 flex items-center justify-between sticky top-0 z-10 bg-[#0B0F14]/80 backdrop-blur-xl">
-                    <form onSubmit={runAudit} className="flex-1 max-w-xl">
+                <header
+                    className="h-16 border-b border-white/[0.06] px-4 md:px-8 flex items-center justify-between sticky top-0 z-10 bg-[#0B0F14]/80 backdrop-blur-xl"
+                    role="banner"
+                >
+                    {/* Logo & Branding */}
+                    <div className="flex items-center gap-6">
+                        <button
+                            onClick={() => window.location.reload()}
+                            className="flex items-center gap-2 hover:opacity-80 transition-opacity focus:outline-none focus:ring-2 focus:ring-[#38BDF8] rounded-lg"
+                            aria-label="Refresh Flux Engine"
+                        >
+                            <div className="h-6 w-6 relative rounded overflow-hidden shrink-0 border border-white/10">
+                                <Image src="/flux-logo.jpg" alt="Flux Intelligence Engine logo" fill className="object-cover" />
+                            </div>
+                            <div className="hidden sm:block">
+                                <div className="text-sm font-bold text-white tracking-tight">FLUX ENGINE</div>
+                            </div>
+                        </button>
+                    </div>
+
+                    <form onSubmit={runAudit} className="flex-1 max-w-xl mx-4" role="search" aria-label="Website analysis search">
                         <div className="relative flex items-center group" onMouseEnter={prefetchAudit}>
-                            <Search className="absolute left-3 w-4 h-4 text-[#64748B] group-focus-within:text-[#94A3B8] transition-colors" />
+                            <Search className="absolute left-3 w-4 h-4 text-[#64748B] group-focus-within:text-[#94A3B8] transition-colors" aria-hidden="true" />
                             <input
                                 type="text"
                                 value={url}
                                 onChange={(e) => setUrl(e.target.value)}
                                 placeholder="Enter domain to analyze..."
-                                className="w-full pl-10 pr-3 py-2 bg-[#1A1E26] border border-white/[0.08] rounded-lg text-sm text-white placeholder-[#64748B] focus:outline-none focus:border-[#38BDF8]/50 focus:ring-1 focus:ring-[#38BDF8]/20 transition-all font-mono"
+                                className="w-full pl-10 pr-3 py-2 bg-[#1A1E26] border border-white/[0.08] rounded-lg text-sm text-white placeholder-[#64748B] focus:outline-none focus:border-[#38BDF8]/50 focus:ring-2 focus:ring-[#38BDF8]/40 transition-all font-mono"
+                                aria-label="Website URL to analyze"
+                                aria-required="true"
+                                aria-describedby="url-hint"
                             />
-                            {status === 'scouting' && <Loader2 className="absolute right-3 w-4 h-4 text-[#64748B] animate-spin" />}
+                            <span id="url-hint" className="sr-only">Enter a website URL to generate a comprehensive analysis report</span>
+                            {status === 'scouting' && <Loader2 className="absolute right-3 w-4 h-4 text-[#64748B] animate-spin" aria-label="Loading" role="status" />}
                         </div>
                     </form>
 
-                    {report && (
-                        <div className="flex items-center gap-4 ml-4">
-                            <button className="text-xs font-medium text-[#94A3B8] hover:text-white flex items-center gap-2 px-3 py-1.5 rounded-lg border border-transparent hover:bg-white/[0.06] hover:border-white/[0.06] transition-all">
-                                <Share2 className="w-3.5 h-3.5" /> Share Report
+                    {report && status === 'complete' && safety && displayPerformance && (
+                        <div className="flex items-center gap-4 ml-4" role="toolbar" aria-label="Report actions">
+                            <button
+                                onClick={generateReport}
+                                className="text-xs font-medium text-[#94A3B8] hover:text-white flex items-center gap-2 px-3 py-1.5 rounded-lg border border-transparent hover:bg-white/[0.06] hover:border-white/[0.06] transition-all focus:outline-none focus:ring-2 focus:ring-[#38BDF8]"
+                                aria-label="Download report as PDF"
+                            >
+                                <Share2 className="w-3.5 h-3.5" aria-hidden="true" /> Download Report
                             </button>
-                            <button onClick={() => runAudit(undefined, true)} className="text-xs font-medium text-[#94A3B8] hover:text-white flex items-center gap-2 px-3 py-1.5 rounded-lg border border-transparent hover:bg-white/[0.06] hover:border-white/[0.06] transition-all">
-                                <RefreshCw className="w-3.5 h-3.5" /> Re-Scan
+                            <button
+                                onClick={() => runAudit(undefined, true)}
+                                className="text-xs font-medium text-[#94A3B8] hover:text-white flex items-center gap-2 px-3 py-1.5 rounded-lg border border-transparent hover:bg-white/[0.06] hover:border-white/[0.06] transition-all focus:outline-none focus:ring-2 focus:ring-[#38BDF8]"
+                                aria-label="Re-scan website to refresh analysis"
+                            >
+                                <RefreshCw className="w-3.5 h-3.5" aria-hidden="true" /> Re-Scan
                             </button>
                         </div>
                     )}
                 </header>
 
-                <div className="flex-1 overflow-y-auto p-8 lg:p-12">
+                <div className="flex-1 overflow-y-auto p-8 lg:p-12" id="main-content">
 
                     {/* --- AUDIT VIEW --- */}
                     {activeView === 'audit' && (
@@ -457,7 +570,7 @@ export default function Dashboard() {
 
                             {/* REPORT VIEW (Both Fast & Deep) */}
                             {report && report.meta && (
-                                <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="space-y-12 pb-20 max-w-[1600px] mx-auto">
+                                <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="space-y-12 pb-20 max-w-[1600px] mx-auto report-content">
 
                                     {/* PROGRESS BANNER (ONLY DURING DEEP SCAN) */}
                                     {status === 'analyzing_deep' && (
@@ -487,76 +600,154 @@ export default function Dashboard() {
 
                                     <div className="h-px bg-gradient-to-r from-white/[0.1] via-white/[0.05] to-transparent" />
 
-                                    {/* TOP METRICS GRID */}
-                                    <section className="grid grid-cols-1 md:grid-cols-4 gap-8">
-                                        {/* 1. STRATEGIC INDEX */}
-                                        <div className="p-6 rounded-xl bg-[#1A1E26]/50 border border-white/[0.06] relative group">
-                                            <div className="flex items-center justify-between mb-1">
-                                                <div className="text-sm font-medium text-[#94A3B8]">Strategic Index</div>
-                                                <div className="relative">
-                                                    <Info className="w-4 h-4 text-[#64748B] hover:text-[#94A3B8] cursor-help transition-colors" />
-                                                    {/* Tooltip positioned to the left to avoid cutoff */}
-                                                    <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-3 w-72 p-4 bg-[#0F1115] border border-white/[0.15] rounded-lg shadow-2xl opacity-0 pointer-events-none group-hover:opacity-100 group-hover:pointer-events-auto transition-opacity z-50">
-                                                        <div className="absolute -bottom-2 left-1/2 -translate-x-1/2 w-4 h-4 bg-[#0F1115] border-r border-b border-white/[0.15] rotate-45"></div>
-                                                        <p className="text-xs text-[#CBD5E1] leading-relaxed relative z-10">
-                                                            <span className="font-bold text-white block mb-2">What is this?</span>
-                                                            Composite score measuring digital presence quality based on brand clarity, message-market fit, visual coherence, and conversion potential.
-                                                        </p>
-                                                        <div className="mt-3 space-y-1 text-[10px] text-[#94A3B8] relative z-10">
-                                                            <div className="flex justify-between"><span>90-100</span><span className="text-emerald-400 font-semibold">Market Leader</span></div>
-                                                            <div className="flex justify-between"><span>70-89</span><span className="text-blue-400 font-semibold">Strong Presence</span></div>
-                                                            <div className="flex justify-between"><span>50-69</span><span className="text-amber-400 font-semibold">Needs Work</span></div>
-                                                            <div className="flex justify-between"><span>&lt;50</span><span className="text-red-400 font-semibold">Critical</span></div>
-                                                        </div>
-                                                    </div>
+                                    {/* STRATEGIC INTELLIGENCE - ELEVATED & ENHANCED */}
+                                    {report.strategicIntelligence && (
+                                        <motion.section
+                                            initial={{ opacity: 0, y: 20 }}
+                                            animate={{ opacity: 1, y: 0 }}
+                                            transition={{ duration: 0.5, delay: 0.2 }}
+                                            className="py-10 border-b border-white/[0.06]"
+                                        >
+                                            <div className="flex items-center gap-4 mb-8">
+                                                <Target className="w-6 h-6 text-[#38BDF8]" />
+                                                <h2 className="text-3xl font-light text-white tracking-tight">Strategic Intelligence</h2>
+                                            </div>
+
+                                            <div className="grid grid-cols-1 md:grid-cols-3 gap-8 md:gap-12">
+                                                {/* On-Site Optimization */}
+                                                <div className="space-y-4">
+                                                    <h3 className="text-lg font-medium text-[#EDEEF2] border-l-2 border-[#38BDF8] pl-3">On-Site Optimization</h3>
+                                                    <p className="text-[14px] text-[#9AA0AE] leading-relaxed">
+                                                        {report.strategicIntelligence.onSiteStrategy?.summary || 'Technical SEO, content architecture, and conversion optimization strategies.'}
+                                                    </p>
+                                                    <ul className="space-y-2.5 mt-4">
+                                                        {report.strategicIntelligence.onSiteStrategy?.actions?.map((action, i) => (
+                                                            <li key={i} className="text-[14px] text-[#EDEEF2] leading-relaxed flex items-start gap-2.5">
+                                                                <span className="text-[#6B7280] mt-1.5 w-1 h-1 rounded-full bg-[#38BDF8] shrink-0"></span>
+                                                                <span>{action}</span>
+                                                            </li>
+                                                        ))}
+                                                    </ul>
+                                                </div>
+
+                                                {/* Off-Site Growth */}
+                                                <div className="space-y-4">
+                                                    <h3 className="text-lg font-medium text-[#EDEEF2] border-l-2 border-[#A855F7] pl-3">Off-Site Growth</h3>
+                                                    <p className="text-[14px] text-[#9AA0AE] leading-relaxed">
+                                                        {report.strategicIntelligence.offSiteGrowth?.summary || 'Link building, brand mentions, and strategic partnerships.'}
+                                                    </p>
+                                                    <ul className="space-y-2.5 mt-4">
+                                                        {report.strategicIntelligence.offSiteGrowth?.actions?.map((action, i) => (
+                                                            <li key={i} className="text-[14px] text-[#EDEEF2] leading-relaxed flex items-start gap-2.5">
+                                                                <span className="text-[#6B7280] mt-1.5 w-1 h-1 rounded-full bg-[#A855F7] shrink-0"></span>
+                                                                <span>{action}</span>
+                                                            </li>
+                                                        ))}
+                                                    </ul>
+                                                </div>
+
+                                                {/* AI & Automation */}
+                                                <div className="space-y-4">
+                                                    <h3 className="text-lg font-medium text-[#EDEEF2] border-l-2 border-[#10B981] pl-3">AI & Automation</h3>
+                                                    <p className="text-[14px] text-[#9AA0AE] leading-relaxed">
+                                                        {report.strategicIntelligence.aiOpportunities?.summary || 'Schema markup, AI search optimization, process automation.'}
+                                                    </p>
+                                                    <ul className="space-y-2.5 mt-4">
+                                                        {report.strategicIntelligence.aiOpportunities?.actions?.map((action, i) => (
+                                                            <li key={i} className="text-[14px] text-[#EDEEF2] leading-relaxed flex items-start gap-2.5">
+                                                                <span className="text-[#6B7280] mt-1.5 w-1 h-1 rounded-full bg-[#10B981] shrink-0"></span>
+                                                                <span>{action}</span>
+                                                            </li>
+                                                        ))}
+                                                    </ul>
                                                 </div>
                                             </div>
-                                            <div className="flex items-baseline gap-2">
-                                                <span className="text-4xl font-bold text-white">{report.coreSignals?.vibeScore?.score || '-'}</span>
-                                                <span className="text-sm text-[#64748B]">/100</span>
+                                        </motion.section>
+                                    )}
+
+
+                                    {/* STRATEGIC INDEX - Compact */}
+                                    <div className="flex items-center justify-between py-4 px-4 mb-6 rounded-lg bg-[#12141A] border border-white/[0.06]">
+                                        <div>
+                                            <div className="text-[11px] font-medium text-[#9AA0AE] uppercase tracking-[0.05em] mb-1">
+                                                Strategic Index
                                             </div>
-                                            <div className="text-xs text-[#64748B] mt-2 font-mono uppercase tracking-widest">{report.coreSignals?.vibeScore?.label}</div>
+                                            <p className="text-[13px] text-[#9AA0AE] leading-tight max-w-md">
+                                                {report.coreSignals?.vibeScore?.summary || 'Digital presence quality'}
+                                            </p>
                                         </div>
+                                        <div className="flex items-baseline gap-1 shrink-0 ml-4">
+                                            <span className="text-[32px] font-light text-[#EDEEF2] leading-none tracking-tight">
+                                                {report.coreSignals?.vibeScore?.score ? (
+                                                    <CountUp value={report.coreSignals.vibeScore.score} />
+                                                ) : '-'}
+                                            </span>
+                                            <span className="text-[14px] text-[#6B7280] font-medium">/100</span>
+                                        </div>
+                                    </div>
 
-                                        <div className="md:col-span-3 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8">
+                                    {/* CORE METRICS - Compact Cards */}
+                                    <section className="space-y-4 sm:space-y-6 mb-8">
+                                        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4">{/* Mobile-first grid */}
 
-                                            {/* 2. HEADLINE STRATEGY */}
-                                            <button
-                                                onClick={() => setSelectedSignal({ title: 'Headline Strategy', data: report.coreSignals.headlineSignal })}
-                                                className="p-6 rounded-xl bg-[#1A1E26]/50 border border-white/[0.06] hover:bg-[#1A1E26] hover:border-white/[0.15] transition-all text-left group w-full relative"
-                                            >
-                                                <Maximize2 className="absolute top-4 right-4 w-4 h-4 text-[#94A3B8] opacity-0 group-hover:opacity-100 transition-opacity" />
-                                                <div className="text-sm font-medium text-[#94A3B8] mb-1">Headline Strategy</div>
-                                                <div className="flex items-center justify-between mb-3">
-                                                    <span className="text-sm font-semibold text-white line-clamp-1">{report.coreSignals?.headlineSignal?.summary}</span>
-                                                    <span className={clsx("text-xs px-2 py-0.5 rounded font-bold border", getGradeColor(report.coreSignals?.headlineSignal?.grade))}>
+                                            {/* Headline Signal */}
+                                            <div className="p-4 rounded-lg bg-[#12141A] border border-white/[0.06]">
+                                                <div className="flex items-center justify-between mb-2">
+                                                    <span className="text-[11px] sm:text-[12px] font-medium text-[#9AA0AE] uppercase tracking-[0.05em]">
+                                                        Headline Signal
+                                                    </span>
+                                                    <span className={clsx("text-[16px] sm:text-[18px] font-medium", getGradeColor(report.coreSignals?.headlineSignal?.grade))}>
                                                         {report.coreSignals?.headlineSignal?.grade}
                                                     </span>
                                                 </div>
-                                                <p className="text-xs text-[#94A3B8] leading-relaxed line-clamp-2 min-h-[2.5em]">
-                                                    {report.coreSignals?.headlineSignal?.whyItMatters || 'Analysis pending...'}
+                                                <p className="text-[13px] sm:text-[14px] text-[#EDEEF2] leading-relaxed">
+                                                    {report.coreSignals?.headlineSignal?.summary}
                                                 </p>
-                                            </button>
+                                            </div>
 
-                                            {/* 3. VISUAL HIERARCHY */}
-                                            <button
-                                                onClick={() => setSelectedSignal({ title: 'Visual Hierarchy', data: report.coreSignals.visualArchitecture })}
-                                                className="p-6 rounded-xl bg-[#1A1E26]/50 border border-white/[0.06] hover:bg-[#1A1E26] hover:border-white/[0.15] transition-all text-left group w-full relative"
-                                            >
-                                                <Maximize2 className="absolute top-4 right-4 w-4 h-4 text-[#94A3B8] opacity-0 group-hover:opacity-100 transition-opacity" />
-                                                <div className="text-sm font-medium text-[#94A3B8] mb-1">Visual Hierarchy</div>
-                                                <div className="flex items-center justify-between mb-3">
-                                                    <span className="text-sm font-semibold text-white line-clamp-1">{report.coreSignals?.visualArchitecture?.summary}</span>
-                                                    <span className={clsx("text-xs px-2 py-0.5 rounded font-bold border", getGradeColor(report.coreSignals?.visualArchitecture?.grade))}>
+                                            {/* Visual Architecture */}
+                                            <div className="p-4 rounded-lg bg-[#12141A] border border-white/[0.06]">
+                                                <div className="flex items-center justify-between mb-2">
+                                                    <span className="text-[11px] sm:text-[12px] font-medium text-[#9AA0AE] uppercase tracking-[0.05em]">
+                                                        Visual Architecture
+                                                    </span>
+                                                    <span className={clsx("text-[16px] sm:text-[18px] font-medium", getGradeColor(report.coreSignals?.visualArchitecture?.grade))}>
                                                         {report.coreSignals?.visualArchitecture?.grade}
                                                     </span>
                                                 </div>
-                                                <p className="text-xs text-[#94A3B8] leading-relaxed line-clamp-2 min-h-[2.5em]">
-                                                    {report.coreSignals?.visualArchitecture?.whyItMatters || 'Analysis pending...'}
+                                                <p className="text-[13px] sm:text-[14px] text-[#EDEEF2] leading-relaxed">
+                                                    {report.coreSignals?.visualArchitecture?.summary}
                                                 </p>
-                                            </button>
+                                            </div>
 
-                                            {/* 4. GOOGLE PERFORMANCE (PROGRESSIVE) */}
+                                            {/* Domain Integrity */}
+                                            <div className="p-4 rounded-lg bg-[#12141A] border border-white/[0.06]">
+                                                <div className="flex items-center justify-between mb-2">
+                                                    <span className="text-[11px] sm:text-[12px] font-medium text-[#9AA0AE] uppercase tracking-[0.05em]">
+                                                        Domain Integrity
+                                                    </span>
+                                                    {safety && (
+                                                        <span className={clsx("text-[16px] sm:text-[18px] font-medium", safety.isSafe ? "text-[#EDEEF2]" : "text-red-400")}>
+                                                            {safety.isSafe ? "PASS" : "FAIL"}
+                                                        </span>
+                                                    )}
+                                                </div>
+                                                {safety ? (
+                                                    <p className="text-[13px] sm:text-[14px] text-[#EDEEF2] leading-relaxed">
+                                                        {safety.isSafe
+                                                            ? "No threats detected"
+                                                            : `${safety.threats.length} threat(s) detected`
+                                                        }
+                                                    </p>
+                                                ) : (
+                                                    <p className="text-[13px] sm:text-[14px] text-[#9AA0AE]">Pending</p>
+                                                )}
+                                            </div>
+                                        </div>
+
+                                        {/* Core Web Vitals */}
+                                        <div className="p-4 rounded-lg bg-[#12141A] border border-white/[0.06]">{/* Compact CWV */}
+                                            {/* 4. CORE WEB VITALS */}
                                             <div className="p-6 rounded-xl bg-[#1A1E26]/50 border border-white/[0.06] relative group">
                                                 <div className="absolute top-4 right-4 text-[#64748B] opacity-50 group-hover:opacity-100 transition-opacity">
                                                     <Zap className="w-4 h-4" />
@@ -572,7 +763,7 @@ export default function Dashboard() {
                                                                     displayPerformance.lighthouseScore >= 90 ? "text-emerald-400" :
                                                                         displayPerformance.lighthouseScore >= 50 ? "text-yellow-400" : "text-red-400"
                                                                 )}>
-                                                                    {displayPerformance.lighthouseScore}
+                                                                    <CountUp value={displayPerformance.lighthouseScore} />
                                                                 </span>
                                                                 <span className="text-xs text-[#64748B] font-mono">/100</span>
                                                             </div>
@@ -624,6 +815,82 @@ export default function Dashboard() {
                                                 )}
                                             </div>
 
+                                            {/* 5. DOMAIN INTEGRITY (SAFE BROWSING) */}
+                                            <button
+                                                onClick={() => safety && setSelectedSignal({
+                                                    title: 'Domain Integrity Protocol',
+                                                    data: {
+                                                        summary: safety.isSafe ? 'Google Safe Browsing: Verified' : 'Threats Detected',
+                                                        grade: safety.isSafe ? 'PASS' : 'FAIL',
+                                                        whyItMatters: "Search engines allow 'Zero Tolerance' for malware. If Google detects a threat, the site is immediately de-indexed or flagged with a full-screen warning, killing organic traffic instantly.",
+                                                        rationale: safety.isSafe
+                                                            ? "We queried the Google Safe Browsing API against your domain. No matches were found in the Malware, Social Engineering, or Unwanted Software threat lists."
+                                                            : `Threats detected: ${safety.threats.join(', ')}. Immediate action required to restore domain reputation.`,
+                                                        quickWin: safety.isSafe ? "Continue monitoring monthly. Attacks can happen via compromised plugins." : "Request a review in Google Search Console immediately after cleaning the site."
+                                                    }
+                                                })}
+                                                disabled={!safety}
+                                                className="p-6 rounded-xl bg-[#1A1E26]/50 border border-white/[0.06] relative group text-left hover:bg-[#1A1E26] hover:border-white/[0.15] transition-all w-full"
+                                            >
+                                                <Maximize2 className="absolute top-4 right-4 w-4 h-4 text-[#94A3B8] opacity-0 group-hover:opacity-100 transition-opacity" />
+                                                <div className="text-sm font-medium text-[#94A3B8] mb-4">Domain Integrity</div>
+
+                                                {safety ? (
+                                                    <div className="flex flex-col h-full justify-between">
+                                                        <div className="flex items-center gap-2">
+                                                            <div className={clsx(
+                                                                "w-2 h-2 rounded-full",
+                                                                safety.isSafe ? "bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.5)]" : "bg-red-500 shadow-[0_0_8px_rgba(239,68,68,0.5)]"
+                                                            )} />
+                                                            <span className={clsx(
+                                                                "text-lg font-bold tracking-tight",
+                                                                safety.isSafe ? "text-white" : "text-red-400"
+                                                            )}>
+                                                                {safety.isSafe ? "Verified Safe" : "Threat Detected"}
+                                                            </span>
+                                                        </div>
+
+                                                        {safety.isSafe ? (
+                                                            <div className="text-xs text-[#64748B] mt-2">
+                                                                No malware or social engineering threats detected by Google Protocol.
+                                                            </div>
+                                                        ) : (
+                                                            <div className="mt-2 space-y-1">
+                                                                {safety.threats.map(t => (
+                                                                    <div key={t} className="text-xs text-red-300 font-mono bg-red-500/10 px-2 py-1 rounded border border-red-500/20">
+                                                                        {t}
+                                                                    </div>
+                                                                ))}
+                                                            </div>
+                                                        )}
+
+                                                        <div className="mt-4 pt-4 border-t border-white/[0.06] flex items-center justify-between">
+                                                            <span className="text-[10px] text-[#64748B] uppercase tracking-wider">Source</span>
+                                                            <span className="text-[10px] text-white font-mono opacity-60">Google Safe Browsing API</span>
+                                                        </div>
+                                                    </div>
+                                                ) : (
+                                                    <div className="h-32 flex flex-col items-center justify-center text-center opacity-60">
+                                                        {safetyLoading ? (
+                                                            <>
+                                                                <Loader2 className="w-6 h-6 text-[#94A3B8] animate-spin mb-2" />
+                                                                <span className="text-xs text-[#94A3B8]">Verifying Integrity...</span>
+                                                            </>
+                                                        ) : safetyError ? (
+                                                            <>
+                                                                <AlertTriangle className="w-6 h-6 text-red-400 mb-2 opacity-80" />
+                                                                <span className="text-xs text-red-300">Verification Failed</span>
+                                                                <span className="text-[10px] text-red-400/60 mt-1 max-w-[150px] leading-tight">{safetyError}</span>
+                                                            </>
+                                                        ) : (
+                                                            <span className="text-xs text-[#64748B]">Waiting for scan...</span>
+                                                        )}
+                                                    </div>
+                                                )}
+                                            </button>
+
+                                            {/* REMOVED: Brand Authority (keeping Knowledge Graph data private) */}
+
                                         </div>
                                     </section>
 
@@ -642,7 +909,7 @@ export default function Dashboard() {
                                                     <div className="flex items-center gap-2 bg-[#1A1E26]/80 px-3 py-1.5 rounded-full border border-white/[0.06]">
                                                         <div className={clsx("w-2 h-2 rounded-full shadow-[0_0_8px]", trustSignal > 80 ? "bg-emerald-500 shadow-emerald-500/50" : trustSignal > 50 ? "bg-amber-500 shadow-amber-500/50" : "bg-slate-500")} />
                                                         <span className="text-xs font-semibold text-[#CBD5E1]">
-                                                            {trustSignal}% Verified by Data
+                                                            {trustSignal}% Evidence-Backed
                                                         </span>
                                                     </div>
                                                 </div>
@@ -728,38 +995,31 @@ export default function Dashboard() {
                                                 </div>
                                             </div>
 
-                                            {/* STRATEGIC ROADMAP (RIGHT SIDEBAR) */}
-                                            <div className="xl:col-span-1 space-y-8 h-fit sticky top-24">
-                                                <div className="border-b border-white/[0.06] pb-4">
-                                                    <h3 className="font-bold text-white">Strategic Roadmap</h3>
-                                                </div>
 
-                                                {report.strategicIntelligence && (
-                                                    <div className="space-y-8 relative pl-2">
-                                                        <div className="absolute left-0 top-2 bottom-2 w-px bg-white/[0.06]" />
-                                                        {[
-                                                            { title: "On-Site Optimization", data: report.strategicIntelligence.onSiteStrategy, color: "bg-white border-white" },
-                                                            { title: "Off-Site Authority", data: report.strategicIntelligence.offSiteGrowth, color: "bg-[#38BDF8] border-[#38BDF8]" },
-                                                            { title: "AI & Automation", data: report.strategicIntelligence.aiOpportunities, color: "bg-emerald-500 border-emerald-500" }
-                                                        ].map((section, idx) => (
-                                                            <div key={idx} className="relative pl-6">
-                                                                <div className={clsx("absolute left-[-4px] top-1.5 w-2 h-2 rounded-full border shadow-[0_0_10px_rgba(255,255,255,0.2)]", section.color)} />
-                                                                <h4 className="text-xs font-bold text-white uppercase tracking-wider mb-2">{section.title}</h4>
-                                                                <p className="text-xs text-[#94A3B8] leading-relaxed mb-3 font-medium">
-                                                                    {section.data?.summary || 'No data available.'}
-                                                                </p>
-                                                                <ul className="space-y-2">
-                                                                    {section.data?.actions?.map((action, i) => (
-                                                                        <li key={i} className="flex items-start gap-2 text-xs text-[#64748B]">
-                                                                            <span className="text-[#334155] mt-[3px]">•</span> {action}
-                                                                        </li>
-                                                                    ))}
-                                                                </ul>
-                                                            </div>
-                                                        ))}
+                                            {/* CTA - Implementation Support */}
+                                            <div className="col-span-full mt-12">
+                                                <div className="p-6 rounded-lg bg-[#12141A] border border-white/[0.06] hover:border-white/[0.09] transition-colors">
+                                                    <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+                                                        <div className="flex-1">
+                                                            <h3 className="text-[16px] font-medium text-[#EDEEF2] mb-2">
+                                                                Need help implementing these changes?
+                                                            </h3>
+                                                            <p className="text-[13px] text-[#9AA0AE] leading-relaxed">
+                                                                Schedule a complimentary 15-minute consultation to discuss your site's optimization strategy.
+                                                            </p>
+                                                        </div>
+                                                        <a
+                                                            href="mailto:madebyskovie@gmail.com?subject=Flux%20Intelligence%20Consultation%20Request"
+                                                            className="shrink-0 px-5 py-2.5 rounded-lg bg-[#EDEEF2] text-[#0E0F12] text-[13px] font-medium hover:bg-white transition-colors focus:outline-none focus:ring-2 focus:ring-[#EDEEF2] focus:ring-offset-2 focus:ring-offset-[#12141A]"
+                                                        >
+                                                            Get Free Consultation
+                                                        </a>
                                                     </div>
-                                                )}
+                                                </div>
                                             </div>
+
+
+
                                         </div>
                                     </DeepAnalysisReveal>
                                 </motion.div>
@@ -811,6 +1071,14 @@ export default function Dashboard() {
                                             <div className="space-y-3">
                                                 <div className="text-xs font-bold text-[#38BDF8] uppercase tracking-widest flex items-center gap-2">
                                                     <Microscope className="w-3.5 h-3.5" /> Detailed Rationale
+                                                    {status === 'complete' && (
+                                                        <button
+                                                            onClick={generateReport}
+                                                            className="text-xs font-medium text-[#94A3B8] hover:text-white transition-colors flex items-center gap-2 ml-auto"
+                                                        >
+                                                            <Share2 className="w-3.5 h-3.5" /> Download Report
+                                                        </button>
+                                                    )}
                                                 </div>
                                                 <p className="text-sm text-[#94A3B8] leading-loose whitespace-pre-wrap">
                                                     {selectedSignal.data.rationale}
@@ -853,7 +1121,7 @@ export default function Dashboard() {
                     )}
 
                 </div>
-            </main>
-        </div>
+            </main >
+        </div >
     );
 }

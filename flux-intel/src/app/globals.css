@@ -1,23 +1,112 @@
 @import "tailwindcss";
 
 @theme {
-    --color-accent: #7E93B5;
-    --color-primary: #E7EAF0;
-    --color-secondary: #A7AFBD;
-    --color-tertiary: #9099AA;
-    --color-background-charcoal: #0B0F14;
+    /* Editorial Intelligence Palette - Locked */
+    --color-app-background: #0E0F12;
+    --color-canvas-background: #12141A;
+    --color-text-primary: #EDEEF2;
+    --color-text-secondary: #9AA0AE;
+    --color-text-muted: #6B7280;
+    --color-divider: rgba(255, 255, 255, 0.06);
 }
 
 @layer base {
     body {
-        background-color: var(--color-background-charcoal);
-        background-image:
-            radial-gradient(ellipse 100% 100% at 30% 0%, rgba(126, 147, 181, 0.08) 0%, transparent 50%),
-            radial-gradient(ellipse 80% 80% at 70% 40%, rgba(126, 147, 181, 0.05) 0%, transparent 50%),
-            url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='400' height='400'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='4' /%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)' opacity='0.02'/%3E%3C/svg%3E");
-        color: var(--color-primary);
+        background-color: var(--color-app-background);
+        /* Minimal texture - no gradients */
+        background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='400' height='400'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='3' /%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)' opacity='0.015'/%3E%3C/svg%3E");
+        color: var(--color-text-primary);
         -webkit-font-smoothing: antialiased;
         -moz-osx-font-smoothing: grayscale;
         text-rendering: optimizeLegibility;
+        font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Inter", "SF Pro Display", system-ui, sans-serif;
+    }
+}
+
+/* Print Styles for PDF Export */
+@media print {
+    @page {
+        margin: 0.5in;
+        size: letter;
+    }
+
+    * {
+        -webkit-print-color-adjust: exact;
+        print-color-adjust: exact;
+    }
+
+    /* Only hide UI chrome - not content */
+    aside,
+    header,
+    nav {
+        display: none !important;
+    }
+
+    /* Hide decorative elements */
+    div.absolute,
+    [class*="animate-"],
+    [class*="gradient"] {
+        display: none !important;
+    }
+
+    /* Ensure main is visible and full-width */
+    main {
+        display: block !important;
+        width: 100% !important;
+        max-width: none !important;
+        padding: 0.25in !important;
+    }
+
+    /* Make sure content wrapper is visible */
+    main>div {
+        display: block !important;
+    }
+
+    /* AGGRESSIVE background override - force everything to white */
+    *,
+    *::before,
+    *::after {
+        background: white !important;
+        background-color: white !important;
+        background-image: none !important;
+    }
+
+    /* Override dark theme for print */
+    body,
+    main,
+    div,
+    section,
+    article,
+    span,
+    p,
+    button {
+        background: white !important;
+        background-color: white !important;
+    }
+
+    /* Text colors for readability */
+    * {
+        color: #1a1a1a !important;
+    }
+
+    h1,
+    h2,
+    h3,
+    h4,
+    h5,
+    h6 {
+        color: #000 !important;
+        page-break-after: avoid;
+    }
+
+    /* Remove all borders or make them light */
+    * {
+        border-color: #e5e7eb !important;
+    }
+
+    /* Ensure proper spacing */
+    section {
+        page-break-inside: avoid;
+        margin-bottom: 1.5rem;
     }
 }

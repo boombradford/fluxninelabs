@@ -36,6 +36,30 @@ interface PageSignals {
   schemaTypes?: string[]; // Detected JSON-LD types
   pageType?: string; // Heuristic label (blog, product, etc)
   performance?: RoutePerformanceMetrics; // NEW: Real-world PSI metrics
+  techStack?: {
+    cms: string[];
+    analytics: string[];
+    marketing: string[];
+    security: string[];
+  };
+  authority?: {
+    socials: { platform: string; url: string }[];
+    contacts: { type: 'email' | 'phone'; value: string }[];
+  };
+  metaGovernance?: {
+    openGraph: { title: boolean; description: boolean; image: boolean; url: boolean; siteName: boolean };
+    twitter: { card: boolean; site: boolean; creator: boolean };
+    favicon: boolean;
+  };
+  accessibility?: {
+    altTextMissing: number; // Count of images missing alt
+    headingOrder: string[]; // e.g. ['h1', 'h2', 'h1'] for hierarchy check
+    ariaLabels: number; // Count of ARIA labels detected
+  };
+  resources?: {
+    imageFormats: string[]; // ['jpg', 'webp', 'avif']
+    resourceHints: string[]; // ['preload', 'preconnect']
+  };
 }
 
 // --- CONFIG ---
@@ -218,6 +242,154 @@ async function discoverPages(baseUrl: string): Promise<string[]> {
   return Array.from(pages).slice(0, MAX_PAGES_TO_ANALYZE);
 }
 
+// --- NEW: Tech Stack Fingerprinting ---
+interface TechStack {
+  cms: string[];
+  analytics: string[];
+  marketing: string[];
+  security: string[];
+}
+
+function detectTechStack(html: string, $: cheerio.CheerioAPI): TechStack {
+  const stack: TechStack = { cms: [], analytics: [], marketing: [], security: [] };
+  const lowerHtml = html.toLowerCase();
+  const scripts = $('script').map((_, el) => $(el).attr('src') || '').get().join(' ').toLowerCase();
+  const metaGen = $('meta[name="generator"]').attr('content')?.toLowerCase() || '';
+
+  // CMS Fingerprints
+  if (lowerHtml.includes('wp-content') || metaGen.includes('wordpress')) stack.cms.push('WordPress');
+  if (lowerHtml.includes('shopify.com') || lowerHtml.includes('cdn.shopify.com')) stack.cms.push('Shopify');
+  if (lowerHtml.includes('wix.com') || metaGen.includes('wix')) stack.cms.push('Wix');
+  if (lowerHtml.includes('squarespace')) stack.cms.push('Squarespace');
+  if (lowerHtml.includes('next_data') || lowerHtml.includes('__next')) stack.cms.push('Next.js');
+  if (lowerHtml.includes('webflow')) stack.cms.push('Webflow');
+
+  // Analytics Fingerprints
+  if (lowerHtml.includes('googletagmanager.com/gtm.js')) stack.analytics.push('Google Tag Manager');
+  if (lowerHtml.includes('google-analytics.com') || lowerHtml.includes('ga(')) stack.analytics.push('Google Analytics');
+  if (lowerHtml.includes('segment.com/analytics.js')) stack.analytics.push('Segment');
+  if (lowerHtml.includes('hotjar.com')) stack.analytics.push('Hotjar');
+  if (lowerHtml.includes('mixpanel.com')) stack.analytics.push('Mixpanel');
+  if (lowerHtml.includes('clarity.ms')) stack.analytics.push('Microsoft Clarity');
+
+  // Marketing Tech
+  if (lowerHtml.includes('hubspot.com') || lowerHtml.includes('hs-scripts')) stack.marketing.push('HubSpot');
+  if (lowerHtml.includes('klaviyo.com')) stack.marketing.push('Klaviyo');
+  if (lowerHtml.includes('connect.facebook.net')) stack.marketing.push('Meta Pixel');
+  if (lowerHtml.includes('linkedin.com/insight')) stack.marketing.push('LinkedIn Insight');
+  if (lowerHtml.includes('intercom.com') || lowerHtml.includes('intercomcdn')) stack.marketing.push('Intercom');
+  if (lowerHtml.includes('drift.com')) stack.marketing.push('Drift');
+  if (lowerHtml.includes('marketo.com')) stack.marketing.push('Marketo');
+
+  // Security/CDN
+  if (lowerHtml.includes('cloudflare')) stack.security.push('Cloudflare');
+  if (lowerHtml.includes('vercel.app') || scripts.includes('_vercel')) stack.security.push('Vercel');
+
+  return stack;
+}
+
+// --- NEW: Social & Contact Extraction ---
+interface AuthoritySignals {
+  socials: { platform: string; url: string }[];
+  contacts: { type: 'email' | 'phone'; value: string }[];
+}
+
+function extractAuthoritySignals($: cheerio.CheerioAPI): AuthoritySignals {
+  const signals: AuthoritySignals = { socials: [], contacts: [] };
+  const socialDomains = ['linkedin.com', 'twitter.com', 'x.com', 'facebook.com', 'instagram.com', 'youtube.com', 'tiktok.com'];
+
+  // Extract Links
+  $('a[href]').each((_, el) => {
+    const href = $(el).attr('href')?.trim();
+    if (!href) return;
+
+    // Socials
+    if (socialDomains.some(d => href.includes(d))) {
+      const platform = socialDomains.find(d => href.includes(d))?.split('.')[0] || 'social';
+      // simple dedup check
+      if (!signals.socials.some(s => s.url === href)) {
+        signals.socials.push({ platform, url: href });
+      }
+    }
+
+    // Contacts
+    if (href.startsWith('mailto:')) {
+      signals.contacts.push({ type: 'email', value: href.replace('mailto:', '').split('?')[0] });
+    }
+    if (href.startsWith('tel:')) {
+      signals.contacts.push({ type: 'phone', value: href.replace('tel:', '') });
+    }
+  });
+
+  return signals;
+}
+
+// --- NEW: Deep Forensics (Phase 3) ---
+function detectMetaGovernance($: cheerio.CheerioAPI) {
+  return {
+    openGraph: {
+      title: !!$('meta[property="og:title"]').attr('content'),
+      description: !!$('meta[property="og:description"]').attr('content'),
+      image: !!$('meta[property="og:image"]').attr('content'),
+      url: !!$('meta[property="og:url"]').attr('content'),
+      siteName: !!$('meta[property="og:site_name"]').attr('content')
+    },
+    twitter: {
+      card: !!$('meta[name="twitter:card"]').attr('content'),
+      site: !!$('meta[name="twitter:site"]').attr('content'),
+      creator: !!$('meta[name="twitter:creator"]').attr('content')
+    },
+    favicon: !!$('link[rel="icon"]').attr('href') || !!$('link[rel="shortcut icon"]').attr('href')
+  };
+}
+
+function assessAccessibility($: cheerio.CheerioAPI) {
+  let missingAlt = 0;
+  $('img').each((_, el) => {
+    const alt = $(el).attr('alt');
+    if (!alt || alt.trim() === '') missingAlt++;
+  });
+
+  const headingOrder: string[] = [];
+  $('h1, h2, h3, h4, h5, h6').each((_, el) => {
+    headingOrder.push(el.tagName.toLowerCase());
+  });
+
+  return {
+    altTextMissing: missingAlt,
+    headingOrder: headingOrder.slice(0, 10), // First 10 for snapshot
+    ariaLabels: $('[aria-label], [aria-labelledby]').length
+  };
+}
+
+function auditResources(html: string, $: cheerio.CheerioAPI) {
+  const formats = new Set<string>();
+  const hints = new Set<string>();
+
+  // Image Formats
+  $('img').each((_, el) => {
+    const src = $(el).attr('src')?.toLowerCase() || '';
+    if (src.endsWith('.webp')) formats.add('webp');
+    if (src.endsWith('.avif')) formats.add('avif');
+    if (src.endsWith('.jpg') || src.endsWith('.jpeg')) formats.add('jpg');
+    if (src.endsWith('.png')) formats.add('png');
+    if (src.endsWith('.svg')) formats.add('svg');
+  });
+
+  // Resource Hints
+  $('link[rel]').each((_, el) => {
+    const rel = $(el).attr('rel')?.toLowerCase();
+    if (rel === 'preload') hints.add('preload');
+    if (rel === 'preconnect') hints.add('preconnect');
+    if (rel === 'dns-prefetch') hints.add('dns-prefetch');
+  });
+
+  return {
+    imageFormats: Array.from(formats),
+    resourceHints: Array.from(hints)
+  };
+}
+
 async function analyzePage(url: string, includePerformance = false): Promise<PageSignals> {
   try {
     // Parallel Extraction: Cheat code for speed. fetch HTML and PSI at same time if needed.
@@ -243,6 +415,13 @@ async function analyzePage(url: string, includePerformance = false): Promise<Pag
     const schemaTypes = detectSchema($);
     const internalLinks = $('a[href^="/"], a[href^="' + url + '"]').length; // Rough internal link count
 
+    // NEW: Advanced Signals (Phase 2 & 3)
+    const techStack = detectTechStack(html, $);
+    const authority = extractAuthoritySignals($);
+    const metaGovernance = detectMetaGovernance($);
+    const accessibility = assessAccessibility($);
+    const resources = auditResources(html, $);
+
     return {
       url,
       statusCode: 200,
@@ -257,13 +436,19 @@ async function analyzePage(url: string, includePerformance = false): Promise<Pag
       ctas,
       schemaTypes,
       pageType: heuristicPageType(url, h1s[0] || ''),
-      performance // Inject Real World Metrics if requested
+      performance, // Inject Real World Metrics if requested
+      techStack, // NEW Phase 2
+      authority, // NEW Phase 2
+      metaGovernance, // NEW Phase 3
+      accessibility, // NEW Phase 3
+      resources // NEW Phase 3
     };
   } catch (e: any) {
     console.error(`[Flux Analyze] Failed ${url}: ${e.message}`);
     return { url, statusCode: e.response?.status || 500 };
   }
 }
+
 
 // --- HELPER: Ensure Report Structure ---
 function ensureReportStructure(raw: any, domain: string): any {
@@ -311,7 +496,12 @@ async function generateAuditReport(pages: PageSignals[], domain: string, mode: '
     signals: {
       ctas: p.ctas?.map(c => c.text).join(', '),
       schema: p.schemaTypes,
-      internalLinks: p.internalLinkCount
+      internalLinks: p.internalLinkCount,
+      techStack: p.techStack, // Phase 2
+      authority: p.authority, // Phase 2
+      metaGovernance: p.metaGovernance, // Phase 3
+      accessibility: p.accessibility, // Phase 3
+      resources: p.resources // Phase 3
     },
     // INJECT TRUTH: If available, AI sees real speed.
     performance: p.performance ? {
