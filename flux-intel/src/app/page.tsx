@@ -15,6 +15,8 @@ import IntelligentTypewriter from '../components/IntelligentTypewriter';
 import ThinkingLog, { Milestone } from '../components/ThinkingLog';
 import { DeepAnalysisReveal }
     from '../components/DeepAnalysisReveal';
+import { TechIcon } from '../components/ui/TechIcon';
+import { CyberLoader } from '../components/ui/CyberLoader';
 
 import { MonitorView } from '../components/MonitorView';
 import { CountUp } from '../components/CountUp';
@@ -625,16 +627,14 @@ export default function Dashboard() {
                                     exit={{ opacity: 0 }}
                                     className="h-full flex flex-col items-center justify-center relative"
                                 >
-                                    <div className="relative mb-8">
-                                        <div className="absolute inset-0 bg-[#38BDF8] blur-[40px] opacity-10 animate-pulse" />
-                                        <div className="relative z-10 w-20 h-20 rounded-2xl bg-[#0F172A] border border-[#38BDF8]/20 flex items-center justify-center shadow-[0_0_30px_rgba(56,189,248,0.1)]">
-                                            <Loader2 className="w-8 h-8 text-[#38BDF8] animate-spin" />
-                                        </div>
+                                    <div className="scale-125 mb-8">
+                                        <CyberLoader text="ESTABLISHING_LINK" />
                                     </div>
 
-                                    <h3 className="text-white text-xl font-bold tracking-tight mb-2">Flux Intelligence Engine</h3>
-                                    <div className="text-[#64748B] text-sm mb-6 h-6 flex items-center justify-center">
-                                        <IntelligentTypewriter text={scanStatusMessage} isThinking={true} />
+                                    <div className="absolute bottom-12 left-0 right-0 text-center">
+                                        <p className="text-[#64748B] text-xs font-mono animate-pulse tracking-widest uppercase">
+                                            Flux Intelligence Engine v2.0
+                                        </p>
                                     </div>
 
                                     {/* Thinking Stream */}
@@ -875,8 +875,8 @@ export default function Dashboard() {
 
                                     {/* CORE WEB VITALS - TERMINAL STYLE */}
                                     <div className="mb-16">
-                                        <div className="flex items-center gap-2 mb-6 opacity-70">
-                                            <Zap className="w-4 h-4 text-[#64748B]" />
+                                        <div className="flex items-center gap-4 mb-6 opacity-90">
+                                            <TechIcon icon={Zap} isActive={true} color="text-[#38BDF8]" />
                                             <span className="text-xs font-mono text-[#64748B] uppercase tracking-widest">Core_Web_Vitals (Mobile)</span>
                                         </div>
 
