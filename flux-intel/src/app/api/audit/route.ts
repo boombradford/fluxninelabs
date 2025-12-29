@@ -554,7 +554,7 @@ function ensureReportStructure(raw: any, domain: string): any {
     strategicIntelligence: undefined // Undefined triggers Skeleton in UI
   };
 
-  // Deep Merge (Simple level)
+  // Deep Merge (Simple level) - explicitly preserve tacticalFixes and strategicIntelligence from raw
   return {
     ...base,
     ...raw,
@@ -565,7 +565,10 @@ function ensureReportStructure(raw: any, domain: string): any {
       vibeScore: { ...base.coreSignals.vibeScore, ...raw?.coreSignals?.vibeScore },
       headlineSignal: { ...base.coreSignals.headlineSignal, ...raw?.coreSignals?.headlineSignal },
       visualArchitecture: { ...base.coreSignals.visualArchitecture, ...raw?.coreSignals?.visualArchitecture }
-    }
+    },
+    tacticalFixes: raw?.tacticalFixes && raw.tacticalFixes.length > 0 ? raw.tacticalFixes : base.tacticalFixes,
+    strategicIntelligence: raw?.strategicIntelligence || base.strategicIntelligence,
+    clientReadySummary: { ...base.clientReadySummary, ...raw?.clientReadySummary }
   };
 }
 
