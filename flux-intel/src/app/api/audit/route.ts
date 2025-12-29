@@ -603,12 +603,43 @@ async function generateAuditReport(pages: PageSignals[], domain: string, mode: '
     contentSnippet: p.primaryContentSnippet ? p.primaryContentSnippet.substring(0, isFast ? 1000 : 2500) + '...' : 'No content extracted'
   }));
 
-  const userInstruction = {
-    instruction: isFast ? "Analyze the homepage ONLY. Provide a Vibe Check and Top 3 Wins." : "Analyze this dataset using the defined strategic lenses. NOTICE: If 'performance' data is present, you MUST prioritize it over heuristic guesses about code bloat.",
-    outputRequirement: isFast ? undefined : OUTPUT_INSTRUCTION_PROMPT, // Fast uses implicit schema in Sys Prompt
-    siteContext: { domain, scanTimestamp: new Date().toISOString() },
-    dataset
-  };
+  // Build specific, forceful instruction for Claude
+  const userInstruction = isFast
+    ? {
+      instruction: "Analyze the homepage ONLY. Provide a Vibe Check and Top 3 Wins.",
+      siteContext: { domain, scanTimestamp: new Date().toISOString() },
+      dataset
+    }
+    : {
+      instruction: `You are analyzing ${domain}. This is a REAL CLIENT AUDIT - provide specific, valuable insights.
+
+CRITICAL REQUIREMENTS:
+1. QUOTE ACTUAL CONTENT from the site (H1s, CTAs, meta tags, body text)
+2. Reference SPECIFIC METRICS from the data (LCP values, word counts, link counts)
+3. NO GENERIC RECOMMENDATIONS - everything must be specific to THIS site
+4. EXPLAIN WHY each recommendation matters for customer acquisition
+
+BANNED PHRASES (if you use these, START OVER):
+- "tactical maneuver"
+- "asymmetric advantage"
+- "optimize performance" (without specifics)
+- "improve SEO" (without specifics)
+- "enhance metadata" (without quoting current tags)
+
+ACTUAL SITE DATA:
+- Homepage H1: "${dataset[0]?.structure?.h1 || 'not detected'}"
+- Homepage Title: "${dataset[0]?.meta?.title || 'not detected'}"
+- Homepage Meta Description: "${dataset[0]?.meta?.description || 'not detected'}"
+- Page Performance: ${dataset[0]?.performance ? `LCP ${dataset[0].performance.lcp}ms, Score: ${dataset[0].performance.score}` : 'not measured'}
+- Content Length: ${dataset[0]?.structure?.wordCount || 0} words
+- CTAs Found: ${dataset[0]?.signals?.ctas || 'none detected'}
+- Schema Found: ${dataset[0]?.signals?.schema?.join(', ') || 'none'}
+
+USE THIS DATA in your analysis. Quote it. Reference the exact numbers.`,
+      outputRequirement: OUTPUT_INSTRUCTION_PROMPT,
+      siteContext: { domain, scanTimestamp: new Date().toISOString() },
+      dataset
+    };
 
   try {
     let response;
