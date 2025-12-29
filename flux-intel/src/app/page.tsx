@@ -3,18 +3,15 @@
 import { useState, useRef, useEffect } from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
-import { motion, AnimatePresence } from 'framer-motion';
+import { AnimatePresence, motion } from 'framer-motion';
 import {
-    Search, Loader2, Activity, Settings, Target, LayoutTemplate, Share2, RefreshCw,
-    Microscope, ShieldCheck, X, Maximize2, Zap, AlertTriangle, Info, Globe, Printer,
-    TrendingUp, CheckCircle2, Sparkles, ArrowRight
+    Share2, Search, Zap, Globe, Gauge, Activity, Target, ArrowRight, Settings, AlertTriangle, Monitor, Database, Lock, Loader2, Microscope, Maximize2, X, Trophy, LayoutTemplate, RefreshCw, ShieldCheck, Info, Printer
 } from 'lucide-react';
 import { TextDecode } from "../components/ui/TextDecode";
 import clsx from 'clsx';
 import IntelligentTypewriter from '../components/IntelligentTypewriter';
 import ThinkingLog, { Milestone } from '../components/ThinkingLog';
-import { DeepAnalysisReveal }
-    from '../components/DeepAnalysisReveal';
+import { DeepAnalysisReveal } from '../components/DeepAnalysisReveal';
 import { TechIcon } from '../components/ui/TechIcon';
 import { CyberLoader } from '../components/ui/CyberLoader';
 
@@ -92,6 +89,10 @@ interface AnalysisReport {
     domIssues?: {
         lcp?: { rect: { width: number; height: number; top: number; left: number }; snippet?: string };
         cls?: Array<{ rect: { width: number; height: number; top: number; left: number }; snippet?: string }>;
+    };
+    vs?: { // New property for VS mode
+        self: AnalysisReport;
+        enemy: AnalysisReport;
     };
 }
 
@@ -316,7 +317,19 @@ const MOCK_REPORT: AnalysisReport = {
             expectedOutcome: "Improved SEO"
         }
     ],
-    type: "deep"
+    type: "deep",
+    vs: {
+        self: {
+            meta: { url: "https://demo.flux-intel.com", scanTimestamp: new Date().toISOString(), performance: { lighthouseScore: 88, lcp: "1.2s", inp: "45ms", cls: "0.01", speedIndex: "1.5s" } },
+            coreSignals: { vibeScore: { grade: "B" }, headlineSignal: { grade: "A" }, visualArchitecture: { grade: "B-" } },
+            clientReadySummary: { executiveSummary: "Self summary", top3WinsThisWeek: [] }
+        },
+        enemy: {
+            meta: { url: "https://competitor.com", scanTimestamp: new Date().toISOString(), performance: { lighthouseScore: 75, lcp: "2.5s", inp: "80ms", cls: "0.05", speedIndex: "2.8s" } },
+            coreSignals: { vibeScore: { grade: "C" }, headlineSignal: { grade: "B" }, visualArchitecture: { grade: "C+" } },
+            clientReadySummary: { executiveSummary: "Enemy summary", top3WinsThisWeek: [] }
+        }
+    }
 };
 
 export default function Dashboard() {
@@ -329,7 +342,7 @@ export default function Dashboard() {
     const [report, setReport] = useState<AnalysisReport | null>(null);
     const [enemyReport, setEnemyReport] = useState<AnalysisReport | null>(null); // VS Mode: Competitor Report
     const [error, setError] = useState<string | null>(null);
-    const [activeView, setActiveView] = useState<'audit' | 'monitor' | 'strategy' | 'settings'>('audit');
+    const [activeView, setActiveView] = useState<'audit' | 'monitor' | 'strategy' | 'settings' | 'vs'>('audit');
     const [selectedSignal, setSelectedSignal] = useState<{
         title: string;
         data: CoreSignal;
@@ -500,9 +513,16 @@ export default function Dashboard() {
                             mile
                 ));
 
-                handleSetReport(deepSelfData);
-                setEnemyReport(deepEnemyData);
+                // Combine self and enemy reports into a single report object for the 'vs' view
+                handleSetReport({
+                    ...deepSelfData,
+                    vs: {
+                        self: deepSelfData,
+                        enemy: deepEnemyData
+                    }
+                });
                 setStatus('complete');
+                setActiveView('vs'); // Switch to VS view
 
             } else {
                 // SINGLE MODE (Legacy)
@@ -688,18 +708,22 @@ export default function Dashboard() {
                             {/* HERO SECTION / INPUT */}
                             {status === 'idle' && !report && !error && (
                                 <div className="max-w-5xl mx-auto w-full space-y-12 mt-20">
-                                    <div className="text-center space-y-6">
-                                        <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-[#38BDF8]/10 border border-[#38BDF8]/20 text-[#38BDF8] text-xs font-mono tracking-wider mb-4 animate-pulse">
-                                            <div className="w-2 h-2 rounded-full bg-[#38BDF8]" />
-                                            SYSTEM_ONLINE
+                                    <div className="space-y-6 max-w-2xl mx-auto text-center">
+                                        {/* HEADLINE */}
+                                        <div className="space-y-4">
+                                            <div className="flex justify-center mb-6">
+                                                <div className="px-3 py-1 bg-[#38BDF8]/10 text-[#38BDF8] rounded-full text-[10px] font-mono tracking-widest border border-[#38BDF8]/20 animate-pulse">
+                                                    ● SYSTEM_INITIAL
+                                                </div>
+                                            </div>
+                                            <h2 className="text-5xl md:text-7xl font-bold tracking-tighter text-white mb-2 font-display">
+                                                Flux <span className="text-[#38BDF8] italic">Intelligence</span>
+                                            </h2>
+                                            <p className="text-lg text-[#94A3B8] font-light max-w-xl mx-auto leading-relaxed">
+                                                Advanced competitive reconnaissance and technical arbitrage engine.
+                                                <br />Transform audit data into <span className="text-white font-semibold">dominant market position</span>.
+                                            </p>
                                         </div>
-                                        <h1 className="text-5xl md:text-7xl font-light tracking-tight text-white mb-6">
-                                            Flux <span className="font-serif italic text-[#38BDF8]">Intelligence</span>
-                                        </h1>
-                                        <p className="text-[#94A3B8] text-lg max-w-xl mx-auto font-light leading-relaxed">
-                                            Advanced competitive reconnaissance and technical arbitrage engine.
-                                            Transform audit data into <span className="text-white font-medium">dominant market position</span>.
-                                        </p>
                                     </div>
 
                                     {/* VS MODE TOGGLE */}
@@ -709,19 +733,19 @@ export default function Dashboard() {
                                             className={clsx(
                                                 "group relative inline-flex items-center gap-3 px-6 py-2 rounded-full border transition-all duration-300",
                                                 isVsMode
-                                                    ? "bg-[#ef4444]/10 border-[#ef4444]/40 hover:border-[#ef4444]"
+                                                    ? "bg-[#38BDF8]/10 border-[#38BDF8]/50 shadow-[0_0_20px_-5px_rgba(56,189,248,0.5)]"
                                                     : "bg-white/5 border-white/10 hover:border-white/20"
                                             )}
                                         >
                                             <span className={clsx(
-                                                "w-2 h-2 rounded-full transition-colors",
-                                                isVsMode ? "bg-[#ef4444] animate-pulse" : "bg-[#64748B]"
+                                                "w-2 h-2 rounded-full transition-colors animate-pulse",
+                                                isVsMode ? "bg-[#38BDF8]" : "bg-[#64748B]"
                                             )} />
                                             <span className={clsx(
-                                                "text-sm font-mono tracking-wider",
-                                                isVsMode ? "text-[#ef4444]" : "text-[#94A3B8]"
+                                                "text-xs font-mono tracking-[0.2em] font-bold",
+                                                isVsMode ? "text-[#38BDF8]" : "text-[#94A3B8]"
                                             )}>
-                                                {isVsMode ? "WAR_ROOM_ACTIVE" : "ACTIVATE_VS_MODE"}
+                                                {isVsMode ? "● VS_MODE_ACTIVE" : "● ACTIVATE_VS_MODE"}
                                             </span>
                                         </button>
                                     </div>
@@ -739,28 +763,28 @@ export default function Dashboard() {
                                     >
                                         {/* YOUR URL */}
                                         <div className="relative group">
-                                            <div className="absolute inset-0 bg-blue-500/20 blur-xl rounded-lg opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
-                                            <div className="relative flex items-center bg-[#0F172A] border border-white/10 rounded-lg p-2 focus-within:border-[#38BDF8] transition-colors shadow-2xl">
-                                                <Search className="w-5 h-5 text-[#64748B] ml-3" />
+                                            <div className="absolute inset-0 bg-[#38BDF8]/20 blur-xl rounded-lg opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
+                                            <div className="relative flex items-center bg-[#0F172A] border border-white/10 rounded-lg p-2 focus-within:border-[#38BDF8] focus-within:shadow-[0_0_30px_-10px_rgba(56,189,248,0.3)] transition-all shadow-2xl">
+                                                <div className="pl-3 pr-2 text-[#64748B] font-mono text-xs opacity-50 select-none">{">"}</div>
                                                 <input
                                                     type="text"
                                                     value={url}
                                                     onChange={(e) => setUrl(e.target.value)}
-                                                    placeholder={isVsMode ? "TARGET: SELF (URL)" : "Enter domain to intercept..."}
-                                                    className="w-full bg-transparent border-none text-white px-4 py-3 focus:ring-0 placeholder:text-[#64748B] font-mono text-sm"
+                                                    placeholder={isVsMode ? "ENTER_TARGET_SELF..." : "Enter domain to intercept..."}
+                                                    className="w-full bg-transparent border-none text-white px-2 py-3 focus:ring-0 placeholder:text-[#64748B] font-mono text-sm tracking-wide"
                                                     autoFocus
                                                 />
                                                 {!isVsMode && (
                                                     <button
                                                         type="submit"
                                                         disabled={!url.trim()}
-                                                        className="px-6 py-2 bg-[#38BDF8] text-[#0F172A] font-bold text-sm rounded md:hover:bg-[#7DD3FC] transition-colors disabled:opacity-50 disabled:cursor-not-allowed uppercase tracking-wider"
+                                                        className="px-6 py-2 bg-[#38BDF8] text-[#0F172A] font-bold text-xs rounded md:hover:bg-[#7DD3FC] transition-colors disabled:opacity-50 disabled:cursor-not-allowed uppercase tracking-widest font-mono"
                                                     >
-                                                        Scan
+                                                        SCAN
                                                     </button>
                                                 )}
                                             </div>
-                                            {isVsMode && <div className="absolute -top-3 left-4 text-[10px] font-mono text-[#38BDF8] bg-[#0B0F14] px-2">YOU (BLUE TEAM)</div>}
+                                            {isVsMode && <div className="absolute -top-3 left-4 text-[10px] font-mono text-[#38BDF8] bg-[#0B0F14] px-2 border border-[#38BDF8]/20">TARGET: SELF</div>}
                                         </div>
 
                                         {/* ENEMY URL (VS MODE ONLY) */}
@@ -778,11 +802,11 @@ export default function Dashboard() {
                                                         type="text"
                                                         value={enemyUrl}
                                                         onChange={(e) => setEnemyUrl(e.target.value)}
-                                                        placeholder="TARGET: ENEMY (URL)"
+                                                        placeholder="COMPETITOR SITE (URL)"
                                                         className="w-full bg-transparent border-none text-white px-4 py-3 focus:ring-0 placeholder:text-[#64748B] font-mono text-sm"
                                                     />
                                                 </div>
-                                                <div className="absolute -top-3 left-4 text-[10px] font-mono text-[#ef4444] bg-[#0B0F14] px-2">ENEMY (RED TEAM)</div>
+                                                <div className="absolute -top-3 left-4 text-[10px] font-mono text-white/50 bg-[#0B0F14] px-2">COMPETITOR</div>
                                             </motion.div>
                                         )}
 
@@ -795,20 +819,21 @@ export default function Dashboard() {
                                                     className="group relative px-12 py-4 bg-white/5 border border-white/10 hover:bg-white/10 hover:border-white/20 text-white font-bold text-sm rounded-none transition-all disabled:opacity-50 disabled:cursor-not-allowed uppercase tracking-widest overflow-hidden"
                                                 >
                                                     <span className="relative z-10 flex items-center gap-3">
-                                                        INITIATE_WAR_GAME
+                                                        INITIALIZE_WAR_ROOM
                                                         <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
                                                     </span>
                                                     {/* Glitch Effect BG */}
-                                                    <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/5 to-transparent -translate-x-full group-hover:animate-shimmer" />
+                                                    <div className="absolute inset-0 bg-white/5 translate-y-full group-hover:translate-y-0 transition-transform duration-300" />
                                                 </button>
                                             </div>
                                         )}
                                     </motion.form>
 
                                     {/* QUICK ACTIONS */}
+                                    {/* QUICK ACTIONS */}
                                     {!isVsMode && (
-                                        <div className="flex flex-wrap justify-center gap-4 text-xs font-mono text-[#64748B]">
-                                            <span>SUGGESTED_TARGETS:</span>
+                                        <div className="flex flex-wrap justify-center gap-4 text-[10px] font-mono text-[#64748B] uppercase tracking-widest mt-8">
+                                            <span className="opacity-50">SUGGESTED_TARGETS:</span>
                                             {['apple.com', 'stripe.com', 'linear.app'].map((domain) => (
                                                 <button
                                                     key={domain}
@@ -823,6 +848,7 @@ export default function Dashboard() {
 
                                 </div>
                             )}
+
 
 
 
@@ -880,8 +906,89 @@ export default function Dashboard() {
                                             {report.clientReadySummary.executiveSummary}
                                         </p>
                                     </section>
+                                    {/* CORE SIGNALS & HIGHLIGHTS GRID */}
+                                    {status === 'complete' && (
+                                        <motion.div
+                                            initial={{ opacity: 0, y: 10 }}
+                                            animate={{ opacity: 1, y: 0 }}
+                                            className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-12"
+                                        >
+                                            {/* 1. HEADLINE SIGNAL */}
+                                            <button
+                                                onClick={() => setSelectedSignal({
+                                                    title: 'Headline Signal Strength',
+                                                    data: report.coreSignals?.headlineSignal || { grade: 'N/A', summary: 'No data available' }
+                                                })}
+                                                className="text-left p-6 rounded-lg bg-[#0F172A] border border-white/[0.05] hover:border-[#38BDF8] hover:shadow-[0_0_20px_-12px_rgba(56,189,248,0.5)] transition-all group relative overflow-hidden"
+                                            >
+                                                <div className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                                                    <Maximize2 className="w-3 h-3 text-[#38BDF8]" />
+                                                </div>
+                                                <div className="text-[10px] font-mono text-[#64748B] uppercase tracking-widest mb-2">Headline_Signal</div>
+                                                <div className={clsx("text-3xl font-bold font-mono", getGradeColor(report.coreSignals?.headlineSignal?.grade))}>
+                                                    {report.coreSignals?.headlineSignal?.grade || "-"}
+                                                </div>
+                                            </button>
 
-                                    <div className="h-px bg-gradient-to-r from-white/[0.1] via-white/[0.05] to-transparent" />
+                                            {/* 2. VISUAL ARCHITECTURE */}
+                                            <button
+                                                onClick={() => setSelectedSignal({
+                                                    title: 'Visual Architecture Quality',
+                                                    data: report.coreSignals?.visualArchitecture || { grade: 'N/A', summary: 'No data available' }
+                                                })}
+                                                className="text-left p-6 rounded-lg bg-[#0F172A] border border-white/[0.05] hover:border-[#38BDF8] hover:shadow-[0_0_20px_-12px_rgba(56,189,248,0.5)] transition-all group relative overflow-hidden"
+                                            >
+                                                <div className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                                                    <Maximize2 className="w-3 h-3 text-[#38BDF8]" />
+                                                </div>
+                                                <div className="text-[10px] font-mono text-[#64748B] uppercase tracking-widest mb-2">Visual_Architecture</div>
+                                                <div className={clsx("text-3xl font-bold font-mono", getGradeColor(report.coreSignals?.visualArchitecture?.grade))}>
+                                                    {report.coreSignals?.visualArchitecture?.grade || "-"}
+                                                </div>
+                                            </button>
+
+                                            {/* 3. DOMAIN INTEGRITY */}
+                                            <button
+                                                onClick={() => safety && setSelectedSignal({
+                                                    title: 'Domain Integrity Protocol',
+                                                    data: {
+                                                        summary: safety.isSafe ? 'Google Safe Browsing: Verified' : 'Threats Detected',
+                                                        grade: safety.isSafe ? 'PASS' : 'FAIL',
+                                                        whyItMatters: "Search engines allow 'Zero Tolerance' for malware.",
+                                                        rationale: safety.isSafe ? "No threats detected by Google Safe Browsing API." : `Threats: ${safety.threats.join(', ')}`,
+                                                        quickWin: safety.isSafe ? "Continue monitoring." : "Immediate malware removal required."
+                                                    }
+                                                })}
+                                                disabled={!safety}
+                                                className="text-left p-6 rounded-lg bg-[#0F172A] border border-white/[0.05] hover:border-[#38BDF8] hover:shadow-[0_0_20px_-12px_rgba(56,189,248,0.5)] transition-all group"
+                                            >
+                                                <div className="text-[10px] font-mono text-[#64748B] uppercase tracking-widest mb-2">Domain_Integrity</div>
+                                                {safety && (
+                                                    <div className={clsx("text-2xl font-bold font-mono flex items-center gap-2", safety.isSafe ? "text-[#EDEEF2]" : "text-red-400")}>
+                                                        {safety.isSafe ? "PASS" : "FAIL"}
+                                                        <div className={clsx("w-2 h-2 rounded-full", safety.isSafe ? "bg-emerald-500" : "bg-red-500")} />
+                                                    </div>
+                                                )}
+                                            </button>
+
+                                            {/* 4. WEB VITALS */}
+                                            <div className="p-6 rounded-lg bg-[#0F172A] border border-white/[0.05]">
+                                                <div className="text-[10px] font-mono text-[#64748B] uppercase tracking-widest mb-2">Performance_Score</div>
+                                                {displayPerformance ? (
+                                                    <div className="flex items-end justify-between">
+                                                        <span className={clsx("text-3xl font-bold font-mono", getPerformanceColor(displayPerformance.lighthouseScore))}>
+                                                            {displayPerformance.lighthouseScore}
+                                                        </span>
+                                                        <span className="text-xs text-[#64748B] mb-1">LCP: {displayPerformance.lcp}</span>
+                                                    </div>
+                                                ) : (
+                                                    <div className="flex items-center gap-2 text-xs text-[#64748B]">
+                                                        <Loader2 className="w-3 h-3 animate-spin" /> Measuring...
+                                                    </div>
+                                                )}
+                                            </div>
+                                        </motion.div>
+                                    )}
 
 
                                     {report.strategicIntelligence && (
@@ -991,58 +1098,62 @@ export default function Dashboard() {
 
 
                                     {/* STRATEGIC INDEX - TERMINAL STYLE */}
-                                    <div className="flex items-end justify-between py-8 border-b border-white/[0.1]">
-                                        <div>
-                                            <div className="text-xs font-mono text-[#64748B] uppercase tracking-widest mb-2">
-                                                Strategic_Index
-                                            </div>
-                                            <p className="text-sm text-[#94A3B8] max-w-md leading-relaxed font-mono">
-                                                {report.coreSignals?.vibeScore?.summary || (
-                                                    <span className="animate-pulse bg-white/10 h-3 w-32 inline-block" />
-                                                )}
-                                            </p>
-                                        </div>
-                                        <div className="text-right">
-                                            {report.coreSignals?.vibeScore?.score ? (
-                                                <div className="flex items-baseline justify-end gap-2">
-                                                    <span className="text-6xl font-light text-white tracking-tighter">
-                                                        <CountUp value={report.coreSignals.vibeScore.score} />
-                                                    </span>
-                                                    <span className="text-sm text-[#64748B] font-mono mb-2">/100</span>
-                                                </div>
-                                            ) : (
-                                                <div className="flex flex-col items-end">
-                                                    <div className="h-12 w-24 bg-white/10 animate-pulse mb-2" />
-                                                    <span className="text-[10px] text-[#64748B] uppercase tracking-wider font-mono">CALCULATING_INDEX...</span>
-                                                </div>
-                                            )}
-                                        </div>
-                                    </div>
+                                    {/* OLD LOCATION OF STRATEGIC INDEX - REMOVED */}
+                                    {/* (Moved to Top Grid) */}
 
 
 
                                     {/* MAIN CONTENT GRID - WAR ROOM MODE */}
-                                    {isVsMode && enemyReport && (
-                                        <div className="mt-8">
-                                            <WarRoomView selfReport={report} enemyReport={enemyReport} />
-                                        </div>
-                                    )}
+
 
                                     {/* MAIN CONTENT GRID - STANDARD MODE */}
                                     {!isVsMode && (
                                         <DeepAnalysisReveal status={status} className="mt-8">
 
-                                            {/* VISUAL FORENSICS HERO */}
-                                            <div className="mb-16">
-                                                <h3 className="text-xs font-mono text-[#64748B] uppercase tracking-widest mb-4 flex items-center gap-2">
-                                                    <Target className="w-3 h-3" /> Visual_Intelligence_Layer
-                                                </h3>
-                                                <TacticalVision
-                                                    url={report.meta.url}
-                                                    fixes={report.tacticalFixes}
-                                                    isScanning={status !== 'complete'}
-                                                    domIssues={report.domIssues}
-                                                />
+                                            {/* SPLIT HERO: VISUAL + SCORE */}
+                                            <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 mb-16">
+
+                                                {/* LEFT: VISUAL AUDIT (2/3) */}
+                                                <div className="lg:col-span-2">
+                                                    <h3 className="text-xs font-mono text-[#64748B] uppercase tracking-widest mb-4 flex items-center gap-2">
+                                                        <Target className="w-3 h-3" /> Visual Audit
+                                                    </h3>
+                                                    <TacticalVision
+                                                        url={report.meta.url}
+                                                        fixes={report.tacticalFixes}
+                                                        isScanning={status !== 'complete'}
+                                                        domIssues={report.domIssues}
+                                                    />
+                                                </div>
+
+                                                {/* RIGHT: PERFORMANCE INDEX (1/3) - Moved from below */}
+                                                <div className="flex flex-col justify-between border border-white/10 bg-white/5 rounded-xl p-6">
+                                                    <div>
+                                                        <div className="text-xs font-mono text-[#64748B] uppercase tracking-widest mb-2">
+                                                            Performance Index
+                                                        </div>
+                                                        <p className="text-sm text-[#94A3B8] leading-relaxed font-mono">
+                                                            {report.coreSignals?.vibeScore?.summary || (
+                                                                <span className="animate-pulse bg-white/10 h-3 w-32 inline-block" />
+                                                            )}
+                                                        </p>
+                                                    </div>
+                                                    <div className="mt-8 text-right">
+                                                        {report.coreSignals?.vibeScore?.score ? (
+                                                            <div className="flex items-baseline justify-end gap-2">
+                                                                <span className="text-6xl font-light text-white tracking-tighter">
+                                                                    <CountUp value={report.coreSignals.vibeScore.score} />
+                                                                </span>
+                                                                <span className="text-sm text-[#64748B] font-mono mb-2">/100</span>
+                                                            </div>
+                                                        ) : (
+                                                            <div className="flex flex-col items-end">
+                                                                <div className="h-12 w-24 bg-white/10 animate-pulse mb-2" />
+                                                                <span className="text-[10px] text-[#64748B] uppercase tracking-wider font-mono">CALCULATING...</span>
+                                                            </div>
+                                                        )}
+                                                    </div>
+                                                </div>
                                             </div>
 
                                             <div className="grid grid-cols-1 xl:grid-cols-4 gap-12">
@@ -1051,7 +1162,7 @@ export default function Dashboard() {
                                                 <div className="xl:col-span-3 space-y-12">
                                                     <div className="flex items-center justify-between border-b border-white/[0.1] pb-6">
                                                         <h3 className="text-xl font-light text-white uppercase tracking-tight">
-                                                            <TextDecode text="Tactical Execution Plan" />
+                                                            <TextDecode text="Priority Action Plan" />
                                                             <span className="text-[#64748B] font-mono text-sm ml-4 normal-case">/ {report.tacticalFixes?.length || 0} ITEMS</span>
                                                         </h3>
                                                         <div className="text-xs font-mono text-[#64748B]">
@@ -1155,105 +1266,6 @@ export default function Dashboard() {
                                                     </a>
                                                 </div>
 
-                                                {/* SIDEBAR: ACTIVE INTELLIGENCE & SIGNALS */}
-                                                <div className="xl:col-span-1 space-y-8">
-
-                                                    {/* HEADER */}
-                                                    <div className="flex items-center gap-2 mb-6 border-b border-white/[0.1] pb-2">
-                                                        <TechIcon icon={Zap} isActive={true} color="text-[#38BDF8]" size={16} />
-                                                        <span className="text-xs font-mono text-[#64748B] uppercase tracking-widest">Active_Signals</span>
-                                                    </div>
-
-                                                    {/* 1. HEADLINE SIGNAL */}
-                                                    <button
-                                                        onClick={() => setSelectedSignal({
-                                                            title: 'Headline Signal Strength',
-                                                            data: report.coreSignals?.headlineSignal || { grade: 'N/A', summary: 'No data available' }
-                                                        })}
-                                                        className="w-full text-left p-6 border border-white/[0.05] bg-white/[0.02] hover:bg-white/[0.05] hover:border-[#38BDF8]/30 transition-all group relative overflow-hidden"
-                                                    >
-                                                        <div className="absolute top-0 right-0 p-2 opacity-0 group-hover:opacity-100 transition-opacity">
-                                                            <Maximize2 className="w-3 h-3 text-[#38BDF8]" />
-                                                        </div>
-                                                        <div className="text-[10px] font-mono text-[#64748B] uppercase tracking-widest mb-2">Headline_Signal</div>
-                                                        <div className={clsx("text-3xl font-bold font-mono", getGradeColor(report.coreSignals?.headlineSignal?.grade))}>
-                                                            {report.coreSignals?.headlineSignal?.grade || "-"}
-                                                        </div>
-                                                    </button>
-
-                                                    {/* 2. VISUAL ARCHITECTURE */}
-                                                    <button
-                                                        onClick={() => setSelectedSignal({
-                                                            title: 'Visual Architecture Quality',
-                                                            data: report.coreSignals?.visualArchitecture || { grade: 'N/A', summary: 'No data available' }
-                                                        })}
-                                                        className="w-full text-left p-6 border border-white/[0.05] bg-white/[0.02] hover:bg-white/[0.05] hover:border-[#38BDF8]/30 transition-all group relative overflow-hidden"
-                                                    >
-                                                        <div className="absolute top-0 right-0 p-2 opacity-0 group-hover:opacity-100 transition-opacity">
-                                                            <Maximize2 className="w-3 h-3 text-[#38BDF8]" />
-                                                        </div>
-                                                        <div className="text-[10px] font-mono text-[#64748B] uppercase tracking-widest mb-2">Visual_Architecture</div>
-                                                        <div className={clsx("text-3xl font-bold font-mono", getGradeColor(report.coreSignals?.visualArchitecture?.grade))}>
-                                                            {report.coreSignals?.visualArchitecture?.grade || "-"}
-                                                        </div>
-                                                    </button>
-
-                                                    {/* 3. DOMAIN INTEGRITY */}
-                                                    <button
-                                                        onClick={() => safety && setSelectedSignal({
-                                                            title: 'Domain Integrity Protocol',
-                                                            data: {
-                                                                summary: safety.isSafe ? 'Google Safe Browsing: Verified' : 'Threats Detected',
-                                                                grade: safety.isSafe ? 'PASS' : 'FAIL',
-                                                                whyItMatters: "Search engines allow 'Zero Tolerance' for malware.",
-                                                                rationale: safety.isSafe ? "No threats detected by Google Safe Browsing API." : `Threats: ${safety.threats.join(', ')}`,
-                                                                quickWin: safety.isSafe ? "Continue monitoring." : "Immediate malware removal required."
-                                                            }
-                                                        })}
-                                                        disabled={!safety}
-                                                        className="w-full text-left p-6 border border-white/[0.05] bg-white/[0.02] hover:bg-white/[0.05] hover:border-[#38BDF8]/30 transition-all group"
-                                                    >
-                                                        <div className="text-[10px] font-mono text-[#64748B] uppercase tracking-widest mb-2">Domain_Integrity</div>
-                                                        {safety && (
-                                                            <div className={clsx("text-xl font-bold font-mono flex items-center gap-2", safety.isSafe ? "text-[#EDEEF2]" : "text-red-400")}>
-                                                                {safety.isSafe ? "PASS" : "FAIL"}
-                                                                <div className={clsx("w-2 h-2 rounded-full", safety.isSafe ? "bg-emerald-500" : "bg-red-500")} />
-                                                            </div>
-                                                        )}
-                                                    </button>
-
-                                                    {/* 4. WEB VITALS (COMPACT) */}
-                                                    <div className="p-6 border border-white/[0.05] bg-white/[0.02]">
-                                                        <div className="text-[10px] font-mono text-[#64748B] uppercase tracking-widest mb-4">Core_Web_Vitals</div>
-                                                        {displayPerformance ? (
-                                                            <div className="space-y-4">
-                                                                <div className="flex justify-between items-center">
-                                                                    <span className="text-xs text-[#94A3B8] font-mono">LCP (Load)</span>
-                                                                    <span className="text-sm text-white font-mono">{displayPerformance.lcp}</span>
-                                                                </div>
-                                                                <div className="flex justify-between items-center">
-                                                                    <span className="text-xs text-[#94A3B8] font-mono">INP (Interact)</span>
-                                                                    <span className="text-sm text-white font-mono">{displayPerformance.inp}</span>
-                                                                </div>
-                                                                <div className="flex justify-between items-center">
-                                                                    <span className="text-xs text-[#94A3B8] font-mono">CLS (Stable)</span>
-                                                                    <span className="text-sm text-white font-mono">{displayPerformance.cls}</span>
-                                                                </div>
-                                                                <div className="pt-4 border-t border-white/10 flex justify-between items-center">
-                                                                    <span className="text-xs text-[#38BDF8] font-mono">Performance_Score</span>
-                                                                    <span className={clsx("text-xl font-bold", getPerformanceColor(displayPerformance.lighthouseScore))}>
-                                                                        {displayPerformance.lighthouseScore}
-                                                                    </span>
-                                                                </div>
-                                                            </div>
-                                                        ) : (
-                                                            <div className="flex items-center gap-2 text-xs text-[#64748B]">
-                                                                <Loader2 className="w-3 h-3 animate-spin" /> Measuring...
-                                                            </div>
-                                                        )}
-                                                    </div>
-
-                                                </div>
                                             </div>
                                         </DeepAnalysisReveal>
                                     )}
@@ -1346,6 +1358,14 @@ export default function Dashboard() {
                             </motion.div>
                         )}
                     </AnimatePresence>
+
+                    {/* VS MODE (COMPETITOR RESEARCH) */}
+                    {activeView === 'vs' && report && report.vs && (
+                        <WarRoomView
+                            selfReport={report.vs.self}
+                            enemyReport={report.vs.enemy}
+                        />
+                    )}
 
                     {/* MONITOR / STRATEGY PLACEHOLDERS */}
                     {activeView === 'monitor' && <MonitorView />}

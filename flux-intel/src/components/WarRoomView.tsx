@@ -1,163 +1,183 @@
-"use client";
-
 import React from 'react';
 import { motion } from 'framer-motion';
 import { clsx } from 'clsx';
-import { Zap, Shield, Target, Trophy, AlertTriangle } from 'lucide-react';
+import { Shield, Target, Zap, Crosshair, AlertTriangle, CheckCircle, XCircle, Brain, Globe, Search } from 'lucide-react';
 import { CountUp } from './CountUp';
-import { TechIcon } from './ui/TechIcon';
-
-interface Report {
-    meta: {
-        url: string;
-        performance?: {
-            lighthouseScore: number;
-            lcp: string;
-            speedIndex: string;
-        };
-    };
-    coreSignals: {
-        vibeScore: { score?: number };
-    };
-}
 
 interface WarRoomViewProps {
-    selfReport: Report;
-    enemyReport: Report;
+    selfReport: any;
+    enemyReport: any;
 }
 
 export const WarRoomView = ({ selfReport, enemyReport }: WarRoomViewProps) => {
-    // 1. Calculate Scores
-    const selfScore = selfReport.coreSignals.vibeScore.score || 0;
-    const enemyScore = enemyReport.coreSignals.vibeScore.score || 0;
+    // Helper to extract score safely
+    const getScore = (report: any) => report?.coreSignals?.vibeScore?.score || 0;
 
-    const selfLCP = parseFloat(selfReport.meta.performance?.lcp || "0");
-    const enemyLCP = parseFloat(enemyReport.meta.performance?.lcp || "0");
+    const selfScore = getScore(selfReport);
+    const enemyScore = getScore(enemyReport);
 
-    // Victory Calculation
-    const selfWins = selfScore > enemyScore;
-    const scoreDelta = Math.abs(selfScore - enemyScore);
+    const isWinner = selfScore >= enemyScore;
+    const scoreDiff = Math.abs(selfScore - enemyScore);
 
     return (
-        <div className="w-full max-w-7xl mx-auto space-y-12 animate-in fade-in duration-700">
+        <div className="w-full space-y-8 animate-in fade-in duration-700">
 
-            {/* VICTORY BANNER */}
-            <div className={clsx(
-                "w-full p-8 border-y-2 text-center uppercase tracking-widest font-bold text-4xl font-mono relative overflow-hidden group",
-                selfWins
-                    ? "border-emerald-500/50 text-emerald-400 bg-emerald-900/10"
-                    : "border-red-500/50 text-red-500 bg-red-900/10"
-            )}>
-                <div className="relative z-10 flex items-center justify-center gap-6">
-                    {selfWins ? <Trophy className="w-10 h-10" /> : <AlertTriangle className="w-10 h-10" />}
-                    <span>{selfWins ? "DOMINANCE ESTABLISHED" : "TACTICAL DISADVANTAGE DETECTED"}</span>
+            {/* TACTICAL HEADER */}
+            <div className="flex items-center justify-between border-b border-white/[0.1] pb-4">
+                <div className="flex items-center gap-3">
+                    <div className="w-3 h-3 bg-red-500 animate-pulse rounded-full box-shadow-[0_0_10px_rgba(239,68,68,0.8)]" />
+                    <h2 className="text-xl font-mono font-bold tracking-[0.2em] text-red-500 uppercase">
+                        WAR ROOM ACTIVE // <span className="text-white">INTERCEPTION_MODE</span>
+                    </h2>
                 </div>
-                {/* Scanline BG */}
-                <div className="absolute inset-0 bg-[url('/grid.svg')] opacity-10 pointer-events-none" />
+                <div className="text-xs font-mono text-[#64748B]">
+                    SYS.TIME: {new Date().toLocaleTimeString()}
+                </div>
             </div>
 
-            {/* SPLIT TERMINAL */}
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-0 border border-white/10 rounded-xl overflow-hidden relative">
+            {/* VICTORY/DEFEAT BANNER */}
+            <motion.div
+                initial={{ scaleX: 0 }}
+                animate={{ scaleX: 1 }}
+                transition={{ duration: 0.5, delay: 0.2 }}
+                className={clsx(
+                    "w-full py-4 text-center border-y-2 relative overflow-hidden",
+                    isWinner
+                        ? "bg-emerald-900/20 border-emerald-500/50 text-emerald-400"
+                        : "bg-red-900/20 border-red-500/50 text-red-400"
+                )}
+            >
+                <div className="absolute inset-0 bg-[url('/grid.svg')] opacity-20" />
+                <h3 className="text-2xl md:text-3xl font-black font-display tracking-widest uppercase relative z-10 flex items-center justify-center gap-4">
+                    {isWinner ? (
+                        <>
+                            <CheckCircle className="w-8 h-8" />
+                            DOMINANCE ESTABLISHED
+                            <CheckCircle className="w-8 h-8" />
+                        </>
+                    ) : (
+                        <>
+                            <AlertTriangle className="w-8 h-8" />
+                            TACTICAL DISADVANTAGE DETECTED
+                            <AlertTriangle className="w-8 h-8" />
+                        </>
+                    )}
+                </h3>
+            </motion.div>
 
-                {/* VS BADGE CENTER */}
-                <div className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 z-20 bg-[#0B0F14] p-2 border border-white/20 rounded-full">
-                    <span className="font-mono text-white text-xl font-bold px-3 py-1 bg-white/5 rounded-full">VS</span>
+            {/* COMPARISON GRID */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-8 md:gap-12 relative">
+
+                {/* VS BADGE */}
+                <div className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 z-20 hidden md:flex items-center justify-center w-16 h-16 bg-[#0A0A0A] border-2 border-white/20 rounded-full">
+                    <span className="font-black italic text-2xl text-white">VS</span>
                 </div>
 
                 {/* LEFT: BLUE TEAM (YOU) */}
-                <div className="p-8 border-r border-white/10 bg-blue-500/5 relative">
-                    <div className="absolute top-0 left-0 w-full h-1 bg-blue-500/50" />
-                    <h3 className="text-blue-400 font-mono text-sm mb-8 tracking-widest flex items-center gap-2">
-                        <div className="w-2 h-2 bg-blue-500 rounded-full animate-pulse" />
-                        TARGET: SELF ({new URL(selfReport.meta.url).hostname})
-                    </h3>
+                <motion.div
+                    initial={{ x: -50, opacity: 0 }}
+                    animate={{ x: 0, opacity: 1 }}
+                    transition={{ duration: 0.5 }}
+                    className="relative group"
+                >
+                    <div className="absolute -top-3 left-4 bg-[#0A0A0A] px-2 text-xs font-mono text-[#38BDF8] border border-[#38BDF8]/30 z-10">
+                        TARGET: SELF [BLUE_TEAM]
+                    </div>
 
-                    <div className="space-y-8">
-                        {/* SCORE */}
-                        <div>
-                            <div className="text-xs text-blue-300/50 font-mono mb-2">VIBE_SCORE</div>
-                            <div className="text-6xl font-black text-white font-mono">
-                                <CountUp end={selfScore} />
+                    <div className={clsx(
+                        "h-full bg-[#0F172A]/50 border-2 p-6 rounded-xl transition-all duration-500 overflow-hidden relative",
+                        isWinner ? "border-[#38BDF8] shadow-[0_0_30px_-10px_rgba(56,189,248,0.3)]" : "border-white/10 opacity-80"
+                    )}>
+                        {/* SCANLINE BG */}
+                        <div className="absolute inset-0 pointer-events-none opacity-10 bg-[linear-gradient(rgba(18,16,16,0)_50%,rgba(0,0,0,0.25)_50%),linear-gradient(90deg,rgba(255,0,0,0.06),rgba(0,255,0,0.02),rgba(0,0,255,0.06))] z-0 bg-[length:100%_2px,3px_100%] bg-repeat" />
+
+                        <div className="relative z-10 flex flex-col items-center text-center space-y-6">
+                            <div className="w-24 h-24 rounded-full border-4 border-[#38BDF8]/20 flex items-center justify-center bg-[#38BDF8]/5">
+                                <Shield className="w-10 h-10 text-[#38BDF8]" />
+                            </div>
+
+                            <div>
+                                <h4 className="text-sm font-mono text-[#94A3B8] uppercase tracking-widest mb-2">VIBE_SCORE</h4>
+                                <div className="text-6xl font-black text-white tracking-tighter">
+                                    <CountUp value={selfScore} />
+                                </div>
+                            </div>
+
+                            <div className="w-full grid grid-cols-2 gap-4 border-t border-white/10 pt-6">
+                                <div className="space-y-1">
+                                    <div className="text-[10px] uppercase text-[#64748B] font-mono">LCP (Load)</div>
+                                    <div className="text-xl font-bold text-white">{selfReport.meta?.performance?.lcp || 'N/A'}s</div>
+                                </div>
+                                <div className="space-y-1">
+                                    <div className="text-[10px] uppercase text-[#64748B] font-mono">SPEED_INDEX</div>
+                                    <div className="text-xl font-bold text-white">{selfReport.meta?.performance?.speedIndex || 'N/A'}s</div>
+                                </div>
                             </div>
                         </div>
-
-                        {/* METRICS */}
-                        <div className="space-y-4">
-                            <MetricRow
-                                label="LCP (Load)"
-                                value={selfReport.meta.performance?.lcp || "N/A"}
-                                isWin={selfLCP <= enemyLCP}
-                                color="blue"
-                            />
-                            <MetricRow
-                                label="SPEED_INDEX"
-                                value={selfReport.meta.performance?.speedIndex || "N/A"}
-                                isWin={true} // Simplified check
-                                color="blue"
-                            />
-                        </div>
                     </div>
-                </div>
+                </motion.div>
+
 
                 {/* RIGHT: RED TEAM (ENEMY) */}
-                <div className="p-8 bg-red-500/5 relative">
-                    <div className="absolute top-0 left-0 w-full h-1 bg-red-500/50" />
-                    <h3 className="text-red-400 font-mono text-sm mb-8 tracking-widest flex items-center gap-2 justify-end">
-                        TARGET: ENEMY ({new URL(enemyReport.meta.url).hostname})
-                        <div className="w-2 h-2 bg-red-500 rounded-full animate-pulse" />
-                    </h3>
+                <motion.div
+                    initial={{ x: 50, opacity: 0 }}
+                    animate={{ x: 0, opacity: 1 }}
+                    transition={{ duration: 0.5, delay: 0.1 }}
+                    className="relative group"
+                >
+                    <div className="absolute -top-3 right-4 bg-[#0A0A0A] px-2 text-xs font-mono text-red-500 border border-red-500/30 z-10">
+                        TARGET: ENEMY [RED_TEAM]
+                    </div>
 
-                    <div className="space-y-8 text-right">
-                        {/* SCORE */}
-                        <div>
-                            <div className="text-xs text-red-300/50 font-mono mb-2">VIBE_SCORE</div>
-                            <div className="text-6xl font-black text-white font-mono">
-                                <CountUp end={enemyScore} />
+                    <div className={clsx(
+                        "h-full bg-[#1a0505]/50 border-2 p-6 rounded-xl transition-all duration-500 overflow-hidden relative",
+                        !isWinner ? "border-red-500 shadow-[0_0_30px_-10px_rgba(239,68,68,0.3)]" : "border-white/10 opacity-80"
+                    )}>
+                        {/* SCANLINE BG */}
+                        <div className="absolute inset-0 pointer-events-none opacity-10 bg-[linear-gradient(rgba(18,16,16,0)_50%,rgba(0,0,0,0.25)_50%),linear-gradient(90deg,rgba(255,0,0,0.06),rgba(0,255,0,0.02),rgba(0,0,255,0.06))] z-0 bg-[length:100%_2px,3px_100%] bg-repeat" />
+
+                        <div className="relative z-10 flex flex-col items-center text-center space-y-6">
+                            <div className="w-24 h-24 rounded-full border-4 border-red-500/20 flex items-center justify-center bg-red-500/5">
+                                <Crosshair className="w-10 h-10 text-red-500" />
+                            </div>
+
+                            <div>
+                                <h4 className="text-sm font-mono text-[#94A3B8] uppercase tracking-widest mb-2">VIBE_SCORE</h4>
+                                <div className="text-6xl font-black text-white tracking-tighter">
+                                    <CountUp value={enemyScore} />
+                                </div>
+                            </div>
+
+                            <div className="w-full grid grid-cols-2 gap-4 border-t border-white/10 pt-6">
+                                <div className="space-y-1">
+                                    <div className="text-[10px] uppercase text-[#64748B] font-mono">LCP (Load)</div>
+                                    <div className="text-xl font-bold text-white">{enemyReport.meta?.performance?.lcp || 'N/A'}s</div>
+                                </div>
+                                <div className="space-y-1">
+                                    <div className="text-[10px] uppercase text-[#64748B] font-mono">SPEED_INDEX</div>
+                                    <div className="text-xl font-bold text-white">{enemyReport.meta?.performance?.speedIndex || 'N/A'}s</div>
+                                </div>
                             </div>
                         </div>
-
-                        {/* METRICS */}
-                        <div className="space-y-4">
-                            <MetricRow
-                                label="LCP (Load)"
-                                value={enemyReport.meta.performance?.lcp || "N/A"}
-                                isWin={enemyLCP < selfLCP}
-                                color="red"
-                                align="right"
-                            />
-                            <MetricRow
-                                label="SPEED_INDEX"
-                                value={enemyReport.meta.performance?.speedIndex || "N/A"}
-                                isWin={false} // Simplified check
-                                color="red"
-                                align="right"
-                            />
-                        </div>
                     </div>
-                </div>
+                </motion.div>
+
             </div>
 
-            {/* AI STRATEGIC SUMMARY */}
-            <div className="border border-white/10 p-8 bg-white/5 rounded-xl font-mono text-sm">
-                <h4 className="text-[#64748B] uppercase tracking-widest mb-4 border-b border-white/10 pb-2">War Room Intelligence</h4>
-                <p className="text-gray-300 leading-relaxed">
-                    <span className="text-[#38BDF8] font-bold">ANALYSIS:</span> {selfWins ? "You currently maintain visual and technical superiority." : "Competitor exhibits lower latency and stronger core signals."}
-                    Immediate recommendation: {selfWins ? "Capitalize on brand authority." : "Execute strict image optimization to reduce LCP gap."}
+            {/* STRATEGIC SUMMARY */}
+            <div className="border border-white/10 bg-white/5 p-6 rounded-lg relative overflow-hidden">
+                <div className="absolute top-0 left-0 w-1 h-full bg-gradient-to-b from-[#38BDF8] to-transparent" />
+                <h4 className="text-sm font-mono text-[#38BDF8] uppercase tracking-widest mb-4 flex items-center gap-2">
+                    <Brain className="w-4 h-4" /> AI STRATEGIC SUMMARY
+                </h4>
+                <p className="text-gray-300 leading-relaxed font-light">
+                    {isWinner
+                        ? `Superiority confirmed. Your digital footprint outperforms the target by ${scoreDiff} points. Maintain current trajectory but monitor enemy movement on mobile LCP.`
+                        : `CRITICAL ALERT. Target is outperforming you by ${scoreDiff} points. Immediate tactical pivots required in speed index and visual hierarchy to regain market dominance.`
+                    }
                 </p>
             </div>
 
         </div>
     );
 };
-
-const MetricRow = ({ label, value, isWin, color, align = "left" }: { label: string, value: string, isWin: boolean, color: "blue" | "red", align?: "left" | "right" }) => (
-    <div className={clsx("flex items-center gap-4", align === "right" ? "flex-row-reverse" : "flex-row")}>
-        <div className={clsx("p-2 rounded bg-white/5", isWin ? `text-${color}-400 border border-${color}-500/50` : "text-gray-600 border border-transparent")}>
-            <Zap className="w-4 h-4" />
-        </div>
-        <div>
-            <div className={clsx("text-[10px] uppercase font-bold", isWin ? "text-white" : "text-gray-500")}>{label}</div>
-            <div className={clsx("text-xl font-mono", isWin ? `text-${color}-400` : "text-gray-600")}>{value}</div>
-        </div>
-    </div>
-);
