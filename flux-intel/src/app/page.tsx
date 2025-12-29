@@ -737,43 +737,6 @@ export default function Dashboard() {
                                                 Run Audit
                                             </button>
                                         </div>
-
-                                        {/* COMPARE TOGGLE */}
-                                        <div className="flex items-center justify-center gap-3">
-                                            <button
-                                                type="button"
-                                                onClick={() => setIsVsMode(!isVsMode)}
-                                                className="text-sm text-[#64748B] hover:text-white transition-colors flex items-center gap-2"
-                                            >
-                                                <div className={clsx(
-                                                    "w-4 h-4 rounded border transition-colors flex items-center justify-center",
-                                                    isVsMode ? "bg-[#38BDF8] border-[#38BDF8]" : "border-[#475569]"
-                                                )}>
-                                                    {isVsMode && <Check className="w-3 h-3 text-[#0F172A]" />}
-                                                </div>
-                                                Compare with competitor
-                                            </button>
-                                        </div>
-
-                                        {/* COMPETITOR INPUT (when enabled) */}
-                                        {isVsMode && (
-                                            <motion.div
-                                                initial={{ opacity: 0, height: 0 }}
-                                                animate={{ opacity: 1, height: "auto" }}
-                                                exit={{ opacity: 0, height: 0 }}
-                                                className="overflow-hidden"
-                                            >
-                                                <div className="flex items-center bg-[#0F172A] border border-[#1E293B] rounded-lg overflow-hidden focus-within:border-[#334155] transition-colors">
-                                                    <input
-                                                        type="text"
-                                                        value={enemyUrl}
-                                                        onChange={(e) => setEnemyUrl(e.target.value)}
-                                                        placeholder="https://competitor.com"
-                                                        className="w-full bg-transparent text-white px-4 py-4 focus:ring-0 focus:outline-none placeholder:text-[#475569] text-base"
-                                                    />
-                                                </div>
-                                            </motion.div>
-                                        )}
                                     </form>
 
                                     {/* EXAMPLES */}
