@@ -100,10 +100,10 @@ export const DeepAnalysisReveal = ({ status, children, className }: DeepAnalysis
                     </div>
 
                     <h3 className="text-xl font-bold text-white mb-2 tracking-tight">
-                        Initializing Tactical Matrix
+                        Analyzing Your Marketing Strategy
                     </h3>
                     <p className="text-sm text-blue-200/60 font-mono tracking-wide max-w-xs">
-                        Calibrating strategic vectors...
+                        Building your customer acquisition plan...
                     </p>
                 </div>
 

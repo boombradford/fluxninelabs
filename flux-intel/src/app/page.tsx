@@ -1169,7 +1169,7 @@ export default function Dashboard() {
                                                                 <div className="lg:col-span-5">
                                                                     <div className="h-full pl-6 border-l border-white/[0.1]">
                                                                         <div className="text-[10px] font-mono font-bold text-[#64748B] uppercase tracking-widest mb-6 flex items-center gap-2">
-                                                                            <Microscope className="w-3 h-3" /> Forensic_Evidence
+                                                                            <Microscope className="w-3 h-3" /> Supporting Data
                                                                         </div>
 
                                                                         {fix.evidence && fix.evidence.length > 0 ? (
