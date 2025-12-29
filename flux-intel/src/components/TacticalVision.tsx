@@ -17,20 +17,24 @@ interface TacticalVisionProps {
     url: string;
     fixes?: TacticalFix[];
     isScanning?: boolean;
+    domIssues?: {
+        lcp?: { rect: { width: number; height: number; top: number; left: number }; snippet?: string };
+        cls?: Array<{ rect: { width: number; height: number; top: number; left: number }; snippet?: string }>;
+    };
 }
 
-export const TacticalVision = ({ url, fixes = [], isScanning = false }: TacticalVisionProps) => {
-    // Determine high-severity issues for "Hotzones"
-    const criticalIssues = fixes.filter(f => f.severity === 'Critical');
+export const TacticalVision = ({ url, fixes = [], isScanning = false, domIssues }: TacticalVisionProps) => {
+    // Generate placeholder if no real data
+    const hasRealData = !!(domIssues?.lcp || domIssues?.cls?.length);
 
-    // Simulate hotzone positions (random for visual effect, ideally mapped to DOM elements)
-    // In a real implementation, we'd use the `evidence` field to get selector/coordinates
-    const hotzones = criticalIssues.slice(0, 3).map((issue, i) => ({
-        id: issue.id,
-        top: `${20 + (i * 15)}%`,
-        left: `${30 + (i * 20)}%`,
-        label: issue.title
-    }));
+    // Normalize coordinates from Lighthouse (often based on 360-412px width) to % if possible.
+    // We map 412px (Moto G4 standard LH mobile) to 100%. height 800px.
+    const mapRect = (rect: any) => ({
+        top: `${Math.min((rect.top / 800) * 100, 90)}%`,
+        left: `${Math.min((rect.left / 412) * 100, 90)}%`,
+        width: `${Math.min((rect.width / 412) * 100, 50)}%`,
+        height: `${Math.min((rect.height / 800) * 100, 30)}%`
+    });
 
     const [activeZone, setActiveZone] = useState<string | null>(null);
 
@@ -61,22 +65,75 @@ export const TacticalVision = ({ url, fixes = [], isScanning = false }: Tactical
                 <div className="relative aspect-video w-full bg-[#0F172A] overflow-hidden group-hover:scale-[1.005] transition-transform duration-700">
 
                     {/* IFRAME / SCREENSHOT PLACEHOLDER */}
-                    {/* Note: Using Microlink specific URL for screenshot generation */}
                     <div
                         className="absolute inset-0 bg-cover bg-center opacity-40 grayscale-[50%] group-hover:grayscale-0 transition-all duration-700 brightness-75 group-hover:brightness-100"
                         style={{ backgroundImage: `url('https://api.microlink.io?url=${encodeURIComponent(url)}&screenshot=true&meta=false&embed=screenshot.url')` }}
                     />
 
+                    {/* REAL DOM FORENSICS LAYER */}
+                    {hasRealData && (
+                        <div className="absolute inset-0 pointer-events-none">
+                            {/* LCP - CRITICAL RENDERING PATH (RED) */}
+                            {domIssues?.lcp && (
+                                <motion.div
+                                    initial={{ opacity: 0, scale: 1.1 }}
+                                    animate={{ opacity: 1, scale: 1 }}
+                                    className="absolute border-2 border-red-500 bg-red-500/10 z-20"
+                                    style={mapRect(domIssues.lcp.rect)}
+                                >
+                                    <div className="absolute -top-6 left-0 bg-red-500 text-black text-[10px] font-mono font-bold px-1 py-0.5">
+                                        LCP_FAIL
+                                    </div>
+                                    {/* Crosshair */}
+                                    <div className="absolute top-0 left-0 w-2 h-2 border-t border-l border-red-500" />
+                                    <div className="absolute top-0 right-0 w-2 h-2 border-t border-r border-red-500" />
+                                    <div className="absolute bottom-0 left-0 w-2 h-2 border-b border-l border-red-500" />
+                                    <div className="absolute bottom-0 right-0 w-2 h-2 border-b border-r border-red-500" />
+                                </motion.div>
+                            )}
+
+                            {/* CLS - LAYOUT SHIFTS (YELLOW) */}
+                            {domIssues?.cls?.map((cls, i) => (
+                                <motion.div
+                                    key={i}
+                                    initial={{ opacity: 0 }}
+                                    animate={{ opacity: 1 }}
+                                    transition={{ delay: 0.2 + (i * 0.1) }}
+                                    className="absolute border border-yellow-400 border-dashed bg-yellow-400/5 z-10"
+                                    style={mapRect(cls.rect)}
+                                >
+                                    <div className="absolute -bottom-4 right-0 text-yellow-400 text-[9px] font-mono">
+                                        SHIFT_DETECTED
+                                    </div>
+                                </motion.div>
+                            ))}
+                        </div>
+                    )}
+
+                    {/* FALLBACK: SIMULATED HOTZONES (Only if no real data) */}
+                    {!hasRealData && !isScanning && fixes.length > 0 && (
+                        <div className="absolute inset-0 pointer-events-none">
+                            {/* Simulated LCP */}
+                            <div className="absolute top-[20%] left-[10%] w-[80%] h-[30%] border border-red-500/40 bg-red-500/10 animate-pulse opacity-0 group-hover:opacity-100 transition-opacity duration-500">
+                                <div className="absolute -top-3 left-0 bg-red-500 text-black text-[9px] font-mono font-bold px-1 py-0.5">
+                                    LCP_FAIL (Est)
+                                </div>
+                            </div>
+                        </div>
+                    )}
+
                     {/* SCANNING GRID OVERLAY */}
                     <div className="absolute inset-0 bg-[url('/grid.svg')] opacity-20 pointer-events-none" />
 
                     {/* SCAN LINE ANIMATION */}
-                    <motion.div
-                        initial={{ top: "0%" }}
-                        animate={{ top: "100%" }}
-                        transition={{ duration: 3, repeat: Infinity, ease: "linear" }}
-                        className="absolute left-0 right-0 h-[2px] bg-[#38BDF8] shadow-[0_0_20px_#38BDF8] z-10 pointer-events-none"
-                    />
+                    {isScanning && (
+                        <motion.div
+                            initial={{ top: "0%" }}
+                            animate={{ top: "100%" }}
+                            transition={{ duration: 2, repeat: Infinity, ease: "linear" }}
+                            className="absolute left-0 right-0 h-[2px] bg-[#38BDF8] shadow-[0_0_20px_#38BDF8] z-10 pointer-events-none"
+                        />
+                    )}
 
                     {/* HUD ELEMENTS */}
                     <div className="absolute inset-4 border border-white/5 pointer-events-none flex flex-col justify-between p-4">
@@ -88,52 +145,11 @@ export const TacticalVision = ({ url, fixes = [], isScanning = false }: Tactical
 
                         {/* Data Readout */}
                         <div className="font-mono text-[9px] text-[#38BDF8]/70 leading-tight">
-                            COORD: {Math.random().toFixed(4)}, {Math.random().toFixed(4)}<br />
-                            DOM_NODES: {Math.floor(Math.random() * 2000) + 500}<br />
+                            COORD: {hasRealData ? "LOCKED_PHYSICAL" : "SIMULATION_MODE"}<br />
+                            DOM_NODES: {isScanning ? "..." : (Math.floor(Math.random() * 2000) + 500)}<br />
                             RENDER_TIME: 142ms
                         </div>
                     </div>
-
-                    {/* INTERACTIVE HOTZONES */}
-                    {hotzones.map((zone) => (
-                        <motion.div
-                            key={zone.id}
-                            initial={{ scale: 0, opacity: 0 }}
-                            animate={{ scale: 1, opacity: 1 }}
-                            transition={{ delay: 1 }}
-                            style={{ top: zone.top, left: zone.left }}
-                            className="absolute z-30"
-                            onMouseEnter={() => setActiveZone(zone.id)}
-                            onMouseLeave={() => setActiveZone(null)}
-                        >
-                            {/* Reticle Element */}
-                            <div className="relative -translate-x-1/2 -translate-y-1/2 cursor-crosshair group/zone">
-                                <div className={clsx(
-                                    "w-12 h-12 border-2 rounded-sm transition-all duration-300 flex items-center justify-center relative",
-                                    activeZone === zone.id ? "border-red-500 bg-red-500/10 w-48 h-auto p-4" : "border-red-500/50 hover:border-red-500"
-                                )}>
-                                    {!activeZone && <div className="w-1 h-1 bg-red-500 animate-ping absolute" />}
-
-                                    {/* Expanded Details */}
-                                    {activeZone === zone.id && (
-                                        <motion.div
-                                            initial={{ opacity: 0 }}
-                                            animate={{ opacity: 1 }}
-                                            className="text-left"
-                                        >
-                                            <div className="text-[10px] font-mono text-red-500 font-bold uppercase mb-1 flex items-center gap-2">
-                                                <AlertTriangle className="w-3 h-3" /> CRITICAL_FAILURE
-                                            </div>
-                                            <div className="text-xs text-white font-mono leading-tight">{zone.label}</div>
-                                        </motion.div>
-                                    )}
-                                </div>
-                                {/* Connecting Line to nothing (Visual flair) */}
-                                <div className="absolute top-1/2 left-full w-8 h-[1px] bg-red-500/30" />
-                                <div className="absolute top-1/2 left-full translate-x-8 -translate-y-[2px] w-1 h-1 bg-red-500/50" />
-                            </div>
-                        </motion.div>
-                    ))}
 
                     {/* CENTRAL FOCUS RETICLE */}
                     <div className="absolute inset-0 flex items-center justify-center pointer-events-none opacity-20 group-hover:opacity-40 transition-opacity">

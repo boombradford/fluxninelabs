@@ -89,6 +89,10 @@ interface AnalysisReport {
         top3WinsThisWeek: string[];
     };
     type?: 'fast' | 'deep'; // Track which stage we are at
+    domIssues?: {
+        lcp?: { rect: { width: number; height: number; top: number; left: number }; snippet?: string };
+        cls?: Array<{ rect: { width: number; height: number; top: number; left: number }; snippet?: string }>;
+    };
 }
 
 // --- HELPERS ---
@@ -1037,6 +1041,7 @@ export default function Dashboard() {
                                                     url={report.meta.url}
                                                     fixes={report.tacticalFixes}
                                                     isScanning={status !== 'complete'}
+                                                    domIssues={report.domIssues}
                                                 />
                                             </div>
 
