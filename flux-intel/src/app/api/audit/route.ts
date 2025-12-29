@@ -622,7 +622,16 @@ async function generateAuditReport(pages: PageSignals[], domain: string, mode: '
     });
 
     const content = response.choices[0].message.content || '{}';
-    const parsed = JSON.parse(content);
+    console.log('[Flux AI] Raw response length:', content.length);
+
+    let parsed;
+    try {
+      parsed = JSON.parse(content);
+      console.log('[Flux AI] Parsed tacticalFixes count:', parsed?.tacticalFixes?.length || 0);
+    } catch (parseError) {
+      console.error('[Flux AI] JSON Parse Error:', parseError);
+      parsed = {};
+    }
 
     // FORCE INJECT PERFORMANCE TRUTH (Do not rely on AI echo)
     const homepage = pages.find(p => p.url === domain || p.url === domain + '/') || pages[0];
@@ -632,6 +641,7 @@ async function generateAuditReport(pages: PageSignals[], domain: string, mode: '
       report.meta.performance = homepage.performance;
     }
 
+    console.log('[Flux AI] Final report tacticalFixes count:', report?.tacticalFixes?.length || 0);
     return report;
 
   } catch (error) {
