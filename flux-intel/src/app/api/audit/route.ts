@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import axios from 'axios';
 import OpenAI from 'openai';
+import Anthropic from '@anthropic-ai/sdk';
 import * as cheerio from 'cheerio';
 import { parseStringPromise } from 'xml2js';
 import { STRATEGY_SYSTEM_PROMPT, FAST_SYSTEM_PROMPT, OUTPUT_INSTRUCTION_PROMPT } from '../../../lib/prompts/auditSystemPrompt';
@@ -68,7 +69,7 @@ interface PageSignals {
 }
 
 // --- CONFIG ---
-const MAX_PAGES_TO_ANALYZE = 10;
+const MAX_PAGES_TO_ANALYZE = 3; // Reduced from 10 to avoid timeout (homepage + 2 key pages)
 const MICROLINK_API_KEY = process.env.MICROLINK_API_KEY;
 
 // --- STEP 1: FACT EXTRACTION (LAYER 0) ---
@@ -610,18 +611,42 @@ async function generateAuditReport(pages: PageSignals[], domain: string, mode: '
   };
 
   try {
-    const response = await openai.chat.completions.create({
-      model: isFast ? "gpt-4o-mini" : "gpt-4o", // Reverting to stable models to fix crash
-      messages: [
-        { role: "system", content: isFast ? FAST_SYSTEM_PROMPT : STRATEGY_SYSTEM_PROMPT }, // Select Prompt based on Mode
-        { role: "user", content: JSON.stringify(userInstruction) }
-      ],
-      response_format: { type: "json_object" },
-      temperature: 0.2, // Lower temperature for consistent scientific scoring
-      max_tokens: isFast ? 1000 : 8000 // Increased from 4000 to 8000 for deep runs
-    });
+    let response;
+    let content;
 
-    const content = response.choices[0].message.content || '{}';
+    if (isFast) {
+      // FAST MODE: Use gpt-4o-mini for quick technical extraction
+      response = await openai.chat.completions.create({
+        model: "gpt-4o-mini",
+        messages: [
+          { role: "system", content: FAST_SYSTEM_PROMPT },
+          { role: "user", content: JSON.stringify(userInstruction) }
+        ],
+        response_format: { type: "json_object" },
+        temperature: 0.2,
+        max_tokens: 1000
+      });
+      content = response.choices[0].message.content || '{}';
+    } else {
+      // DEEP MODE: Use Claude-3.5-Sonnet for strategic synthesis
+      const anthropic = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
+
+      const claudeResponse = await anthropic.messages.create({
+        model: "claude-3-5-sonnet-20241022",
+        max_tokens: 6000,
+        temperature: 0.2,
+        system: STRATEGY_SYSTEM_PROMPT,
+        messages: [{
+          role: "user",
+          content: JSON.stringify(userInstruction)
+        }]
+      });
+
+      // Extract text content from Claude's response
+      content = claudeResponse.content[0].type === 'text'
+        ? claudeResponse.content[0].text
+        : '{}';
+    }
     console.log('[Flux AI] Raw response length:', content.length);
 
     let parsed;

@@ -570,8 +570,39 @@ export default function Dashboard() {
                     new Promise(resolve => setTimeout(resolve, 4000))
                 ]);
 
-                const deepData = await deepRes.json();
-                if (!deepRes.ok) throw new Error(deepData.error || 'Deep analysis failed');
+                // Improved error handling for timeouts
+                let deepData;
+                try {
+                    deepData = await deepRes.json();
+                } catch (parseErr) {
+                    // Likely got HTML error page due to timeout
+                    console.warn('[Flux] Deep analysis timed out or returned invalid JSON');
+                    // Keep fast mode results and mark as complete
+                    setStatus('complete');
+                    setMilestones(m => m.map(mile =>
+                        mile.id === 'analyze' ? { ...mile, status: 'complete' } :
+                            mile.id === 'complete' ? { ...mile, status: 'complete', timestamp: Date.now() } :
+                                mile
+                    ));
+                    // Show warning but don't break the whole experience
+                    console.warn('Fast mode results retained. Deep analysis unavailable.');
+                    return; // Exit early, keep fast results
+                }
+
+                if (!deepRes.ok) {
+                    const errorMsg = deepRes.status === 504
+                        ? 'Analysis timed out. Showing quick insights instead. Try re-scanning with a simpler site or refresh the page.'
+                        : deepData.error || 'Deep analysis failed';
+                    // Don't throw - keep the fast results we already have
+                    console.warn('[Flux]', errorMsg);
+                    setStatus('complete');
+                    setMilestones(m => m.map(mile =>
+                        mile.id === 'analyze' ? { ...mile, status: 'complete' } :
+                            mile.id === 'complete' ? { ...mile, status: 'complete', timestamp: Date.now() } :
+                                mile
+                    ));
+                    return; // Exit early, keep fast results
+                }
 
                 // Update: Complete
                 setMilestones(m => m.map(mile =>
@@ -586,7 +617,12 @@ export default function Dashboard() {
 
         } catch (err: any) {
             console.error(err);
-            setError(err.message || 'An unexpected error occurred');
+            // Provide helpful error messages for common scenarios
+            let errorMessage = err.message || 'An unexpected error occurred';
+            if (err.message?.includes('Failed to fetch') || err.message?.includes('timed out')) {
+                errorMessage = 'Connection timed out. The analysis may be taking longer than expected. Please try again with a simpler website.';
+            }
+            setError(errorMessage);
             setStatus('idle');
         }
     };
