@@ -2,9 +2,10 @@ import { LRUCache } from 'lru-cache';
 
 // Simple in-memory cache to share data between "Fast Phase" and "Deep Phase"
 // This avoids fetching the HTML twice for the same URL.
+// OPTIMIZATION: Increased TTL to 1 hour - most sites don't change that frequently
 const cache = new LRUCache<string, any>({
     max: 100, // Keep last 100 scans (plenty for transient use)
-    ttl: 1000 * 60 * 5, // 5 minutes TTL
+    ttl: 1000 * 60 * 60, // 1 hour TTL (was 5 min) - much faster repeat audits
 });
 
 export const getCachedData = (key: string) => {

@@ -567,7 +567,7 @@ export default function Dashboard() {
                         headers: { 'Content-Type': 'application/json' },
                         body: JSON.stringify({ url: targetUrl, mode: 'deep', forceRefresh }),
                     }),
-                    new Promise(resolve => setTimeout(resolve, 4000))
+                    new Promise(resolve => setTimeout(resolve, 500)) // Smooth transition without artificial slowdown
                 ]);
 
                 // Improved error handling for timeouts
