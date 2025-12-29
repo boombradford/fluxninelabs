@@ -7,7 +7,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import {
     Search, Loader2, Activity, Settings, Target, LayoutTemplate, Share2, RefreshCw,
     Microscope, ShieldCheck, X, Maximize2, Zap, AlertTriangle, Info, Globe, Printer,
-    TrendingUp, CheckCircle2, Sparkles
+    TrendingUp, CheckCircle2, Sparkles, ArrowRight
 } from 'lucide-react';
 import { TextDecode } from "../components/ui/TextDecode";
 import clsx from 'clsx';
@@ -20,6 +20,7 @@ import { CyberLoader } from '../components/ui/CyberLoader';
 
 import { MonitorView } from '../components/MonitorView';
 import { CountUp } from '../components/CountUp';
+import { WarRoomView } from '../components/WarRoomView';
 
 // --- TYPES ---
 interface PerformanceMetrics {
@@ -315,10 +316,13 @@ const MOCK_REPORT: AnalysisReport = {
 
 export default function Dashboard() {
     const [url, setUrl] = useState('');
+    const [enemyUrl, setEnemyUrl] = useState(''); // VS Mode: Competitor URL
+    const [isVsMode, setIsVsMode] = useState(false); // VS Mode Toggle
     const [status, setStatus] = useState<'idle' | 'scouting' | 'analyzing_deep' | 'complete'>('idle');
     const [scanStatusMessage, setScanStatusMessage] = useState('Initializing Flux Engine...');
     const [milestones, setMilestones] = useState<Milestone[]>([]);
     const [report, setReport] = useState<AnalysisReport | null>(null);
+    const [enemyReport, setEnemyReport] = useState<AnalysisReport | null>(null); // VS Mode: Competitor Report
     const [error, setError] = useState<string | null>(null);
     const [activeView, setActiveView] = useState<'audit' | 'monitor' | 'strategy' | 'settings'>('audit');
     const [selectedSignal, setSelectedSignal] = useState<{
@@ -405,15 +409,16 @@ export default function Dashboard() {
         setStatus('scouting');
         setError(null);
         handleSetReport(null);
+        setEnemyReport(null); // Reset enemy report
         setActiveView('audit');
 
         // Initialize milestones
         setMilestones([
-            { id: 'init', message: 'Initializing Flux Engine...', status: 'active', timestamp: Date.now() },
-            { id: 'dns', message: 'Resolving domain...', status: 'pending' },
-            { id: 'scrape', message: 'Extracting website data...', status: 'pending' },
-            { id: 'analyze', message: 'Running AI analysis...', status: 'pending' },
-            { id: 'complete', message: 'Generating report...', status: 'pending' }
+            { id: 'init', message: isVsMode ? 'Initializing War Room...' : 'Initializing Flux Engine...', status: 'active', timestamp: Date.now() },
+            { id: 'dns', message: isVsMode ? 'Acquiring multiple targets...' : 'Resolving domain...', status: 'pending' },
+            { id: 'scrape', message: 'Extracting intelligence...', status: 'pending' },
+            { id: 'analyze', message: 'Running comparative analysis...', status: 'pending' },
+            { id: 'complete', message: 'Generating tactical report...', status: 'pending' }
         ]);
 
         try {
@@ -424,66 +429,135 @@ export default function Dashboard() {
                         mile
             ));
 
-            // PHASE 1: FAST PASS (Vibe Check)
-            let fastRes;
+            // VS MODE: PARALLEL EXECUTION
+            if (isVsMode && enemyUrl) {
+                // PHASE 1: DUAL FAST PASS
+                const [selfRes, enemyRes] = await Promise.all([
+                    fetch('/api/audit', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ url: targetUrl, mode: 'fast', forceRefresh }),
+                    }),
+                    fetch('/api/audit', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ url: enemyUrl, mode: 'fast', forceRefresh }),
+                    })
+                ]);
 
-            // Check for speculative prefetch
-            if (prefetchRef.current && !forceRefresh) {
-                fastRes = await prefetchRef.current;
-                prefetchRef.current = null; // Clear usage
+                // Update: Scraped
+                setMilestones(m => m.map(mile =>
+                    mile.id === 'dns' ? { ...mile, status: 'complete' } :
+                        mile.id === 'scrape' ? { ...mile, status: 'active', timestamp: Date.now(), detail: 'Intercepting rival signals...' } :
+                            mile
+                ));
+
+                const selfData = await selfRes.json();
+                const enemyData = await enemyRes.json();
+
+                if (!selfRes.ok) throw new Error(selfData.error || 'Self scan failed');
+                // Note: If enemy fails, we could potentially just show self, but for now we fail hard.
+
+                // Update: Analyzed
+                setMilestones(m => m.map(mile =>
+                    mile.id === 'scrape' ? { ...mile, status: 'complete' } :
+                        mile.id === 'analyze' ? { ...mile, status: 'active', timestamp: Date.now() } :
+                            mile
+                ));
+
+                // Render Fast Results (Self) - We don't render Enemy Fast yet, we wait for Deep
+                handleSetReport(selfData);
+                setEnemyReport(enemyData);
+                setStatus('analyzing_deep');
+
+                // PHASE 2: DUAL DEEP PASS
+                const [deepSelf, deepEnemy] = await Promise.all([
+                    fetch('/api/audit', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ url: targetUrl, mode: 'deep', forceRefresh }),
+                    }),
+                    fetch('/api/audit', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ url: enemyUrl, mode: 'deep', forceRefresh }),
+                    }),
+                    new Promise(resolve => setTimeout(resolve, 5000)) // 5s War Room Delay
+                ]);
+
+                const deepSelfData = await deepSelf.json();
+                const deepEnemyData = await deepEnemy.json();
+
+                // Update: Complete
+                setMilestones(m => m.map(mile =>
+                    mile.id === 'analyze' ? { ...mile, status: 'complete' } :
+                        mile.id === 'complete' ? { ...mile, status: 'complete', timestamp: Date.now() } :
+                            mile
+                ));
+
+                handleSetReport(deepSelfData);
+                setEnemyReport(deepEnemyData);
+                setStatus('complete');
+
             } else {
-                fastRes = await fetch('/api/audit', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ url: targetUrl, mode: 'fast', forceRefresh }), // Pass refresh flag
-                });
+                // SINGLE MODE (Legacy)
+                // PHASE 1: FAST PASS
+                let fastRes;
+                if (prefetchRef.current && !forceRefresh) {
+                    fastRes = await prefetchRef.current;
+                    prefetchRef.current = null;
+                } else {
+                    fastRes = await fetch('/api/audit', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ url: targetUrl, mode: 'fast', forceRefresh }),
+                    });
+                }
+
+                // Update: Scraped
+                setMilestones(m => m.map(mile =>
+                    mile.id === 'dns' ? { ...mile, status: 'complete' } :
+                        mile.id === 'scrape' ? { ...mile, status: 'active', timestamp: Date.now(), detail: 'Parsing HTML, extracting metadata...' } :
+                            mile
+                ));
+
+                const fastData = await fastRes.json();
+                if (!fastRes.ok) throw new Error(fastData.error || 'Initial scan failed');
+
+                // Update: Analyzed
+                setMilestones(m => m.map(mile =>
+                    mile.id === 'scrape' ? { ...mile, status: 'complete' } :
+                        mile.id === 'analyze' ? { ...mile, status: 'active', timestamp: Date.now() } :
+                            mile
+                ));
+
+                // Render Fast Results Immediately
+                handleSetReport(fastData);
+                setStatus('analyzing_deep');
+
+                // PHASE 2: DEEP PASS
+                const [deepRes] = await Promise.all([
+                    fetch('/api/audit', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ url: targetUrl, mode: 'deep', forceRefresh }),
+                    }),
+                    new Promise(resolve => setTimeout(resolve, 4000))
+                ]);
+
+                const deepData = await deepRes.json();
+                if (!deepRes.ok) throw new Error(deepData.error || 'Deep analysis failed');
+
+                // Update: Complete
+                setMilestones(m => m.map(mile =>
+                    mile.id === 'analyze' ? { ...mile, status: 'complete' } :
+                        mile.id === 'complete' ? { ...mile, status: 'complete', timestamp: Date.now() } :
+                            mile
+                ));
+
+                handleSetReport(deepData);
+                setStatus('complete');
             }
-
-            // Update: Scraped
-            setMilestones(m => m.map(mile =>
-                mile.id === 'dns' ? { ...mile, status: 'complete' } :
-                    mile.id === 'scrape' ? { ...mile, status: 'active', timestamp: Date.now(), detail: 'Parsing HTML, extracting metadata...' } :
-                        mile
-            ));
-
-            const fastData = await fastRes.json();
-            if (!fastRes.ok) throw new Error(fastData.error || 'Initial scan failed');
-
-            // Update: Analyzed
-            setMilestones(m => m.map(mile =>
-                mile.id === 'scrape' ? { ...mile, status: 'complete' } :
-                    mile.id === 'analyze' ? { ...mile, status: 'active', timestamp: Date.now() } :
-                        mile
-            ));
-
-            // Render Fast Results Immediately
-            handleSetReport(fastData);
-            setStatus('analyzing_deep');
-
-            // PHASE 2: DEEP PASS (Background Strategy)
-            // Force a minimum animation time for "cinematic" feel
-            const [deepRes] = await Promise.all([
-                fetch('/api/audit', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ url: targetUrl, mode: 'deep', forceRefresh }),
-                }),
-                new Promise(resolve => setTimeout(resolve, 4000)) // 4s cinematic delay
-            ]);
-
-            const deepData = await deepRes.json();
-            if (!deepRes.ok) throw new Error(deepData.error || 'Deep analysis failed');
-
-            // Update: Complete
-            setMilestones(m => m.map(mile =>
-                mile.id === 'analyze' ? { ...mile, status: 'complete' } :
-                    mile.id === 'complete' ? { ...mile, status: 'complete', timestamp: Date.now() } :
-                        mile
-            ));
-
-            // Upgrade to Full Report
-            handleSetReport(deepData);
-            setStatus('complete');
 
         } catch (err: any) {
             console.error(err);
@@ -549,23 +623,25 @@ export default function Dashboard() {
                         </button>
                     </div>
 
-                    <form onSubmit={runAudit} className="flex-1 max-w-xl mx-4" role="search" aria-label="Website analysis search">
-                        <div className="relative flex items-center group" onMouseEnter={prefetchAudit}>
-                            <Search className="absolute left-3 w-4 h-4 text-[#64748B] group-focus-within:text-[#94A3B8] transition-colors" aria-hidden="true" />
-                            <input
-                                type="text"
-                                value={url}
-                                onChange={(e) => setUrl(e.target.value)}
-                                placeholder="Enter domain to analyze..."
-                                className="w-full pl-10 pr-3 py-2 bg-[#1A1E26] border border-white/[0.08] rounded-lg text-sm text-white placeholder-[#64748B] focus:outline-none focus:border-[#38BDF8]/50 focus:ring-2 focus:ring-[#38BDF8]/40 transition-all font-mono"
-                                aria-label="Website URL to analyze"
-                                aria-required="true"
-                                aria-describedby="url-hint"
-                            />
-                            <span id="url-hint" className="sr-only">Enter a website URL to generate a comprehensive analysis report</span>
-                            {status === 'scouting' && <Loader2 className="absolute right-3 w-4 h-4 text-[#64748B] animate-spin" aria-label="Loading" role="status" />}
-                        </div>
-                    </form>
+                    {status !== 'idle' && (
+                        <form onSubmit={runAudit} className="flex-1 max-w-xl mx-4" role="search" aria-label="Website analysis search">
+                            <div className="relative flex items-center group" onMouseEnter={prefetchAudit}>
+                                <Search className="absolute left-3 w-4 h-4 text-[#64748B] group-focus-within:text-[#94A3B8] transition-colors" aria-hidden="true" />
+                                <input
+                                    type="text"
+                                    value={url}
+                                    onChange={(e) => setUrl(e.target.value)}
+                                    placeholder="Enter domain to analyze..."
+                                    className="w-full pl-10 pr-3 py-2 bg-[#1A1E26] border border-white/[0.08] rounded-lg text-sm text-white placeholder-[#64748B] focus:outline-none focus:border-[#38BDF8]/50 focus:ring-2 focus:ring-[#38BDF8]/40 transition-all font-mono"
+                                    aria-label="Website URL to analyze"
+                                    aria-required="true"
+                                    aria-describedby="url-hint"
+                                />
+                                <span id="url-hint" className="sr-only">Enter a website URL to generate a comprehensive analysis report</span>
+                                {status === 'scouting' && <Loader2 className="absolute right-3 w-4 h-4 text-[#64748B] animate-spin" aria-label="Loading" role="status" />}
+                            </div>
+                        </form>
+                    )}
 
                     {report && status === 'complete' && safety && displayPerformance && (
                         <div className="flex items-center gap-4 ml-4" role="toolbar" aria-label="Report actions">
@@ -604,16 +680,143 @@ export default function Dashboard() {
                                 </motion.div>
                             )}
 
-                            {/* IDLE STATE */}
+                            {/* HERO SECTION / INPUT */}
                             {status === 'idle' && !report && !error && (
-                                <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="h-full flex flex-col items-center justify-center text-center max-w-md mx-auto opacity-60 hover:opacity-100 transition-opacity">
-                                    <Target className="w-16 h-16 text-white/10 mb-6" />
-                                    <h2 className="text-xl font-bold text-white mb-2">Strategic Domain Analysis</h2>
-                                    <p className="text-[#94A3B8] text-sm leading-relaxed">
-                                        Enter a URL to generate a comprehensive audit. <br />
-                                        <span className="text-[#38BDF8]">New:</span> Generates rapid &quot;Vibe Check&quot; in &lt;3 seconds.
-                                    </p>
-                                </motion.div>
+                                <div className="max-w-5xl mx-auto w-full space-y-12 mt-20">
+                                    <div className="text-center space-y-6">
+                                        <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-[#38BDF8]/10 border border-[#38BDF8]/20 text-[#38BDF8] text-xs font-mono tracking-wider mb-4 animate-pulse">
+                                            <div className="w-2 h-2 rounded-full bg-[#38BDF8]" />
+                                            SYSTEM_ONLINE
+                                        </div>
+                                        <h1 className="text-5xl md:text-7xl font-light tracking-tight text-white mb-6">
+                                            Flux <span className="font-serif italic text-[#38BDF8]">Intelligence</span>
+                                        </h1>
+                                        <p className="text-[#94A3B8] text-lg max-w-xl mx-auto font-light leading-relaxed">
+                                            Advanced competitive reconnaissance and technical arbitrage engine.
+                                            Transform audit data into <span className="text-white font-medium">dominant market position</span>.
+                                        </p>
+                                    </div>
+
+                                    {/* VS MODE TOGGLE */}
+                                    <div className="flex justify-center mb-8">
+                                        <button
+                                            onClick={() => setIsVsMode(!isVsMode)}
+                                            className={clsx(
+                                                "group relative inline-flex items-center gap-3 px-6 py-2 rounded-full border transition-all duration-300",
+                                                isVsMode
+                                                    ? "bg-[#ef4444]/10 border-[#ef4444]/40 hover:border-[#ef4444]"
+                                                    : "bg-white/5 border-white/10 hover:border-white/20"
+                                            )}
+                                        >
+                                            <span className={clsx(
+                                                "w-2 h-2 rounded-full transition-colors",
+                                                isVsMode ? "bg-[#ef4444] animate-pulse" : "bg-[#64748B]"
+                                            )} />
+                                            <span className={clsx(
+                                                "text-sm font-mono tracking-wider",
+                                                isVsMode ? "text-[#ef4444]" : "text-[#94A3B8]"
+                                            )}>
+                                                {isVsMode ? "WAR_ROOM_ACTIVE" : "ACTIVATE_VS_MODE"}
+                                            </span>
+                                        </button>
+                                    </div>
+
+                                    {/* INPUT ARRAY */}
+                                    <motion.form
+                                        initial={false}
+                                        animate={isVsMode ? { maxWidth: "100%" } : { maxWidth: "42rem" }}
+                                        transition={{ duration: 0.5, ease: "circOut" }}
+                                        onSubmit={(e) => runAudit(e)}
+                                        className={clsx(
+                                            "relative mx-auto transition-all duration-500",
+                                            isVsMode ? "grid grid-cols-1 md:grid-cols-2 gap-8" : "block"
+                                        )}
+                                    >
+                                        {/* YOUR URL */}
+                                        <div className="relative group">
+                                            <div className="absolute inset-0 bg-blue-500/20 blur-xl rounded-lg opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
+                                            <div className="relative flex items-center bg-[#0F172A] border border-white/10 rounded-lg p-2 focus-within:border-[#38BDF8] transition-colors shadow-2xl">
+                                                <Search className="w-5 h-5 text-[#64748B] ml-3" />
+                                                <input
+                                                    type="text"
+                                                    value={url}
+                                                    onChange={(e) => setUrl(e.target.value)}
+                                                    placeholder={isVsMode ? "TARGET: SELF (URL)" : "Enter domain to intercept..."}
+                                                    className="w-full bg-transparent border-none text-white px-4 py-3 focus:ring-0 placeholder:text-[#64748B] font-mono text-sm"
+                                                    autoFocus
+                                                />
+                                                {!isVsMode && (
+                                                    <button
+                                                        type="submit"
+                                                        disabled={!url.trim()}
+                                                        className="px-6 py-2 bg-[#38BDF8] text-[#0F172A] font-bold text-sm rounded md:hover:bg-[#7DD3FC] transition-colors disabled:opacity-50 disabled:cursor-not-allowed uppercase tracking-wider"
+                                                    >
+                                                        Scan
+                                                    </button>
+                                                )}
+                                            </div>
+                                            {isVsMode && <div className="absolute -top-3 left-4 text-[10px] font-mono text-[#38BDF8] bg-[#0B0F14] px-2">YOU (BLUE TEAM)</div>}
+                                        </div>
+
+                                        {/* ENEMY URL (VS MODE ONLY) */}
+                                        {isVsMode && (
+                                            <motion.div
+                                                initial={{ opacity: 0, x: 20 }}
+                                                animate={{ opacity: 1, x: 0 }}
+                                                exit={{ opacity: 0, x: 20 }}
+                                                className="relative group"
+                                            >
+                                                <div className="absolute inset-0 bg-red-500/20 blur-xl rounded-lg opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
+                                                <div className="relative flex items-center bg-[#0F172A] border border-white/10 rounded-lg p-2 focus-within:border-[#ef4444] transition-colors shadow-2xl">
+                                                    <Target className="w-5 h-5 text-[#64748B] ml-3" />
+                                                    <input
+                                                        type="text"
+                                                        value={enemyUrl}
+                                                        onChange={(e) => setEnemyUrl(e.target.value)}
+                                                        placeholder="TARGET: ENEMY (URL)"
+                                                        className="w-full bg-transparent border-none text-white px-4 py-3 focus:ring-0 placeholder:text-[#64748B] font-mono text-sm"
+                                                    />
+                                                </div>
+                                                <div className="absolute -top-3 left-4 text-[10px] font-mono text-[#ef4444] bg-[#0B0F14] px-2">ENEMY (RED TEAM)</div>
+                                            </motion.div>
+                                        )}
+
+                                        {/* SHARED SUBMIT FOR VS MODE */}
+                                        {isVsMode && (
+                                            <div className="md:col-span-2 flex justify-center mt-4">
+                                                <button
+                                                    type="submit"
+                                                    disabled={!url.trim() || !enemyUrl.trim()}
+                                                    className="group relative px-12 py-4 bg-white/5 border border-white/10 hover:bg-white/10 hover:border-white/20 text-white font-bold text-sm rounded-none transition-all disabled:opacity-50 disabled:cursor-not-allowed uppercase tracking-widest overflow-hidden"
+                                                >
+                                                    <span className="relative z-10 flex items-center gap-3">
+                                                        INITIATE_WAR_GAME
+                                                        <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
+                                                    </span>
+                                                    {/* Glitch Effect BG */}
+                                                    <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/5 to-transparent -translate-x-full group-hover:animate-shimmer" />
+                                                </button>
+                                            </div>
+                                        )}
+                                    </motion.form>
+
+                                    {/* QUICK ACTIONS */}
+                                    {!isVsMode && (
+                                        <div className="flex flex-wrap justify-center gap-4 text-xs font-mono text-[#64748B]">
+                                            <span>SUGGESTED_TARGETS:</span>
+                                            {['apple.com', 'stripe.com', 'linear.app'].map((domain) => (
+                                                <button
+                                                    key={domain}
+                                                    onClick={() => { setUrl(`https://${domain}`); prefetchAudit(); }}
+                                                    className="hover:text-[#38BDF8] hover:underline transition-colors"
+                                                >
+                                                    {domain}
+                                                </button>
+                                            ))}
+                                        </div>
+                                    )}
+
+                                </div>
                             )}
 
 
@@ -919,122 +1122,132 @@ export default function Dashboard() {
                                         )}
                                     </div>
 
-                                    {/* MAIN CONTENT GRID - WRAPPED IN PROGRESSIVE REVEAL */}
-                                    <DeepAnalysisReveal status={status} className="mt-8">
-                                        <div className="grid grid-cols-1 xl:grid-cols-4 gap-12">
+                                    {/* MAIN CONTENT GRID - WAR ROOM MODE */}
+                                    {isVsMode && enemyReport && (
+                                        <div className="mt-8">
+                                            <WarRoomView selfReport={report} enemyReport={enemyReport} />
+                                        </div>
+                                    )}
 
-                                            {/* TACTICAL EXECUTION PLAN - TERMINAL STYLE */}
-                                            <div className="xl:col-span-3 space-y-12">
-                                                <div className="flex items-center justify-between border-b border-white/[0.1] pb-6">
-                                                    <h3 className="text-xl font-light text-white uppercase tracking-tight">
-                                                        <TextDecode text="Tactical Execution Plan" />
-                                                        <span className="text-[#64748B] font-mono text-sm ml-4 normal-case">/ {report.tacticalFixes?.length || 0} ITEMS</span>
-                                                    </h3>
-                                                    <div className="text-xs font-mono text-[#64748B]">
-                                                        EVIDENCE_CONFIDENCE: <span className={clsx("text-white", trustSignal > 80 ? "text-emerald-400" : "text-amber-400")}>{trustSignal}%</span>
+                                    {/* MAIN CONTENT GRID - STANDARD MODE */}
+                                    {!isVsMode && (
+                                        <DeepAnalysisReveal status={status} className="mt-8">
+                                            <div className="grid grid-cols-1 xl:grid-cols-4 gap-12">
+
+                                                {/* TACTICAL EXECUTION PLAN - TERMINAL STYLE */}
+                                                <div className="xl:col-span-3 space-y-12">
+                                                    <div className="flex items-center justify-between border-b border-white/[0.1] pb-6">
+                                                        <h3 className="text-xl font-light text-white uppercase tracking-tight">
+                                                            <TextDecode text="Tactical Execution Plan" />
+                                                            <span className="text-[#64748B] font-mono text-sm ml-4 normal-case">/ {report.tacticalFixes?.length || 0} ITEMS</span>
+                                                        </h3>
+                                                        <div className="text-xs font-mono text-[#64748B]">
+                                                            EVIDENCE_CONFIDENCE: <span className={clsx("text-white", trustSignal > 80 ? "text-emerald-400" : "text-amber-400")}>{trustSignal}%</span>
+                                                        </div>
                                                     </div>
+
+                                                    <motion.div
+                                                        initial={{ opacity: 0 }}
+                                                        animate={{ opacity: 1 }}
+                                                        transition={{ duration: 0.5, delay: 0.2 }}
+                                                        className="divide-y divide-white/[0.1]"
+                                                    >
+                                                        {report.tacticalFixes?.map((fix, idx) => (
+                                                            <motion.div
+                                                                key={fix.id || idx}
+                                                                className="grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-16 py-12 group first:pt-0"
+                                                            >
+                                                                {/* LEFT: CAUSE & ACTION */}
+                                                                <div className="lg:col-span-7 space-y-6">
+                                                                    <div className="flex items-start justify-between">
+                                                                        <div className="space-y-2">
+                                                                            <div className="flex items-center gap-3">
+                                                                                <span className={clsx("text-[10px] font-mono font-bold uppercase tracking-widest", getImpactColor(fix.impact))}>
+                                                                                    {fix.impact}_PRIORITY
+                                                                                </span>
+                                                                                <span className="text-[10px] font-mono font-bold text-[#64748B] uppercase tracking-widest">
+                                                                                    // {fix.category}
+                                                                                </span>
+                                                                            </div>
+                                                                            <h4 className="text-2xl font-light text-white leading-tight">{fix.title}</h4>
+                                                                        </div>
+                                                                    </div>
+
+                                                                    <div className="grid grid-cols-1 gap-6">
+                                                                        <div className="pl-4 border-l border-white/[0.1]">
+                                                                            <span className="text-[#64748B] uppercase text-[10px] font-mono font-bold block mb-2">Observation</span>
+                                                                            <p className="text-sm text-[#94A3B8] leading-relaxed">
+                                                                                {fix.problem}
+                                                                            </p>
+                                                                        </div>
+                                                                        <div className="pl-4 border-l border-[#38BDF8]">
+                                                                            <span className="text-[#38BDF8] uppercase text-[10px] font-mono font-bold block mb-2">Recommendation</span>
+                                                                            <p className="text-sm text-[#E2E8F0] leading-relaxed font-medium">
+                                                                                {fix.recommendation}
+                                                                            </p>
+                                                                        </div>
+                                                                    </div>
+
+                                                                    <div className="flex items-center gap-6 pt-2">
+                                                                        <div className="text-xs font-mono text-[#64748B]">
+                                                                            EFFORT: <span className="text-white">{fix.effortHours}h</span>
+                                                                        </div>
+                                                                        <div className="text-xs font-mono text-[#64748B]">
+                                                                            OUTCOME: <span className="text-emerald-400">{fix.expectedOutcome}</span>
+                                                                        </div>
+                                                                    </div>
+                                                                </div>
+
+                                                                {/* RIGHT: EVIDENCE DATA */}
+                                                                <div className="lg:col-span-5">
+                                                                    <div className="h-full pl-6 border-l border-white/[0.1]">
+                                                                        <div className="text-[10px] font-mono font-bold text-[#64748B] uppercase tracking-widest mb-6 flex items-center gap-2">
+                                                                            <Microscope className="w-3 h-3" /> Forensic_Evidence
+                                                                        </div>
+
+                                                                        {fix.evidence && fix.evidence.length > 0 ? (
+                                                                            <ul className="space-y-4">
+                                                                                {fix.evidence.map((ev, i) => (
+                                                                                    <li key={i} className="flex flex-col gap-1">
+                                                                                        <span className="text-[10px] text-[#64748B] uppercase tracking-wide font-mono">{ev.label}</span>
+                                                                                        <span className="text-xs font-mono text-[#E2E8F0] break-all border-b border-white/[0.1] pb-1 inline-block">
+                                                                                            {ev.value}
+                                                                                        </span>
+                                                                                    </li>
+                                                                                ))}
+                                                                            </ul>
+                                                                        ) : (
+                                                                            <div className="h-full flex flex-col items-center justify-center text-center opacity-50">
+                                                                                <span className="text-xs font-mono text-[#64748B]">NO_DOM_SIGNAL</span>
+                                                                            </div>
+                                                                        )}
+                                                                    </div>
+                                                                </div>
+                                                            </motion.div>
+                                                        ))}
+                                                    </motion.div>
                                                 </div>
 
-                                                <motion.div
-                                                    initial={{ opacity: 0 }}
-                                                    animate={{ opacity: 1 }}
-                                                    transition={{ duration: 0.5, delay: 0.2 }}
-                                                    className="divide-y divide-white/[0.1]"
-                                                >
-                                                    {report.tacticalFixes?.map((fix, idx) => (
-                                                        <motion.div
-                                                            key={fix.id || idx}
-                                                            className="grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-16 py-12 group first:pt-0"
-                                                        >
-                                                            {/* LEFT: CAUSE & ACTION */}
-                                                            <div className="lg:col-span-7 space-y-6">
-                                                                <div className="flex items-start justify-between">
-                                                                    <div className="space-y-2">
-                                                                        <div className="flex items-center gap-3">
-                                                                            <span className={clsx("text-[10px] font-mono font-bold uppercase tracking-widest", getImpactColor(fix.impact))}>
-                                                                                {fix.impact}_PRIORITY
-                                                                            </span>
-                                                                            <span className="text-[10px] font-mono font-bold text-[#64748B] uppercase tracking-widest">
-                                                                                    // {fix.category}
-                                                                            </span>
-                                                                        </div>
-                                                                        <h4 className="text-2xl font-light text-white leading-tight">{fix.title}</h4>
-                                                                    </div>
-                                                                </div>
+                                                {/* CTA - TERMINAL STYLE */}
+                                                <div className="col-span-full mt-24 border-t border-white/[0.1] pt-12 text-center">
+                                                    <h3 className="text-xl font-light text-white mb-4">Implementation Support</h3>
+                                                    <p className="text-sm text-[#94A3B8] max-w-lg mx-auto mb-8 leading-relaxed">
+                                                        Systems optimization requires precision execution. Schedule a brief with our principal strategist.
+                                                    </p>
+                                                    <a
+                                                        href="mailto:madebyskovie@gmail.com?subject=Flux%20Intelligence%20Briefing%20Request"
+                                                        className="inline-flex items-center gap-2 px-8 py-3 bg-white text-black text-sm font-bold uppercase tracking-widest hover:bg-[#38BDF8] hover:text-white transition-colors"
+                                                    >
+                                                        Initialize Contact <Target className="w-4 h-4" />
+                                                    </a>
+                                                </div>
 
-                                                                <div className="grid grid-cols-1 gap-6">
-                                                                    <div className="pl-4 border-l border-white/[0.1]">
-                                                                        <span className="text-[#64748B] uppercase text-[10px] font-mono font-bold block mb-2">Observation</span>
-                                                                        <p className="text-sm text-[#94A3B8] leading-relaxed">
-                                                                            {fix.problem}
-                                                                        </p>
-                                                                    </div>
-                                                                    <div className="pl-4 border-l border-[#38BDF8]">
-                                                                        <span className="text-[#38BDF8] uppercase text-[10px] font-mono font-bold block mb-2">Recommendation</span>
-                                                                        <p className="text-sm text-[#E2E8F0] leading-relaxed font-medium">
-                                                                            {fix.recommendation}
-                                                                        </p>
-                                                                    </div>
-                                                                </div>
 
-                                                                <div className="flex items-center gap-6 pt-2">
-                                                                    <div className="text-xs font-mono text-[#64748B]">
-                                                                        EFFORT: <span className="text-white">{fix.effortHours}h</span>
-                                                                    </div>
-                                                                    <div className="text-xs font-mono text-[#64748B]">
-                                                                        OUTCOME: <span className="text-emerald-400">{fix.expectedOutcome}</span>
-                                                                    </div>
-                                                                </div>
-                                                            </div>
 
-                                                            {/* RIGHT: EVIDENCE DATA */}
-                                                            <div className="lg:col-span-5">
-                                                                <div className="h-full pl-6 border-l border-white/[0.1]">
-                                                                    <div className="text-[10px] font-mono font-bold text-[#64748B] uppercase tracking-widest mb-6 flex items-center gap-2">
-                                                                        <Microscope className="w-3 h-3" /> Forensic_Evidence
-                                                                    </div>
-
-                                                                    {fix.evidence && fix.evidence.length > 0 ? (
-                                                                        <ul className="space-y-4">
-                                                                            {fix.evidence.map((ev, i) => (
-                                                                                <li key={i} className="flex flex-col gap-1">
-                                                                                    <span className="text-[10px] text-[#64748B] uppercase tracking-wide font-mono">{ev.label}</span>
-                                                                                    <span className="text-xs font-mono text-[#E2E8F0] break-all border-b border-white/[0.1] pb-1 inline-block">
-                                                                                        {ev.value}
-                                                                                    </span>
-                                                                                </li>
-                                                                            ))}
-                                                                        </ul>
-                                                                    ) : (
-                                                                        <div className="h-full flex flex-col items-center justify-center text-center opacity-50">
-                                                                            <span className="text-xs font-mono text-[#64748B]">NO_DOM_SIGNAL</span>
-                                                                        </div>
-                                                                    )}
-                                                                </div>
-                                                            </div>
-                                                        </motion.div>
-                                                    ))}
-                                                </motion.div>
                                             </div>
+                                        </DeepAnalysisReveal>
+                                    )}
 
-                                            {/* CTA - TERMINAL STYLE */}
-                                            <div className="col-span-full mt-24 border-t border-white/[0.1] pt-12 text-center">
-                                                <h3 className="text-xl font-light text-white mb-4">Implementation Support</h3>
-                                                <p className="text-sm text-[#94A3B8] max-w-lg mx-auto mb-8 leading-relaxed">
-                                                    Systems optimization requires precision execution. Schedule a brief with our principal strategist.
-                                                </p>
-                                                <a
-                                                    href="mailto:madebyskovie@gmail.com?subject=Flux%20Intelligence%20Briefing%20Request"
-                                                    className="inline-flex items-center gap-2 px-8 py-3 bg-white text-black text-sm font-bold uppercase tracking-widest hover:bg-[#38BDF8] hover:text-white transition-colors"
-                                                >
-                                                    Initialize Contact <Target className="w-4 h-4" />
-                                                </a>
-                                            </div>
-
-
-
-                                        </div>
-                                    </DeepAnalysisReveal>
                                 </motion.div>
                             )}
                         </AnimatePresence>
