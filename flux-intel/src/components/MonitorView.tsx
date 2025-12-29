@@ -156,6 +156,7 @@ export const MonitorView = () => {
     useEffect(() => {
         const saved = localStorage.getItem('flux_monitor_targets');
         if (saved) {
+            // eslint-disable-next-line react-hooks/exhaustive-deps
             setTargets(JSON.parse(saved));
         } else {
             // Seed initial demo data

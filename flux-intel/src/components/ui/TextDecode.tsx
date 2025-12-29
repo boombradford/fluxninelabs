@@ -22,6 +22,7 @@ export const TextDecode = ({ text, className, delay = 0, duration = 1.5 }: TextD
     const [isMounted, setIsMounted] = useState(false);
 
     useEffect(() => {
+        // eslint-disable-next-line react-hooks/exhaustive-deps
         setIsMounted(true);
     }, []);
 
