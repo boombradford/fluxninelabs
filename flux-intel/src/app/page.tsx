@@ -836,18 +836,29 @@ export default function Dashboard() {
 
                                     {/* HEADER SECTION */}
                                     <section>
-                                        <div className="flex items-center gap-3 mb-4">
-                                            <h1 className="text-2xl font-bold tracking-tight text-white">
-                                                {new URL(report.meta.url).hostname.toLowerCase()} Analysis
+                                        <div className="flex items-center gap-4 mb-6">
+                                            <h1 className="text-3xl md:text-4xl font-bold tracking-tight text-white flex items-center gap-3">
+                                                {new URL(report.meta.url).hostname.toLowerCase()}
+                                                <span className="text-[#475569] font-light">Analysis</span>
                                             </h1>
-                                            <span className="px-2.5 py-0.5 rounded-full bg-white/[0.06] text-[#94A3B8] text-xs font-semibold border border-white/[0.06] font-mono" suppressHydrationWarning>
-                                                {new Date().toLocaleDateString()}
-                                            </span>
-                                            {report.type === 'fast' && <span className="text-[10px] bg-amber-500/10 text-amber-500 border border-amber-500/20 px-2 py-0.5 rounded uppercase font-bold tracking-wide">Fast Pass</span>}
+
+                                            <div className="flex items-center gap-2 mt-1">
+                                                <span className="px-3 py-1 rounded-full bg-white/[0.04] text-[#94A3B8] text-xs font-medium border border-white/[0.05] font-mono tracking-wide" suppressHydrationWarning>
+                                                    {new Date().toLocaleDateString()}
+                                                </span>
+                                                {report.type === 'fast' && (
+                                                    <span className="text-[10px] bg-gradient-to-r from-amber-400 to-orange-500 text-black border border-amber-300/40 px-3 py-1 rounded-full uppercase font-bold tracking-widest shadow-[0_0_15px_-4px_rgba(245,158,11,0.5)] transform hover:scale-105 transition-transform cursor-default">
+                                                        Fast Pass
+                                                    </span>
+                                                )}
+                                            </div>
                                         </div>
-                                        <p className="text-lg text-[#CBD5E1] leading-relaxed max-w-4xl min-h-[4em]">
-                                            {report.clientReadySummary.executiveSummary}
-                                        </p>
+                                        <div className="relative pl-6 border-l-2 border-[#38BDF8]/30">
+                                            <p className="text-lg md:text-xl text-[#E2E8F0] leading-relaxed max-w-4xl font-light">
+                                                {report.clientReadySummary.executiveSummary}
+                                            </p>
+                                        </div>
+
                                     </section>
                                     {/* CORE SIGNALS & HIGHLIGHTS GRID */}
                                     {status === 'complete' && (
