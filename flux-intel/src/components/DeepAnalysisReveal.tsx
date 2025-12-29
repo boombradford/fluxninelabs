@@ -20,22 +20,47 @@ export const DeepAnalysisReveal = ({ status, children, className }: DeepAnalysis
     const SkeletonPlaceholder = () => (
         <div className="space-y-12 opacity-50 pointer-events-none select-none grayscale">
             <div className="flex items-center justify-between border-b border-white/[0.06] pb-4">
-                <div className="h-8 w-64 bg-white/10 rounded animate-pulse" />
-                <div className="h-8 w-32 bg-white/10 rounded-full animate-pulse" />
+                <div className="h-8 w-64 bg-white/10 rounded-none animate-pulse" />
+                <div className="h-8 w-32 bg-white/10 rounded-none animate-pulse" />
             </div>
 
             <div className="space-y-8">
                 {[1, 2, 3].map((i) => (
-                    <div key={i} className="grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-12">
+                    <div key={i} className="grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-16 border-b border-white/[0.05] pb-12 last:border-0">
+                        {/* LEFT MOCK */}
                         <div className="lg:col-span-7 space-y-5">
-                            <div className="h-6 w-3/4 bg-white/10 rounded animate-pulse" />
-                            <div className="space-y-2">
-                                <div className="h-4 w-full bg-white/5 rounded animate-pulse" />
-                                <div className="h-4 w-5/6 bg-white/5 rounded animate-pulse" />
+                            <div className="flex items-center gap-3 mb-2">
+                                <div className="h-3 w-16 bg-white/20 rounded-none animate-pulse" />
+                                <div className="h-3 w-24 bg-white/10 rounded-none animate-pulse" />
+                            </div>
+                            <div className="h-8 w-3/4 bg-white/10 rounded-none animate-pulse" />
+
+                            <div className="grid grid-cols-1 gap-6 mt-6">
+                                <div className="pl-4 border-l border-white/[0.1]">
+                                    <div className="h-2 w-16 bg-white/10 mb-2 rounded-none" />
+                                    <div className="space-y-2">
+                                        <div className="h-3 w-full bg-white/5 rounded-none animate-pulse" />
+                                        <div className="h-3 w-5/6 bg-white/5 rounded-none animate-pulse" />
+                                    </div>
+                                </div>
+                                <div className="pl-4 border-l border-[#38BDF8]/30">
+                                    <div className="h-2 w-24 bg-[#38BDF8]/20 mb-2 rounded-none" />
+                                    <div className="space-y-2">
+                                        <div className="h-3 w-full bg-white/5 rounded-none animate-pulse" />
+                                        <div className="h-3 w-5/6 bg-white/5 rounded-none animate-pulse" />
+                                    </div>
+                                </div>
                             </div>
                         </div>
-                        <div className="lg:col-span-5">
-                            <div className="h-40 bg-white/5 rounded-lg border border-white/5 animate-pulse" />
+
+                        {/* RIGHT MOCK */}
+                        <div className="lg:col-span-5 pl-6 border-l border-white/[0.05]">
+                            <div className="h-3 w-32 bg-white/20 rounded-none animate-pulse mb-6" />
+                            <div className="space-y-3">
+                                <div className="h-10 w-full border-b border-white/[0.05] animate-pulse" />
+                                <div className="h-10 w-full border-b border-white/[0.05] animate-pulse" />
+                                <div className="h-10 w-full border-b border-white/[0.05] animate-pulse" />
+                            </div>
                         </div>
                     </div>
                 ))}
@@ -75,10 +100,10 @@ export const DeepAnalysisReveal = ({ status, children, className }: DeepAnalysis
                     </div>
 
                     <h3 className="text-xl font-bold text-white mb-2 tracking-tight">
-                        Synthesizing Deep Intelligence
+                        Initializing Tactical Matrix
                     </h3>
                     <p className="text-sm text-blue-200/60 font-mono tracking-wide max-w-xs">
-                        Calibrating tactical roadmap & strategic vectors...
+                        Calibrating strategic vectors...
                     </p>
                 </div>
 

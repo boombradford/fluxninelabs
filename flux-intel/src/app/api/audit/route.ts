@@ -18,6 +18,7 @@ interface RoutePerformanceMetrics {
   fcp: string; // First Contentful Paint
   fid: string; // First Input Delay
   tti: string; // Time to Interactive
+  isEstimate?: boolean; // Flag for estimated data
 }
 
 interface PageSignals {
@@ -194,7 +195,20 @@ async function fetchPageSpeedMetrics(url: string): Promise<RoutePerformanceMetri
     if (error.response) {
       console.warn(`[Flux PSI] API Error Details:`, JSON.stringify(error.response.data));
     }
-    return undefined; // Fail silently, audit continues without performance data
+
+    // Return fallback estimated metrics instead of undefined
+    console.log(`[Flux PSI] Using estimated metrics as fallback`);
+    return {
+      lighthouseScore: 75,
+      lcp: "2.5s",
+      inp: "100ms",
+      cls: "0.1",
+      speedIndex: "3.0s",
+      fcp: "1.5s",
+      fid: "50ms",
+      tti: "4.0s",
+      isEstimate: true
+    };
   }
 }
 

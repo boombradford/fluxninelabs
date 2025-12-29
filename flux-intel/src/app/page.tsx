@@ -9,10 +9,12 @@ import {
     Microscope, ShieldCheck, X, Maximize2, Zap, AlertTriangle, Info, Globe, Printer,
     TrendingUp, CheckCircle2, Sparkles
 } from 'lucide-react';
+import { TextDecode } from "../components/ui/TextDecode";
 import clsx from 'clsx';
 import IntelligentTypewriter from '../components/IntelligentTypewriter';
 import ThinkingLog, { Milestone } from '../components/ThinkingLog';
-import { DeepAnalysisReveal } from '../components/DeepAnalysisReveal';
+import { DeepAnalysisReveal }
+    from '../components/DeepAnalysisReveal';
 
 import { MonitorView } from '../components/MonitorView';
 import { CountUp } from '../components/CountUp';
@@ -239,6 +241,76 @@ const useSafetyCheck = (url: string, trigger: boolean) => {
 //     return { authority, loading, error };
 // };
 
+
+const MOCK_REPORT: AnalysisReport = {
+    meta: {
+        url: "https://demo.flux-intel.com",
+        scanTimestamp: new Date().toISOString(),
+        performance: {
+            lighthouseScore: 88,
+            lcp: "1.2s",
+            inp: "45ms",
+            cls: "0.01",
+            speedIndex: "1.5s"
+        }
+    },
+    coreSignals: {
+        vibeScore: { grade: "B", score: 82, label: "Solid Foundation", summary: "Good base, needs polish." },
+        headlineSignal: { grade: "A", label: "Example Signal", summary: "Strong messaging." },
+        visualArchitecture: { grade: "B-", label: "Visuals", summary: "Clean but generic." }
+    },
+    clientReadySummary: {
+        executiveSummary: "This is a demonstration of the Flux Intelligence Engine's terminal aesthetic. The system has detected strong structural integrity but suggests targeted optimizations in visual hierarchy and interaction depth.",
+        top3WinsThisWeek: ["Optimize LCP", "Refine Typography", "Enhance Animations"]
+    },
+    strategicIntelligence: {
+        onSiteStrategy: { summary: "Enhance core web vitals.", actions: ["Minify JS", "Optimize Images"] },
+        offSiteGrowth: { summary: "Expand backlink profile.", actions: ["Guest posts", "Social signals"] },
+        aiOpportunities: { summary: "Leverage AI for content.", actions: ["Auto-blogging", "Smart replies"] }
+    },
+    tacticalFixes: [
+        {
+            id: "fix-1",
+            title: "Render blocking resources",
+            category: "Performance",
+            problem: "Critical CSS is not inlined.",
+            recommendation: "Inline critical CSS and defer the rest.",
+            impact: "High",
+            severity: "Critical",
+            effortHours: 4,
+            owners: ["DevOps"],
+            expectedOutcome: "Faster FCP",
+            evidence: [{ label: "Blocking Time", value: "1200ms" }]
+        },
+        {
+            id: "fix-2",
+            title: "Low contrast text",
+
+            category: "Accessibility",
+            problem: "Gray text on white background.",
+            recommendation: "Darken text color to meet WCAG AA.",
+            impact: "Medium",
+            severity: "High",
+            effortHours: 2,
+            owners: ["Design"],
+            expectedOutcome: "Better readability"
+        },
+        {
+            id: "fix-3",
+            title: "Missing Alt Tags",
+            category: "SEO",
+            problem: "Images missing descriptive alt text.",
+            recommendation: "Add alt tags to all images.",
+            impact: "Low",
+            severity: "Medium",
+            effortHours: 1,
+            owners: ["Content"],
+            expectedOutcome: "Improved SEO"
+        }
+    ],
+    type: "deep"
+};
+
 export default function Dashboard() {
     const [url, setUrl] = useState('');
     const [status, setStatus] = useState<'idle' | 'scouting' | 'analyzing_deep' | 'complete'>('idle');
@@ -432,6 +504,9 @@ export default function Dashboard() {
         window.print();
     };
 
+    // Animation Variants
+
+
     return (
         <div className="min-h-screen flex bg-[#0B0F14] text-[#E2E8F0] antialiased selection:bg-[#38BDF8]/30">
 
@@ -588,7 +663,7 @@ export default function Dashboard() {
                                             <h1 className="text-2xl font-bold tracking-tight text-white">
                                                 {new URL(report.meta.url).hostname.toLowerCase()} Analysis
                                             </h1>
-                                            <span className="px-2.5 py-0.5 rounded-full bg-white/[0.06] text-[#94A3B8] text-xs font-semibold border border-white/[0.06] font-mono">
+                                            <span className="px-2.5 py-0.5 rounded-full bg-white/[0.06] text-[#94A3B8] text-xs font-semibold border border-white/[0.06] font-mono" suppressHydrationWarning>
                                                 {new Date().toLocaleDateString()}
                                             </span>
                                             {report.type === 'fast' && <span className="text-[10px] bg-amber-500/10 text-amber-500 border border-amber-500/20 px-2 py-0.5 rounded uppercase font-bold tracking-wide">Fast Pass</span>}
@@ -600,30 +675,32 @@ export default function Dashboard() {
 
                                     <div className="h-px bg-gradient-to-r from-white/[0.1] via-white/[0.05] to-transparent" />
 
-                                    {/* STRATEGIC INTELLIGENCE - ELEVATED & ENHANCED */}
+
                                     {report.strategicIntelligence && (
                                         <motion.section
                                             initial={{ opacity: 0, y: 20 }}
                                             animate={{ opacity: 1, y: 0 }}
                                             transition={{ duration: 0.5, delay: 0.2 }}
-                                            className="py-10 border-b border-white/[0.06]"
+                                            className="py-12 border-b border-white/[0.1]"
                                         >
-                                            <div className="flex items-center gap-4 mb-8">
-                                                <Target className="w-6 h-6 text-[#38BDF8]" />
-                                                <h2 className="text-3xl font-light text-white tracking-tight">Strategic Intelligence</h2>
+                                            <div className="flex items-center gap-4 mb-10">
+                                                <Target className="w-5 h-5 text-[#38BDF8]" />
+                                                <h2 className="text-2xl font-light text-white tracking-tight uppercase">
+                                                    <TextDecode text="Strategic Intelligence" />
+                                                </h2>
                                             </div>
 
-                                            <div className="grid grid-cols-1 md:grid-cols-3 gap-8 md:gap-12">
+                                            <div className="grid grid-cols-1 md:grid-cols-3 gap-12">
                                                 {/* On-Site Optimization */}
-                                                <div className="space-y-4">
-                                                    <h3 className="text-lg font-medium text-[#EDEEF2] border-l-2 border-[#38BDF8] pl-3">On-Site Optimization</h3>
-                                                    <p className="text-[14px] text-[#9AA0AE] leading-relaxed">
+                                                <div className="space-y-6">
+                                                    <h3 className="text-xs font-mono font-bold text-[#38BDF8] uppercase tracking-widest border-t border-[#38BDF8] pt-4">On-Site Optimization</h3>
+                                                    <p className="text-sm text-[#94A3B8] leading-relaxed">
                                                         {report.strategicIntelligence.onSiteStrategy?.summary || 'Technical SEO, content architecture, and conversion optimization strategies.'}
                                                     </p>
-                                                    <ul className="space-y-2.5 mt-4">
+                                                    <ul className="space-y-4">
                                                         {report.strategicIntelligence.onSiteStrategy?.actions?.map((action, i) => (
-                                                            <li key={i} className="text-[14px] text-[#EDEEF2] leading-relaxed flex items-start gap-2.5">
-                                                                <span className="text-[#6B7280] mt-1.5 w-1 h-1 rounded-full bg-[#38BDF8] shrink-0"></span>
+                                                            <li key={i} className="text-sm text-[#E2E8F0] leading-relaxed flex items-start gap-3">
+                                                                <span className="text-[#64748B] font-mono select-none">0{i + 1}</span>
                                                                 <span>{action}</span>
                                                             </li>
                                                         ))}
@@ -631,15 +708,15 @@ export default function Dashboard() {
                                                 </div>
 
                                                 {/* Off-Site Growth */}
-                                                <div className="space-y-4">
-                                                    <h3 className="text-lg font-medium text-[#EDEEF2] border-l-2 border-[#A855F7] pl-3">Off-Site Growth</h3>
-                                                    <p className="text-[14px] text-[#9AA0AE] leading-relaxed">
+                                                <div className="space-y-6">
+                                                    <h3 className="text-xs font-mono font-bold text-[#A855F7] uppercase tracking-widest border-t border-[#A855F7] pt-4">Off-Site Growth</h3>
+                                                    <p className="text-sm text-[#94A3B8] leading-relaxed">
                                                         {report.strategicIntelligence.offSiteGrowth?.summary || 'Link building, brand mentions, and strategic partnerships.'}
                                                     </p>
-                                                    <ul className="space-y-2.5 mt-4">
+                                                    <ul className="space-y-4">
                                                         {report.strategicIntelligence.offSiteGrowth?.actions?.map((action, i) => (
-                                                            <li key={i} className="text-[14px] text-[#EDEEF2] leading-relaxed flex items-start gap-2.5">
-                                                                <span className="text-[#6B7280] mt-1.5 w-1 h-1 rounded-full bg-[#A855F7] shrink-0"></span>
+                                                            <li key={i} className="text-sm text-[#E2E8F0] leading-relaxed flex items-start gap-3">
+                                                                <span className="text-[#64748B] font-mono select-none">0{i + 1}</span>
                                                                 <span>{action}</span>
                                                             </li>
                                                         ))}
@@ -647,15 +724,15 @@ export default function Dashboard() {
                                                 </div>
 
                                                 {/* AI & Automation */}
-                                                <div className="space-y-4">
-                                                    <h3 className="text-lg font-medium text-[#EDEEF2] border-l-2 border-[#10B981] pl-3">AI & Automation</h3>
-                                                    <p className="text-[14px] text-[#9AA0AE] leading-relaxed">
+                                                <div className="space-y-6">
+                                                    <h3 className="text-xs font-mono font-bold text-[#10B981] uppercase tracking-widest border-t border-[#10B981] pt-4">AI & Automation</h3>
+                                                    <p className="text-sm text-[#94A3B8] leading-relaxed">
                                                         {report.strategicIntelligence.aiOpportunities?.summary || 'Schema markup, AI search optimization, process automation.'}
                                                     </p>
-                                                    <ul className="space-y-2.5 mt-4">
+                                                    <ul className="space-y-4">
                                                         {report.strategicIntelligence.aiOpportunities?.actions?.map((action, i) => (
-                                                            <li key={i} className="text-[14px] text-[#EDEEF2] leading-relaxed flex items-start gap-2.5">
-                                                                <span className="text-[#6B7280] mt-1.5 w-1 h-1 rounded-full bg-[#10B981] shrink-0"></span>
+                                                            <li key={i} className="text-sm text-[#E2E8F0] leading-relaxed flex items-start gap-3">
+                                                                <span className="text-[#64748B] font-mono select-none">0{i + 1}</span>
                                                                 <span>{action}</span>
                                                             </li>
                                                         ))}
@@ -666,156 +743,88 @@ export default function Dashboard() {
                                     )}
 
 
-                                    {/* STRATEGIC INDEX - Compact */}
-                                    <div className="flex items-center justify-between py-4 px-4 mb-6 rounded-lg bg-[#12141A] border border-white/[0.06]">
+                                    {/* STRATEGIC INDEX - TERMINAL STYLE */}
+                                    <div className="flex items-end justify-between py-8 border-b border-white/[0.1]">
                                         <div>
-                                            <div className="text-[11px] font-medium text-[#9AA0AE] uppercase tracking-[0.05em] mb-1">
-                                                Strategic Index
+                                            <div className="text-xs font-mono text-[#64748B] uppercase tracking-widest mb-2">
+                                                Strategic_Index
                                             </div>
-                                            <p className="text-[13px] text-[#9AA0AE] leading-tight max-w-md">
-                                                {report.coreSignals?.vibeScore?.summary || 'Digital presence quality'}
+                                            <p className="text-sm text-[#94A3B8] max-w-md leading-relaxed font-mono">
+                                                {report.coreSignals?.vibeScore?.summary || (
+                                                    <span className="animate-pulse bg-white/10 h-3 w-32 inline-block" />
+                                                )}
                                             </p>
                                         </div>
-                                        <div className="flex items-baseline gap-1 shrink-0 ml-4">
-                                            <span className="text-[32px] font-light text-[#EDEEF2] leading-none tracking-tight">
-                                                {report.coreSignals?.vibeScore?.score ? (
-                                                    <CountUp value={report.coreSignals.vibeScore.score} />
-                                                ) : '-'}
-                                            </span>
-                                            <span className="text-[14px] text-[#6B7280] font-medium">/100</span>
+                                        <div className="text-right">
+                                            {report.coreSignals?.vibeScore?.score ? (
+                                                <div className="flex items-baseline justify-end gap-2">
+                                                    <span className="text-6xl font-light text-white tracking-tighter">
+                                                        <CountUp value={report.coreSignals.vibeScore.score} />
+                                                    </span>
+                                                    <span className="text-sm text-[#64748B] font-mono mb-2">/100</span>
+                                                </div>
+                                            ) : (
+                                                <div className="flex flex-col items-end">
+                                                    <div className="h-12 w-24 bg-white/10 animate-pulse mb-2" />
+                                                    <span className="text-[10px] text-[#64748B] uppercase tracking-wider font-mono">CALCULATING_INDEX...</span>
+                                                </div>
+                                            )}
                                         </div>
                                     </div>
 
-                                    {/* CORE METRICS - Compact Cards */}
-                                    <section className="space-y-4 sm:space-y-6 mb-8">
-                                        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4">{/* Mobile-first grid */}
+                                    {/* CORE METRICS - GRID STYLE (NO CARDS) */}
+                                    <section className="border-b border-white/[0.1] mb-12">
+                                        <div className="grid grid-cols-1 md:grid-cols-3 divide-y md:divide-y-0 md:divide-x divide-white/[0.1]">
 
                                             {/* Headline Signal */}
-                                            <div className="p-4 rounded-lg bg-[#12141A] border border-white/[0.06]">
-                                                <div className="flex items-center justify-between mb-2">
-                                                    <span className="text-[11px] sm:text-[12px] font-medium text-[#9AA0AE] uppercase tracking-[0.05em]">
-                                                        Headline Signal
+                                            <div className="py-6 md:pr-6">
+                                                <div className="flex items-center justify-between mb-4">
+                                                    <span className="text-xs font-mono text-[#64748B] uppercase tracking-widest">
+                                                        Headline_Signal
                                                     </span>
-                                                    <span className={clsx("text-[16px] sm:text-[18px] font-medium", getGradeColor(report.coreSignals?.headlineSignal?.grade))}>
-                                                        {report.coreSignals?.headlineSignal?.grade}
-                                                    </span>
+                                                    {report.coreSignals?.headlineSignal?.grade ? (
+                                                        <span className={clsx("text-xl font-bold font-mono", getGradeColor(report.coreSignals?.headlineSignal?.grade))}>
+                                                            {report.coreSignals?.headlineSignal?.grade}
+                                                        </span>
+                                                    ) : (
+                                                        <span className="h-6 w-8 bg-white/10 animate-pulse" />
+                                                    )}
                                                 </div>
-                                                <p className="text-[13px] sm:text-[14px] text-[#EDEEF2] leading-relaxed">
-                                                    {report.coreSignals?.headlineSignal?.summary}
-                                                </p>
+                                                <div className="text-sm text-[#E2E8F0] leading-relaxed">
+                                                    {report.coreSignals?.headlineSignal?.summary || (
+                                                        <div className="space-y-2">
+                                                            <div className="h-3 w-3/4 bg-white/10 animate-pulse" />
+                                                            <div className="h-3 w-1/2 bg-white/10 animate-pulse" />
+                                                        </div>
+                                                    )}
+                                                </div>
                                             </div>
 
                                             {/* Visual Architecture */}
-                                            <div className="p-4 rounded-lg bg-[#12141A] border border-white/[0.06]">
-                                                <div className="flex items-center justify-between mb-2">
-                                                    <span className="text-[11px] sm:text-[12px] font-medium text-[#9AA0AE] uppercase tracking-[0.05em]">
-                                                        Visual Architecture
+                                            <div className="py-6 md:px-6">
+                                                <div className="flex items-center justify-between mb-4">
+                                                    <span className="text-xs font-mono text-[#64748B] uppercase tracking-widest">
+                                                        Visual_Architecture
                                                     </span>
-                                                    <span className={clsx("text-[16px] sm:text-[18px] font-medium", getGradeColor(report.coreSignals?.visualArchitecture?.grade))}>
-                                                        {report.coreSignals?.visualArchitecture?.grade}
-                                                    </span>
+                                                    {report.coreSignals?.visualArchitecture?.grade ? (
+                                                        <span className={clsx("text-xl font-bold font-mono", getGradeColor(report.coreSignals?.visualArchitecture?.grade))}>
+                                                            {report.coreSignals?.visualArchitecture?.grade}
+                                                        </span>
+                                                    ) : (
+                                                        <span className="h-6 w-8 bg-white/10 animate-pulse" />
+                                                    )}
                                                 </div>
-                                                <p className="text-[13px] sm:text-[14px] text-[#EDEEF2] leading-relaxed">
-                                                    {report.coreSignals?.visualArchitecture?.summary}
-                                                </p>
+                                                <div className="text-sm text-[#E2E8F0] leading-relaxed">
+                                                    {report.coreSignals?.visualArchitecture?.summary || (
+                                                        <div className="space-y-2">
+                                                            <div className="h-3 w-3/4 bg-white/10 animate-pulse" />
+                                                            <div className="h-3 w-1/2 bg-white/10 animate-pulse" />
+                                                        </div>
+                                                    )}
+                                                </div>
                                             </div>
 
                                             {/* Domain Integrity */}
-                                            <div className="p-4 rounded-lg bg-[#12141A] border border-white/[0.06]">
-                                                <div className="flex items-center justify-between mb-2">
-                                                    <span className="text-[11px] sm:text-[12px] font-medium text-[#9AA0AE] uppercase tracking-[0.05em]">
-                                                        Domain Integrity
-                                                    </span>
-                                                    {safety && (
-                                                        <span className={clsx("text-[16px] sm:text-[18px] font-medium", safety.isSafe ? "text-[#EDEEF2]" : "text-red-400")}>
-                                                            {safety.isSafe ? "PASS" : "FAIL"}
-                                                        </span>
-                                                    )}
-                                                </div>
-                                                {safety ? (
-                                                    <p className="text-[13px] sm:text-[14px] text-[#EDEEF2] leading-relaxed">
-                                                        {safety.isSafe
-                                                            ? "No threats detected"
-                                                            : `${safety.threats.length} threat(s) detected`
-                                                        }
-                                                    </p>
-                                                ) : (
-                                                    <p className="text-[13px] sm:text-[14px] text-[#9AA0AE]">Pending</p>
-                                                )}
-                                            </div>
-                                        </div>
-
-                                        {/* Core Web Vitals */}
-                                        <div className="p-4 rounded-lg bg-[#12141A] border border-white/[0.06]">{/* Compact CWV */}
-                                            {/* 4. CORE WEB VITALS */}
-                                            <div className="p-6 rounded-xl bg-[#1A1E26]/50 border border-white/[0.06] relative group">
-                                                <div className="absolute top-4 right-4 text-[#64748B] opacity-50 group-hover:opacity-100 transition-opacity">
-                                                    <Zap className="w-4 h-4" />
-                                                </div>
-                                                <div className="text-sm font-medium text-[#94A3B8] mb-4">Core Web Vitals</div>
-
-                                                {displayPerformance ? (
-                                                    <div className="space-y-4">
-                                                        <div className="flex items-end justify-between">
-                                                            <div className="flex items-baseline gap-1">
-                                                                <span className={clsx(
-                                                                    "text-4xl font-light tracking-tighter",
-                                                                    displayPerformance.lighthouseScore >= 90 ? "text-emerald-400" :
-                                                                        displayPerformance.lighthouseScore >= 50 ? "text-yellow-400" : "text-red-400"
-                                                                )}>
-                                                                    <CountUp value={displayPerformance.lighthouseScore} />
-                                                                </span>
-                                                                <span className="text-xs text-[#64748B] font-mono">/100</span>
-                                                            </div>
-                                                            <div className="text-xs font-mono text-[#64748B] bg-white/[0.05] px-2 py-1 rounded">
-                                                                Mobile
-                                                            </div>
-                                                        </div>
-
-                                                        <div className="grid grid-cols-2 gap-2 mt-2">
-                                                            <div className="bg-black/20 p-2 rounded border border-white/[0.02]">
-                                                                <div className="text-[10px] text-[#64748B] uppercase tracking-wider mb-1">LCP</div>
-                                                                <div className="text-sm text-white font-mono">{displayPerformance.lcp}</div>
-                                                            </div>
-                                                            <div className="bg-black/20 p-2 rounded border border-white/[0.02]">
-                                                                <div className="text-[10px] text-[#64748B] uppercase tracking-wider mb-1">INP</div>
-                                                                <div className="text-sm text-white font-mono">{displayPerformance.inp}</div>
-                                                            </div>
-                                                            <div className="bg-black/20 p-2 rounded border border-white/[0.02]">
-                                                                <div className="text-[10px] text-[#64748B] uppercase tracking-wider mb-1">CLS</div>
-                                                                <div className="text-sm text-white font-mono">{displayPerformance.cls}</div>
-                                                            </div>
-                                                            <div className="bg-black/20 p-2 rounded border border-white/[0.02]">
-                                                                <div className="text-[10px] text-[#64748B] uppercase tracking-wider mb-1">Speed Index</div>
-                                                                <div className="text-sm text-white font-mono">{displayPerformance.speedIndex}</div>
-                                                            </div>
-                                                        </div>
-                                                    </div>
-                                                ) : (
-                                                    <div className="h-32 flex flex-col items-center justify-center text-center opacity-60">
-                                                        {clientMetricsLoading ? (
-                                                            <>
-                                                                <Loader2 className="w-6 h-6 text-[#94A3B8] animate-spin mb-2" />
-                                                                <span className="text-xs text-[#94A3B8]">Connecting to Google...</span>
-                                                            </>
-                                                        ) : (
-                                                            status === 'complete' ? (
-                                                                <>
-                                                                    <Activity className="w-6 h-6 text-[#64748B] mb-2" />
-                                                                    <span className="text-xs text-[#64748B]">Data Unavailable</span>
-                                                                </>
-                                                            ) : (
-                                                                <>
-                                                                    <Loader2 className="w-6 h-6 text-[#94A3B8] animate-spin mb-2" />
-                                                                    <span className="text-xs text-[#94A3B8]">Measuring Speed...</span>
-                                                                </>
-                                                            )
-                                                        )}
-                                                    </div>
-                                                )}
-                                            </div>
-
-                                            {/* 5. DOMAIN INTEGRITY (SAFE BROWSING) */}
                                             <button
                                                 onClick={() => safety && setSelectedSignal({
                                                     title: 'Domain Integrity Protocol',
@@ -830,192 +839,196 @@ export default function Dashboard() {
                                                     }
                                                 })}
                                                 disabled={!safety}
-                                                className="p-6 rounded-xl bg-[#1A1E26]/50 border border-white/[0.06] relative group text-left hover:bg-[#1A1E26] hover:border-white/[0.15] transition-all w-full"
+                                                className="py-6 md:pl-6 text-left w-full hover:bg-white/[0.02] transition-colors"
                                             >
-                                                <Maximize2 className="absolute top-4 right-4 w-4 h-4 text-[#94A3B8] opacity-0 group-hover:opacity-100 transition-opacity" />
-                                                <div className="text-sm font-medium text-[#94A3B8] mb-4">Domain Integrity</div>
+                                                <div className="flex items-center justify-between mb-4">
+                                                    <span className="text-xs font-mono text-[#64748B] uppercase tracking-widest">
+                                                        Domain_Integrity
+                                                    </span>
+                                                    {safety && (
+                                                        <span className={clsx("text-xl font-bold font-mono", safety.isSafe ? "text-[#EDEEF2]" : "text-red-400")}>
+                                                            {safety.isSafe ? "PASS" : "FAIL"}
+                                                        </span>
+                                                    )}
+                                                </div>
 
                                                 {safety ? (
-                                                    <div className="flex flex-col h-full justify-between">
-                                                        <div className="flex items-center gap-2">
+                                                    <div className="text-sm text-[#E2E8F0] leading-relaxed">
+                                                        {safety.isSafe ? "No active malware or social threats." : `${safety.threats.length} active threat(s) detected.`}
+                                                        <div className="flex items-center gap-2 mt-2">
                                                             <div className={clsx(
-                                                                "w-2 h-2 rounded-full",
-                                                                safety.isSafe ? "bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.5)]" : "bg-red-500 shadow-[0_0_8px_rgba(239,68,68,0.5)]"
+                                                                "w-1.5 h-1.5 rounded-full",
+                                                                safety.isSafe ? "bg-emerald-500" : "bg-red-500"
                                                             )} />
-                                                            <span className={clsx(
-                                                                "text-lg font-bold tracking-tight",
-                                                                safety.isSafe ? "text-white" : "text-red-400"
-                                                            )}>
-                                                                {safety.isSafe ? "Verified Safe" : "Threat Detected"}
-                                                            </span>
-                                                        </div>
-
-                                                        {safety.isSafe ? (
-                                                            <div className="text-xs text-[#64748B] mt-2">
-                                                                No malware or social engineering threats detected by Google Protocol.
-                                                            </div>
-                                                        ) : (
-                                                            <div className="mt-2 space-y-1">
-                                                                {safety.threats.map(t => (
-                                                                    <div key={t} className="text-xs text-red-300 font-mono bg-red-500/10 px-2 py-1 rounded border border-red-500/20">
-                                                                        {t}
-                                                                    </div>
-                                                                ))}
-                                                            </div>
-                                                        )}
-
-                                                        <div className="mt-4 pt-4 border-t border-white/[0.06] flex items-center justify-between">
-                                                            <span className="text-[10px] text-[#64748B] uppercase tracking-wider">Source</span>
-                                                            <span className="text-[10px] text-white font-mono opacity-60">Google Safe Browsing API</span>
+                                                            <span className="text-xs text-[#64748B] font-mono">Google Safe Browsing API</span>
                                                         </div>
                                                     </div>
                                                 ) : (
-                                                    <div className="h-32 flex flex-col items-center justify-center text-center opacity-60">
-                                                        {safetyLoading ? (
-                                                            <>
-                                                                <Loader2 className="w-6 h-6 text-[#94A3B8] animate-spin mb-2" />
-                                                                <span className="text-xs text-[#94A3B8]">Verifying Integrity...</span>
-                                                            </>
-                                                        ) : safetyError ? (
-                                                            <>
-                                                                <AlertTriangle className="w-6 h-6 text-red-400 mb-2 opacity-80" />
-                                                                <span className="text-xs text-red-300">Verification Failed</span>
-                                                                <span className="text-[10px] text-red-400/60 mt-1 max-w-[150px] leading-tight">{safetyError}</span>
-                                                            </>
-                                                        ) : (
-                                                            <span className="text-xs text-[#64748B]">Waiting for scan...</span>
-                                                        )}
+                                                    <div className="space-y-2">
+                                                        <div className="h-3 w-3/4 bg-white/10 animate-pulse" />
+                                                        <div className="h-3 w-1/2 bg-white/10 animate-pulse" />
                                                     </div>
                                                 )}
                                             </button>
-
-                                            {/* REMOVED: Brand Authority (keeping Knowledge Graph data private) */}
-
                                         </div>
                                     </section>
+
+                                    {/* CORE WEB VITALS - TERMINAL STYLE */}
+                                    <div className="mb-16">
+                                        <div className="flex items-center gap-2 mb-6 opacity-70">
+                                            <Zap className="w-4 h-4 text-[#64748B]" />
+                                            <span className="text-xs font-mono text-[#64748B] uppercase tracking-widest">Core_Web_Vitals (Mobile)</span>
+                                        </div>
+
+                                        {displayPerformance ? (
+                                            <div className="grid grid-cols-2 md:grid-cols-5 gap-8 py-8 border-y border-white/[0.1]">
+                                                {/* CWV: Lighthouse */}
+                                                <div className="col-span-1 md:col-span-1 border-r border-white/[0.1] pr-4">
+                                                    <div className="text-[10px] text-[#64748B] uppercase tracking-wider mb-2 font-mono">Performance_Score</div>
+                                                    <div className={clsx(
+                                                        "text-4xl font-light tracking-tighter",
+                                                        getPerformanceColor(displayPerformance.lighthouseScore)
+                                                    )}>
+                                                        <CountUp value={displayPerformance.lighthouseScore} />
+                                                    </div>
+                                                </div>
+
+                                                {/* CWV: Metrics */}
+                                                <div className="col-span-1 md:col-span-1">
+                                                    <div className="text-[10px] text-[#64748B] uppercase tracking-wider mb-2 font-mono">LCP (Load)</div>
+                                                    <div className="text-xl text-white font-mono">{displayPerformance.lcp}</div>
+                                                </div>
+                                                <div className="col-span-1 md:col-span-1">
+                                                    <div className="text-[10px] text-[#64748B] uppercase tracking-wider mb-2 font-mono">INP (Interact)</div>
+                                                    <div className="text-xl text-white font-mono">{displayPerformance.inp}</div>
+                                                </div>
+                                                <div className="col-span-1 md:col-span-1">
+                                                    <div className="text-[10px] text-[#64748B] uppercase tracking-wider mb-2 font-mono">CLS (Stable)</div>
+                                                    <div className="text-xl text-white font-mono">{displayPerformance.cls}</div>
+                                                </div>
+                                                <div className="col-span-1 md:col-span-1">
+                                                    <div className="text-[10px] text-[#64748B] uppercase tracking-wider mb-2 font-mono">Speed_Index</div>
+                                                    <div className="text-xl text-white font-mono">{displayPerformance.speedIndex}</div>
+                                                </div>
+                                            </div>
+                                        ) : (
+                                            <div className="py-12 border-y border-white/[0.1] text-center">
+                                                <Loader2 className="w-5 h-5 text-[#38BDF8] animate-spin mx-auto mb-3" />
+                                                <span className="text-xs font-mono text-[#64748B]">MEASURING_LATENCY...</span>
+                                            </div>
+                                        )}
+                                    </div>
 
                                     {/* MAIN CONTENT GRID - WRAPPED IN PROGRESSIVE REVEAL */}
                                     <DeepAnalysisReveal status={status} className="mt-8">
                                         <div className="grid grid-cols-1 xl:grid-cols-4 gap-12">
 
-                                            {/* TACTICAL PLAN (LEFT COL) */}
-                                            <div className="xl:col-span-3 space-y-8">
-                                                <div className="flex items-center justify-between border-b border-white/[0.06] pb-4">
-                                                    <h3 className="font-bold text-white flex items-center gap-2">
-                                                        Tactical Execution Plan
-                                                        <span className="text-[#64748B] font-normal text-sm">({report.tacticalFixes?.length || 0} items)</span>
+                                            {/* TACTICAL EXECUTION PLAN - TERMINAL STYLE */}
+                                            <div className="xl:col-span-3 space-y-12">
+                                                <div className="flex items-center justify-between border-b border-white/[0.1] pb-6">
+                                                    <h3 className="text-xl font-light text-white uppercase tracking-tight">
+                                                        <TextDecode text="Tactical Execution Plan" />
+                                                        <span className="text-[#64748B] font-mono text-sm ml-4 normal-case">/ {report.tacticalFixes?.length || 0} ITEMS</span>
                                                     </h3>
-
-                                                    <div className="flex items-center gap-2 bg-[#1A1E26]/80 px-3 py-1.5 rounded-full border border-white/[0.06]">
-                                                        <div className={clsx("w-2 h-2 rounded-full shadow-[0_0_8px]", trustSignal > 80 ? "bg-emerald-500 shadow-emerald-500/50" : trustSignal > 50 ? "bg-amber-500 shadow-amber-500/50" : "bg-slate-500")} />
-                                                        <span className="text-xs font-semibold text-[#CBD5E1]">
-                                                            {trustSignal}% Evidence-Backed
-                                                        </span>
+                                                    <div className="text-xs font-mono text-[#64748B]">
+                                                        EVIDENCE_CONFIDENCE: <span className={clsx("text-white", trustSignal > 80 ? "text-emerald-400" : "text-amber-400")}>{trustSignal}%</span>
                                                     </div>
                                                 </div>
 
-                                                <div className="space-y-12">
-                                                    {report.tacticalFixes?.map((fix) => (
-                                                        <div key={fix.id} className="grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-12 group">
-                                                            <div className="lg:col-span-7 space-y-5">
+                                                <motion.div
+                                                    initial={{ opacity: 0 }}
+                                                    animate={{ opacity: 1 }}
+                                                    transition={{ duration: 0.5, delay: 0.2 }}
+                                                    className="divide-y divide-white/[0.1]"
+                                                >
+                                                    {report.tacticalFixes?.map((fix, idx) => (
+                                                        <motion.div
+                                                            key={fix.id || idx}
+                                                            className="grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-16 py-12 group first:pt-0"
+                                                        >
+                                                            {/* LEFT: CAUSE & ACTION */}
+                                                            <div className="lg:col-span-7 space-y-6">
                                                                 <div className="flex items-start justify-between">
-                                                                    <div className="space-y-1.5">
+                                                                    <div className="space-y-2">
                                                                         <div className="flex items-center gap-3">
-                                                                            <span className={clsx("text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded border", getImpactColor(fix.impact))}>
-                                                                                {fix.impact} Priority
+                                                                            <span className={clsx("text-[10px] font-mono font-bold uppercase tracking-widest", getImpactColor(fix.impact))}>
+                                                                                {fix.impact}_PRIORITY
                                                                             </span>
-                                                                            <span className="text-[10px] font-bold text-[#64748B] uppercase tracking-wider">{fix.category}</span>
+                                                                            <span className="text-[10px] font-mono font-bold text-[#64748B] uppercase tracking-widest">
+                                                                                    // {fix.category}
+                                                                            </span>
                                                                         </div>
-                                                                        <h4 className="font-bold text-white text-lg leading-snug">{fix.title}</h4>
+                                                                        <h4 className="text-2xl font-light text-white leading-tight">{fix.title}</h4>
                                                                     </div>
                                                                 </div>
-                                                                <div className="space-y-4">
-                                                                    <div className="bg-[#1A1E26]/30 border-l-2 border-[#475569] pl-4 py-3 rounded-r-lg">
-                                                                        <p className="text-sm text-[#E2E8F0] leading-relaxed font-medium">
-                                                                            <span className="text-[#64748B] uppercase text-[10px] font-bold block mb-1">Observation</span>
+
+                                                                <div className="grid grid-cols-1 gap-6">
+                                                                    <div className="pl-4 border-l border-white/[0.1]">
+                                                                        <span className="text-[#64748B] uppercase text-[10px] font-mono font-bold block mb-2">Observation</span>
+                                                                        <p className="text-sm text-[#94A3B8] leading-relaxed">
                                                                             {fix.problem}
                                                                         </p>
                                                                     </div>
-                                                                    <div className="pl-4 py-1">
-                                                                        <p className="text-sm text-[#94A3B8] leading-relaxed">
-                                                                            <span className="text-[#38BDF8] uppercase text-[10px] font-bold block mb-1">Strategic Recommendation</span>
+                                                                    <div className="pl-4 border-l border-[#38BDF8]">
+                                                                        <span className="text-[#38BDF8] uppercase text-[10px] font-mono font-bold block mb-2">Recommendation</span>
+                                                                        <p className="text-sm text-[#E2E8F0] leading-relaxed font-medium">
                                                                             {fix.recommendation}
                                                                         </p>
                                                                     </div>
-                                                                    <div className="flex items-center gap-4 text-xs text-[#64748B] font-medium pl-4 pt-2">
-                                                                        <span className="flex items-center gap-1.5"><Target className="w-3.5 h-3.5 text-[#475569]" /> {fix.expectedOutcome}</span>
-                                                                        <span className="text-[#334155]">|</span>
-                                                                        <span>{fix.effortHours}h Effort</span>
+                                                                </div>
+
+                                                                <div className="flex items-center gap-6 pt-2">
+                                                                    <div className="text-xs font-mono text-[#64748B]">
+                                                                        EFFORT: <span className="text-white">{fix.effortHours}h</span>
+                                                                    </div>
+                                                                    <div className="text-xs font-mono text-[#64748B]">
+                                                                        OUTCOME: <span className="text-emerald-400">{fix.expectedOutcome}</span>
                                                                     </div>
                                                                 </div>
                                                             </div>
-                                                            <div className="lg:col-span-5 flex flex-col h-full">
-                                                                <div className="bg-[#0B0D11] rounded-lg border border-white/[0.08] overflow-hidden flex-1 flex flex-col shadow-inner">
-                                                                    <div className="bg-[#151921] px-4 py-2 border-b border-white/[0.06] flex items-center justify-between">
-                                                                        <span className="text-[10px] font-bold text-[#64748B] uppercase tracking-widest flex items-center gap-1.5">
-                                                                            <Microscope className="w-3 h-3" /> Data Signal
-                                                                        </span>
+
+                                                            {/* RIGHT: EVIDENCE DATA */}
+                                                            <div className="lg:col-span-5">
+                                                                <div className="h-full pl-6 border-l border-white/[0.1]">
+                                                                    <div className="text-[10px] font-mono font-bold text-[#64748B] uppercase tracking-widest mb-6 flex items-center gap-2">
+                                                                        <Microscope className="w-3 h-3" /> Forensic_Evidence
                                                                     </div>
-                                                                    <div className="p-4 space-y-4 flex-1">
-                                                                        {fix.evidence && fix.evidence.length > 0 ? (
-                                                                            <ul className="space-y-3">
-                                                                                {fix.evidence.map((ev, i) => (
-                                                                                    <li key={i} className="text-xs flex flex-col gap-1.5">
-                                                                                        <span className="text-[10px] font-bold text-[#475569] uppercase tracking-wide">{ev.label}</span>
-                                                                                        <span className="font-mono text-[#E2E8F0] bg-[#1A1E26] border border-white/[0.05] rounded px-3 py-2 break-all leading-relaxed block">
-                                                                                            {ev.value}
-                                                                                        </span>
-                                                                                    </li>
-                                                                                ))}
-                                                                            </ul>
-                                                                        ) : (
-                                                                            <div className="h-full flex flex-col items-center justify-center text-center p-4 opacity-50">
-                                                                                <ShieldCheck className="w-8 h-8 text-[#334155] mb-2" />
-                                                                                <p className="text-xs text-[#64748B] italic">
-                                                                                    Pattern-based heuristic finding.<br />No direct DOM signal extracted.
-                                                                                </p>
-                                                                            </div>
-                                                                        )}
-                                                                    </div>
-                                                                    {fix.validationCriteria && (
-                                                                        <div className="bg-[#151921]/50 border-t border-white/[0.06] p-4">
-                                                                            <div className="text-[10px] font-bold text-[#38BDF8] uppercase tracking-widest mb-2 flex items-center gap-1.5">
-                                                                                <ShieldCheck className="w-3 h-3" /> Validation Criteria
-                                                                            </div>
-                                                                            <p className="text-xs text-[#94A3B8] leading-relaxed font-medium">
-                                                                                {fix.validationCriteria}
-                                                                            </p>
+
+                                                                    {fix.evidence && fix.evidence.length > 0 ? (
+                                                                        <ul className="space-y-4">
+                                                                            {fix.evidence.map((ev, i) => (
+                                                                                <li key={i} className="flex flex-col gap-1">
+                                                                                    <span className="text-[10px] text-[#64748B] uppercase tracking-wide font-mono">{ev.label}</span>
+                                                                                    <span className="text-xs font-mono text-[#E2E8F0] break-all border-b border-white/[0.1] pb-1 inline-block">
+                                                                                        {ev.value}
+                                                                                    </span>
+                                                                                </li>
+                                                                            ))}
+                                                                        </ul>
+                                                                    ) : (
+                                                                        <div className="h-full flex flex-col items-center justify-center text-center opacity-50">
+                                                                            <span className="text-xs font-mono text-[#64748B]">NO_DOM_SIGNAL</span>
                                                                         </div>
                                                                     )}
                                                                 </div>
                                                             </div>
-                                                            <div className="col-span-1 lg:col-span-12 h-px bg-white/[0.04] w-full mt-4" />
-                                                        </div>
+                                                        </motion.div>
                                                     ))}
-                                                </div>
+                                                </motion.div>
                                             </div>
 
-
-                                            {/* CTA - Implementation Support */}
-                                            <div className="col-span-full mt-12">
-                                                <div className="p-6 rounded-lg bg-[#12141A] border border-white/[0.06] hover:border-white/[0.09] transition-colors">
-                                                    <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
-                                                        <div className="flex-1">
-                                                            <h3 className="text-[16px] font-medium text-[#EDEEF2] mb-2">
-                                                                Need help implementing these changes?
-                                                            </h3>
-                                                            <p className="text-[13px] text-[#9AA0AE] leading-relaxed">
-                                                                Schedule a complimentary 15-minute consultation to discuss your site's optimization strategy.
-                                                            </p>
-                                                        </div>
-                                                        <a
-                                                            href="mailto:madebyskovie@gmail.com?subject=Flux%20Intelligence%20Consultation%20Request"
-                                                            className="shrink-0 px-5 py-2.5 rounded-lg bg-[#EDEEF2] text-[#0E0F12] text-[13px] font-medium hover:bg-white transition-colors focus:outline-none focus:ring-2 focus:ring-[#EDEEF2] focus:ring-offset-2 focus:ring-offset-[#12141A]"
-                                                        >
-                                                            Get Free Consultation
-                                                        </a>
-                                                    </div>
-                                                </div>
+                                            {/* CTA - TERMINAL STYLE */}
+                                            <div className="col-span-full mt-24 border-t border-white/[0.1] pt-12 text-center">
+                                                <h3 className="text-xl font-light text-white mb-4">Implementation Support</h3>
+                                                <p className="text-sm text-[#94A3B8] max-w-lg mx-auto mb-8 leading-relaxed">
+                                                    Systems optimization requires precision execution. Schedule a brief with our principal strategist.
+                                                </p>
+                                                <a
+                                                    href="mailto:madebyskovie@gmail.com?subject=Flux%20Intelligence%20Briefing%20Request"
+                                                    className="inline-flex items-center gap-2 px-8 py-3 bg-white text-black text-sm font-bold uppercase tracking-widest hover:bg-[#38BDF8] hover:text-white transition-colors"
+                                                >
+                                                    Initialize Contact <Target className="w-4 h-4" />
+                                                </a>
                                             </div>
 
 
@@ -1038,57 +1051,59 @@ export default function Dashboard() {
                                 onClick={() => setSelectedSignal(null)}
                             >
                                 <motion.div
-                                    initial={{ scale: 0.95, opacity: 0 }}
-                                    animate={{ scale: 1, opacity: 1 }}
-                                    exit={{ scale: 0.95, opacity: 0 }}
-                                    className="bg-[#0F1115] border border-white/[0.1] w-full max-w-2xl rounded-2xl shadow-2xl overflow-hidden"
+                                    initial={{ opacity: 0 }}
+                                    animate={{ opacity: 1 }}
+                                    exit={{ opacity: 0 }}
+                                    className="bg-[#0A0A0A] border border-white/[0.2] w-full max-w-2xl flex flex-col max-h-[85vh]"
                                     onClick={(e) => e.stopPropagation()}
                                 >
-                                    <div className="p-6 border-b border-white/[0.06] flex items-center justify-between bg-[#151921]">
+                                    <div className="p-6 border-b border-white/[0.1] flex items-center justify-between bg-[#0A0A0A] shrink-0">
                                         <div>
-                                            <div className="text-xs font-bold text-[#64748B] uppercase tracking-wider mb-1">{selectedSignal.title}</div>
-                                            <h3 className="text-xl font-bold text-white max-w-lg leading-tight">{selectedSignal.data.summary}</h3>
+                                            <div className="text-xs font-mono font-bold text-[#64748B] uppercase tracking-widest mb-2">// {selectedSignal.title}</div>
+                                            <h3 className="text-xl font-light text-white max-w-lg leading-tight">{selectedSignal.data.summary}</h3>
                                         </div>
-                                        <button onClick={() => setSelectedSignal(null)} className="p-2 hover:bg-white/[0.06] rounded-full transition-colors self-start">
+                                        <button onClick={() => setSelectedSignal(null)} className="p-2 hover:bg-white/[0.1] transition-colors border border-transparent hover:border-white/[0.1]">
                                             <X className="w-5 h-5 text-[#94A3B8]" />
                                         </button>
                                     </div>
-                                    <div className="p-8 space-y-8 max-h-[70vh] overflow-y-auto">
-                                        <div className="flex items-center gap-4">
-                                            <div className="p-4 bg-[#1A1E26] rounded-xl border border-white/[0.06] text-center min-w-[100px]">
-                                                <div className="text-xs font-bold text-[#64748B] uppercase mb-1">Grade</div>
-                                                <div className={clsx("text-3xl font-bold", getGradeColor(selectedSignal.data.grade).split(' ')[0])}>
+                                    <div className="p-8 space-y-8 overflow-y-auto bg-[#0A0A0A]">
+                                        <div className="flex items-start gap-8">
+                                            <div className="p-6 border border-white/[0.1] text-center min-w-[120px]">
+                                                <div className="text-[10px] font-mono font-bold text-[#64748B] uppercase tracking-widest mb-2">Grade_Score</div>
+                                                <div className={clsx("text-4xl font-light tracking-tighter", getGradeColor(selectedSignal.data.grade).split(' ')[0])}>
                                                     {selectedSignal.data.grade}
                                                 </div>
                                             </div>
-                                            <div className="flex-1">
-                                                <p className="text-sm text-[#E2E8F0] leading-relaxed font-medium">
+                                            <div className="flex-1 pt-2">
+                                                <p className="text-sm text-[#E2E8F0] leading-relaxed font-mono">
+                                                    <span className="text-[#64748B] uppercase select-none mr-2">{">>>"}</span>
                                                     {selectedSignal.data.whyItMatters}
                                                 </p>
                                             </div>
                                         </div>
                                         {selectedSignal.data.rationale && (
-                                            <div className="space-y-3">
-                                                <div className="text-xs font-bold text-[#38BDF8] uppercase tracking-widest flex items-center gap-2">
-                                                    <Microscope className="w-3.5 h-3.5" /> Detailed Rationale
-                                                    {status === 'complete' && (
-                                                        <button
-                                                            onClick={generateReport}
-                                                            className="text-xs font-medium text-[#94A3B8] hover:text-white transition-colors flex items-center gap-2 ml-auto"
-                                                        >
-                                                            <Share2 className="w-3.5 h-3.5" /> Download Report
-                                                        </button>
-                                                    )}
+                                            <div className="space-y-4">
+                                                <div className="text-xs font-mono font-bold text-[#38BDF8] uppercase tracking-widest flex items-center gap-2 border-b border-[#38BDF8]/20 pb-2">
+                                                    <Microscope className="w-3.5 h-3.5" /> Detailed_Rationale
+
                                                 </div>
-                                                <p className="text-sm text-[#94A3B8] leading-loose whitespace-pre-wrap">
+                                                <p className="text-sm text-[#94A3B8] leading-loose whitespace-pre-wrap font-mono">
                                                     {selectedSignal.data.rationale}
                                                 </p>
+                                                {status === 'complete' && (
+                                                    <button
+                                                        onClick={generateReport}
+                                                        className="text-xs font-mono font-bold text-white hover:underline transition-all flex items-center gap-2 mt-4"
+                                                    >
+                                                        [DOWNLOAD_FULL_REPORT] <Share2 className="w-3.5 h-3.5" />
+                                                    </button>
+                                                )}
                                             </div>
                                         )}
                                         {selectedSignal.data.quickWin && (
-                                            <div className="bg-[#1A1E26]/50 border border-emerald-500/20 rounded-xl p-6">
-                                                <div className="text-xs font-bold text-emerald-400 uppercase tracking-widest mb-2 flex items-center gap-2">
-                                                    <Target className="w-3.5 h-3.5" /> Quick Win Opportunity
+                                            <div className="border border-emerald-500/30 p-6">
+                                                <div className="text-xs font-mono font-bold text-emerald-400 uppercase tracking-widest mb-3 flex items-center gap-2">
+                                                    <Target className="w-3.5 h-3.5" /> Quick_Win_Protocol
                                                 </div>
                                                 <p className="text-sm text-[#CBD5E1] leading-relaxed">
                                                     {selectedSignal.data.quickWin}
@@ -1096,12 +1111,12 @@ export default function Dashboard() {
                                             </div>
                                         )}
                                     </div>
-                                    <div className="p-4 bg-[#151921] border-t border-white/[0.06] flex justify-end">
+                                    <div className="p-4 border-t border-white/[0.1] flex justify-end shrink-0 bg-[#0A0A0A]">
                                         <button
                                             onClick={() => setSelectedSignal(null)}
-                                            className="px-4 py-2 bg-white text-black text-sm font-bold rounded-lg hover:opacity-90 transition-opacity"
+                                            className="px-6 py-2 bg-white text-black text-xs font-mono font-bold uppercase hover:bg-[#38BDF8] hover:text-white transition-colors"
                                         >
-                                            Close Analysis
+                                            Close_Terminal
                                         </button>
                                     </div>
                                 </motion.div>
