@@ -1,0 +1,54 @@
+Vercel CLI 48.12.0
+Retrieving project…
+Deploying skovies-projects/flux-intel
+Uploading [--------------------] (0.0B/79.1KB)
+Uploading [========------------] (32.1KB/79.1KB)
+Uploading [============--------] (48.1KB/79.1KB)
+Uploading [================----] (64.1KB/79.1KB)
+Uploading [====================] (79.1KB/79.1KB)
+Inspect: https://vercel.com/skovies-projects/flux-intel/HRXq2CYWyQstfVrB6RKiELAzwAjZ [2s]
+Production: https://flux-intel-o58kqeek3-skovies-projects.vercel.app [2s]
+Queued...
+Queued...
+Building: Running build in Washington, D.C., USA (East) – iad1
+Building: Build machine configuration: 2 cores, 8 GB
+Building: Retrieving list of deployment files...
+Building: Downloading 467 deployment files...
+Building: Restored build cache from previous deployment (H56QHCEbbqsUDC54TDjY4grQ4PJh)
+Building: Running "vercel build"
+Building: Vercel CLI 50.1.3
+Building: Installing dependencies...
+Building: up to date in 1s
+Building: 168 packages are looking for funding
+Building: run `npm fund` for details
+Building: Detected Next.js version: 16.1.1
+Building: Running "npm run build"
+Building: > flux-intel@0.1.0 build
+Building: > next build
+Building: ▲ Next.js 16.1.1 (Turbopack)
+Building: Creating an optimized production build ...
+Building: ✓ Compiled successfully in 10.2s
+Building: Running TypeScript ...
+Building: Collecting page data using 1 worker ...
+Building: Generating static pages using 1 worker (0/7) ...
+Building: Generating static pages using 1 worker (1/7)
+Building: Generating static pages using 1 worker (3/7)
+Building: Generating static pages using 1 worker (5/7)
+Building: ✓ Generating static pages using 1 worker (7/7) in 135.6ms
+Building: Finalizing page optimization ...
+Building: Route (app)
+Building: ┌ ○ /
+Building: ├ ○ /_not-found
+Building: ├ ƒ /api/audit
+Building: ├ ƒ /api/authority
+Building: ├ ƒ /api/performance
+Building: └ ƒ /api/safety
+Building: ○  (Static)   prerendered as static content
+Building: ƒ  (Dynamic)  server-rendered on demand
+Building: Traced Next.js server files in: 36.211ms
+Building: Created all serverless functions in: 135.774ms
+Building: Collected static files (public/, static/, .next/static): 3.306ms
+Building: Build Completed in /vercel/output [20s]
+Building: Deploying outputs...
+[2K[1A[2K[GProduction: https://flux-intel-o58kqeek3-skovies-projects.vercel.app [34s]
+Completing...

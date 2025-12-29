@@ -707,133 +707,134 @@ export default function Dashboard() {
 
                             {/* HERO SECTION / INPUT */}
                             {status === 'idle' && !report && !error && (
-                                <div className="max-w-5xl mx-auto w-full space-y-12 mt-20">
-                                    <div className="space-y-6 max-w-2xl mx-auto text-center">
-                                        {/* HEADLINE */}
-                                        <div className="space-y-4">
-                                            <h2 className="text-5xl md:text-7xl font-bold tracking-tighter text-white mb-2 font-display">
-                                                Flux <span className="text-[#38BDF8] italic">Intelligence</span>
-                                            </h2>
-                                            <p className="text-lg text-[#94A3B8] font-light max-w-xl mx-auto leading-relaxed">
-                                                Advanced competitive reconnaissance and technical arbitrage engine.
-                                                <br />Transform audit data into <span className="text-white font-semibold">dominant market position</span>.
-                                            </p>
+                                <div className="max-w-3xl mx-auto w-full space-y-10 mt-16 px-4">
+
+                                    {/* HEADLINE - Premium SaaS Style */}
+                                    <div className="text-center space-y-5">
+                                        <h1 className="text-4xl md:text-6xl font-semibold tracking-tight text-white leading-[1.1]">
+                                            Website Performance
+                                            <br />
+                                            <span className="bg-gradient-to-r from-[#38BDF8] to-[#818CF8] bg-clip-text text-transparent">Intelligence</span>
+                                        </h1>
+                                        <p className="text-lg text-[#94A3B8] max-w-lg mx-auto leading-relaxed">
+                                            Analyze any website's performance, SEO health, and competitive positioning in seconds.
+                                        </p>
+                                    </div>
+
+                                    {/* MODE TOGGLE - Clean Pill Style */}
+                                    <div className="flex justify-center">
+                                        <div className="inline-flex items-center bg-[#1E293B] rounded-full p-1">
+                                            <button
+                                                onClick={() => setIsVsMode(false)}
+                                                className={clsx(
+                                                    "px-5 py-2 rounded-full text-sm font-medium transition-all duration-200",
+                                                    !isVsMode
+                                                        ? "bg-white text-[#0F172A] shadow-sm"
+                                                        : "text-[#94A3B8] hover:text-white"
+                                                )}
+                                            >
+                                                Single Audit
+                                            </button>
+                                            <button
+                                                onClick={() => setIsVsMode(true)}
+                                                className={clsx(
+                                                    "px-5 py-2 rounded-full text-sm font-medium transition-all duration-200",
+                                                    isVsMode
+                                                        ? "bg-white text-[#0F172A] shadow-sm"
+                                                        : "text-[#94A3B8] hover:text-white"
+                                                )}
+                                            >
+                                                Compare Sites
+                                            </button>
                                         </div>
                                     </div>
 
-                                    {/* VS MODE TOGGLE */}
-                                    <div className="flex justify-center mb-8">
-                                        <button
-                                            onClick={() => setIsVsMode(!isVsMode)}
-                                            className={clsx(
-                                                "group relative inline-flex items-center gap-3 px-6 py-2 rounded-full border transition-all duration-300",
-                                                isVsMode
-                                                    ? "bg-[#38BDF8]/10 border-[#38BDF8]/50 shadow-[0_0_20px_-5px_rgba(56,189,248,0.5)]"
-                                                    : "bg-white/5 border-white/10 hover:border-white/20"
-                                            )}
-                                        >
-                                            <span className={clsx(
-                                                "w-2 h-2 rounded-full transition-colors animate-pulse",
-                                                isVsMode ? "bg-[#38BDF8]" : "bg-[#64748B]"
-                                            )} />
-                                            <span className={clsx(
-                                                "text-xs font-mono tracking-[0.2em] font-bold",
-                                                isVsMode ? "text-[#38BDF8]" : "text-[#94A3B8]"
-                                            )}>
-                                                {isVsMode ? "● VS_MODE_ACTIVE" : "● ACTIVATE_VS_MODE"}
-                                            </span>
-                                        </button>
-                                    </div>
-
-                                    {/* INPUT ARRAY */}
+                                    {/* INPUT FORM - Premium Card Style */}
                                     <motion.form
                                         initial={false}
-                                        animate={isVsMode ? { maxWidth: "100%" } : { maxWidth: "42rem" }}
-                                        transition={{ duration: 0.5, ease: "circOut" }}
+                                        animate={isVsMode ? { maxWidth: "100%" } : { maxWidth: "36rem" }}
+                                        transition={{ duration: 0.3, ease: "easeOut" }}
                                         onSubmit={(e) => runAudit(e)}
                                         className={clsx(
-                                            "relative mx-auto transition-all duration-500",
-                                            isVsMode ? "grid grid-cols-1 md:grid-cols-2 gap-8" : "block"
+                                            "mx-auto transition-all duration-300",
+                                            isVsMode ? "grid grid-cols-1 md:grid-cols-2 gap-4" : "block"
                                         )}
                                     >
-                                        {/* YOUR URL */}
-                                        <div className="relative group">
-                                            <div className="absolute inset-0 bg-[#38BDF8]/20 blur-xl rounded-lg opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
-                                            <div className="relative flex items-center bg-[#0F172A] border border-white/10 rounded-lg p-2 focus-within:border-[#38BDF8] focus-within:shadow-[0_0_30px_-10px_rgba(56,189,248,0.3)] transition-all shadow-2xl">
-                                                <div className="pl-3 pr-2 text-[#64748B] font-mono text-xs opacity-50 select-none">{">"}</div>
+                                        {/* PRIMARY URL INPUT */}
+                                        <div className="relative">
+                                            {isVsMode && (
+                                                <label className="block text-xs font-medium text-[#64748B] mb-2 uppercase tracking-wide">
+                                                    Your Website
+                                                </label>
+                                            )}
+                                            <div className="flex items-center bg-[#1E293B] border border-[#334155] rounded-xl overflow-hidden focus-within:border-[#38BDF8] focus-within:ring-1 focus-within:ring-[#38BDF8]/20 transition-all">
+                                                <Globe className="w-5 h-5 text-[#64748B] ml-4" />
                                                 <input
                                                     type="text"
                                                     value={url}
                                                     onChange={(e) => setUrl(e.target.value)}
-                                                    placeholder={isVsMode ? "ENTER_TARGET_SELF..." : "Enter domain to intercept..."}
-                                                    className="w-full bg-transparent border-none text-white px-2 py-3 focus:ring-0 placeholder:text-[#64748B] font-mono text-sm tracking-wide"
+                                                    placeholder={isVsMode ? "https://yoursite.com" : "Enter any website URL..."}
+                                                    className="w-full bg-transparent text-white px-3 py-4 focus:ring-0 focus:outline-none placeholder:text-[#64748B] text-sm"
                                                     autoFocus
                                                 />
                                                 {!isVsMode && (
                                                     <button
                                                         type="submit"
                                                         disabled={!url.trim()}
-                                                        className="px-6 py-2 bg-[#38BDF8] text-[#0F172A] font-bold text-xs rounded md:hover:bg-[#7DD3FC] transition-colors disabled:opacity-50 disabled:cursor-not-allowed uppercase tracking-widest font-mono"
+                                                        className="px-6 py-3 m-1 bg-[#38BDF8] text-[#0F172A] font-semibold text-sm rounded-lg hover:bg-[#7DD3FC] transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
                                                     >
-                                                        SCAN
+                                                        Analyze
                                                     </button>
                                                 )}
                                             </div>
-                                            {isVsMode && <div className="absolute -top-3 left-4 text-[10px] font-mono text-[#38BDF8] bg-[#0B0F14] px-2 border border-[#38BDF8]/20">TARGET: SELF</div>}
                                         </div>
 
-                                        {/* ENEMY URL (VS MODE ONLY) */}
+                                        {/* COMPETITOR URL (Compare Mode) */}
                                         {isVsMode && (
                                             <motion.div
-                                                initial={{ opacity: 0, x: 20 }}
+                                                initial={{ opacity: 0, x: 10 }}
                                                 animate={{ opacity: 1, x: 0 }}
-                                                exit={{ opacity: 0, x: 20 }}
-                                                className="relative group"
+                                                className="relative"
                                             >
-                                                <div className="absolute inset-0 bg-red-500/20 blur-xl rounded-lg opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
-                                                <div className="relative flex items-center bg-[#0F172A] border border-white/10 rounded-lg p-2 focus-within:border-[#ef4444] transition-colors shadow-2xl">
-                                                    <Target className="w-5 h-5 text-[#64748B] ml-3" />
+                                                <label className="block text-xs font-medium text-[#64748B] mb-2 uppercase tracking-wide">
+                                                    Competitor Website
+                                                </label>
+                                                <div className="flex items-center bg-[#1E293B] border border-[#334155] rounded-xl overflow-hidden focus-within:border-[#818CF8] focus-within:ring-1 focus-within:ring-[#818CF8]/20 transition-all">
+                                                    <Target className="w-5 h-5 text-[#64748B] ml-4" />
                                                     <input
                                                         type="text"
                                                         value={enemyUrl}
                                                         onChange={(e) => setEnemyUrl(e.target.value)}
-                                                        placeholder="COMPETITOR SITE (URL)"
-                                                        className="w-full bg-transparent border-none text-white px-4 py-3 focus:ring-0 placeholder:text-[#64748B] font-mono text-sm"
+                                                        placeholder="https://competitor.com"
+                                                        className="w-full bg-transparent text-white px-3 py-4 focus:ring-0 focus:outline-none placeholder:text-[#64748B] text-sm"
                                                     />
                                                 </div>
-                                                <div className="absolute -top-3 left-4 text-[10px] font-mono text-white/50 bg-[#0B0F14] px-2">COMPETITOR</div>
                                             </motion.div>
                                         )}
 
-                                        {/* SHARED SUBMIT FOR VS MODE */}
+                                        {/* COMPARE SUBMIT BUTTON */}
                                         {isVsMode && (
-                                            <div className="md:col-span-2 flex justify-center mt-4">
+                                            <div className="md:col-span-2 mt-2">
                                                 <button
                                                     type="submit"
                                                     disabled={!url.trim() || !enemyUrl.trim()}
-                                                    className="group relative px-12 py-4 bg-white/5 border border-white/10 hover:bg-white/10 hover:border-white/20 text-white font-bold text-sm rounded-none transition-all disabled:opacity-50 disabled:cursor-not-allowed uppercase tracking-widest overflow-hidden"
+                                                    className="w-full py-4 bg-gradient-to-r from-[#38BDF8] to-[#818CF8] text-white font-semibold text-sm rounded-xl hover:opacity-90 transition-opacity disabled:opacity-40 disabled:cursor-not-allowed"
                                                 >
-                                                    <span className="relative z-10 flex items-center gap-3">
-                                                        INITIALIZE_WAR_ROOM
-                                                        <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
-                                                    </span>
-                                                    {/* Glitch Effect BG */}
-                                                    <div className="absolute inset-0 bg-white/5 translate-y-full group-hover:translate-y-0 transition-transform duration-300" />
+                                                    Compare Websites
                                                 </button>
                                             </div>
                                         )}
                                     </motion.form>
 
-                                    {/* QUICK ACTIONS */}
-                                    {/* QUICK ACTIONS */}
+                                    {/* QUICK SUGGESTIONS - Subtle */}
                                     {!isVsMode && (
-                                        <div className="flex flex-wrap justify-center gap-4 text-[10px] font-mono text-[#64748B] uppercase tracking-widest mt-8">
-                                            <span className="opacity-50">SUGGESTED_TARGETS:</span>
-                                            {['apple.com', 'stripe.com', 'linear.app'].map((domain) => (
+                                        <div className="flex flex-wrap justify-center gap-3 text-sm text-[#64748B]">
+                                            <span>Try:</span>
+                                            {['stripe.com', 'linear.app', 'vercel.com'].map((domain) => (
                                                 <button
                                                     key={domain}
                                                     onClick={() => { setUrl(`https://${domain}`); prefetchAudit(); }}
-                                                    className="hover:text-[#38BDF8] hover:underline transition-colors"
+                                                    className="text-[#94A3B8] hover:text-[#38BDF8] transition-colors"
                                                 >
                                                     {domain}
                                                 </button>
