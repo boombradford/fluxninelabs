@@ -105,21 +105,21 @@ const getGradeColor = (grade: string = 'C') => {
     const g = grade?.toUpperCase().charAt(0) || 'C';
     if (g === 'A') return 'text-emerald-400 bg-emerald-500/10 border-emerald-500/20';
     if (g === 'B') return 'text-blue-400 bg-blue-500/10 border-blue-500/20';
-    if (g === 'C') return 'text-amber-400 bg-amber-500/10 border-amber-500/20';
+    if (g === 'C') return 'text-orange-300 bg-orange-500/10 border-orange-500/20';
     return 'text-red-400 bg-red-500/10 border-red-500/20';
 };
 
 const getImpactColor = (impact: string) => {
     switch (impact) {
         case 'High': return 'text-red-300 border-red-500/30 bg-red-500/10';
-        case 'Medium': return 'text-amber-300 border-amber-500/30 bg-amber-500/10';
+        case 'Medium': return 'text-orange-300 border-orange-500/30 bg-orange-500/10';
         default: return 'text-emerald-300 border-emerald-500/30 bg-emerald-500/10';
     }
 };
 
 const getPerformanceColor = (score: number) => {
     if (score >= 90) return 'text-emerald-400';
-    if (score >= 50) return 'text-amber-400';
+    if (score >= 50) return 'text-orange-300';
     return 'text-red-400';
 };
 
@@ -1036,10 +1036,9 @@ export default function Dashboard() {
                                                 <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-16">
 
                                                     {/* VISUAL AUDIT */}
-                                                    <div className="flex flex-col space-y-4">
-                                                        <div className="flex items-center justify-between">
-                                                            <span className="tech-label text-white/60">Visual Surface Forensics</span>
-                                                            <span className="text-[10px] text-white/40 uppercase tracking-widest font-bold">Layer 01</span>
+                                                    <div className="flex flex-col space-y-6">
+                                                        <div className="flex items-center justify-center pb-6 border-b border-white/[0.06]">
+                                                            <span className="tech-label text-white/50">Visual Surface Forensics</span>
                                                         </div>
                                                         <div className="flex-1">
                                                             <TacticalVision
@@ -1053,60 +1052,59 @@ export default function Dashboard() {
 
                                                     {/* INTELLIGENCE SIDEBAR - Styled for Premium SaaS feel */}
                                                     <div className={clsx(
-                                                        "glass-card p-8 flex flex-col h-full bg-white/[0.01] border-white/[0.08]",
+                                                        "glass-card p-10 flex flex-col h-full bg-white/[0.01] border-white/[0.08] rounded-3xl",
                                                         status === 'analyzing_deep' && "ring-1 ring-[#f06c5b]/30 shadow-[0_0_40px_rgba(240,108,91,0.15)]"
                                                     )}>
-                                                        <div className="flex items-center justify-between mb-8 pb-4 border-b border-white/[0.08]">
-                                                            <span className="tech-label text-white/60">Intelligence Matrix</span>
-                                                            <span className="text-[10px] text-white/40 uppercase tracking-widest font-bold">Layer 02</span>
+                                                        <div className="flex items-center justify-center mb-10 pb-6 border-b border-white/[0.06]">
+                                                            <span className="tech-label text-white/50">Intelligence Matrix</span>
                                                         </div>
 
-                                                        <div className="grid grid-cols-1 md:grid-cols-2 gap-8 mb-10">
-                                                            <div className="space-y-1">
-                                                                <div className="tech-label text-white/40 lowercase">Performance Density</div>
-                                                                <div className="flex items-baseline gap-2">
-                                                                    <span className={clsx("text-6xl font-black tracking-tighter", getPerformanceColor(displayPerformance?.lighthouseScore || 0))}>
+                                                        <div className="grid grid-cols-2 gap-12 mb-12 flex-1 items-center">
+                                                            <div className="flex flex-col items-center text-center space-y-3">
+                                                                <div className="tech-label text-white/30 lowercase">Performance Density</div>
+                                                                <div className="flex flex-col items-center">
+                                                                    <span className={clsx("text-7xl font-black tracking-tighter", getPerformanceColor(displayPerformance?.lighthouseScore || 0))}>
                                                                         {displayPerformance?.lighthouseScore || "-"}
                                                                     </span>
-                                                                    <span className="text-[11px] font-bold text-white/40 uppercase tracking-widest">Base</span>
+                                                                    <span className="text-[10px] font-bold text-white/30 uppercase tracking-[0.2em] mt-2">Base</span>
                                                                 </div>
                                                             </div>
-                                                            <div className="space-y-1">
-                                                                <div className="tech-label text-white/40 lowercase">
+                                                            <div className="flex flex-col items-center text-center space-y-3">
+                                                                <div className="tech-label text-white/30 lowercase">
                                                                     {report.coreSignals?.vibeScore?.label || "Strategic Grade"}
                                                                 </div>
-                                                                <div className="flex items-baseline gap-2">
-                                                                    <span className={clsx("text-6xl font-black tracking-tighter", getGradeColor(report.coreSignals?.vibeScore?.grade))}>
+                                                                <div className="flex flex-col items-center">
+                                                                    <span className={clsx("text-7xl font-black tracking-tighter", getGradeColor(report.coreSignals?.vibeScore?.grade))}>
                                                                         {report.coreSignals?.vibeScore?.grade || "-"}
                                                                     </span>
-                                                                    <span className="text-[11px] font-bold text-white/40 uppercase tracking-widest">Core</span>
+                                                                    <span className="text-[10px] font-bold text-white/30 uppercase tracking-[0.2em] mt-2">Core</span>
                                                                 </div>
                                                             </div>
                                                         </div>
 
-                                                        {/* SECONDARY SIGNALS - Refined Contrast */}
-                                                        <div className="grid grid-cols-3 gap-6 py-8 border-y border-white/5 mb-8">
+                                                        {/* SECONDARY SIGNALS - iOS Inspired Grid */}
+                                                        <div className="grid grid-cols-3 gap-4 py-6 border-t border-white/[0.06] mt-auto">
                                                             <button
                                                                 onClick={() => setSelectedSignal({ title: 'Headline Strength', data: report.coreSignals?.headlineSignal })}
-                                                                className="text-center group"
+                                                                className="text-center group px-4 py-3 rounded-2xl hover:bg-white/[0.02] transition-all"
                                                             >
-                                                                <div className="text-[10px] font-bold mb-2 text-white/30 uppercase tracking-wider group-hover:text-[#f06c5b] transition-colors">Narrative</div>
-                                                                <div className={clsx("text-2xl font-black", getGradeColor(report.coreSignals?.headlineSignal?.grade))}>
+                                                                <div className="text-[9px] font-bold mb-2 text-white/30 uppercase tracking-[0.15em] group-hover:text-[#f06c5b] transition-colors">Narrative</div>
+                                                                <div className={clsx("text-3xl font-black", getGradeColor(report.coreSignals?.headlineSignal?.grade))}>
                                                                     {report.coreSignals?.headlineSignal?.grade || "-"}
                                                                 </div>
                                                             </button>
                                                             <button
                                                                 onClick={() => setSelectedSignal({ title: 'Visual Quality', data: report.coreSignals?.visualArchitecture })}
-                                                                className="text-center group"
+                                                                className="text-center group px-4 py-3 rounded-2xl hover:bg-white/[0.02] transition-all"
                                                             >
-                                                                <div className="text-[10px] font-bold mb-2 text-white/30 uppercase tracking-wider group-hover:text-[#f06c5b] transition-colors">Visual</div>
-                                                                <div className={clsx("text-2xl font-black", getGradeColor(report.coreSignals?.visualArchitecture?.grade))}>
+                                                                <div className="text-[9px] font-bold mb-2 text-white/30 uppercase tracking-[0.15em] group-hover:text-[#f06c5b] transition-colors">Visual</div>
+                                                                <div className={clsx("text-3xl font-black", getGradeColor(report.coreSignals?.visualArchitecture?.grade))}>
                                                                     {report.coreSignals?.visualArchitecture?.grade || "-"}
                                                                 </div>
                                                             </button>
-                                                            <div className="text-center">
-                                                                <div className="text-[10px] font-bold mb-2 text-white/30 uppercase tracking-wider">Integrity</div>
-                                                                <div className={clsx("text-2xl font-black", safety?.isSafe ? "text-[#10b981]" : "text-red-400")}>
+                                                            <div className="text-center px-4 py-3 rounded-2xl">
+                                                                <div className="text-[9px] font-bold mb-2 text-white/30 uppercase tracking-[0.15em]">Integrity</div>
+                                                                <div className={clsx("text-3xl font-black", safety?.isSafe ? "text-[#10b981]" : "text-red-400")}>
                                                                     {safety ? (safety.isSafe ? "PASS" : "FAIL") : "-"}
                                                                 </div>
                                                             </div>
@@ -1139,7 +1137,7 @@ export default function Dashboard() {
                                                 {report.domIssues?.lcp && (
                                                     <div className="p-4 bg-white/[0.02] rounded-lg border border-white/5 flex flex-col gap-2">
                                                         <div className="flex justify-between items-center">
-                                                            <span className="text-[10px] font-mono font-medium text-amber-500 uppercase tracking-[0.12em]">LCP Element</span>
+                                                            <span className="text-[10px] font-mono font-medium text-white/40 uppercase tracking-[0.12em]">LCP Element</span>
                                                             <span className="text-[8px] font-mono text-white/20">COORD: {(report.domIssues.lcp.rect as { left: number }).left},{(report.domIssues.lcp.rect as { top: number }).top}</span>
                                                         </div>
                                                         <div className="text-[10px] font-mono text-white/40 bg-black/40 p-2 rounded border border-white/5 overflow-hidden text-ellipsis whitespace-nowrap">
