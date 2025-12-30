@@ -1147,211 +1147,208 @@ export default function Dashboard() {
                                                         </div>
                                                     </div>
                                                 )}
-                                            </div>
-                                                </div>
 
-                                                {/* EXTRACTED NAVIGATION */}
-                                    {report.signals?.navigation && report.signals.navigation.length > 0 && (
-                                        <div className="mt-6 pt-6 border-t border-white/[0.05]">
-                                            <h3 className="text-[10px] font-mono font-medium text-[#a1a1aa] uppercase tracking-[0.12em] mb-3">Detected Navigation</h3>
-                                            <div className="flex flex-wrap gap-2">
-                                                {report.signals.navigation.map((item, i) => (
-                                                    <div key={i} className="px-2 py-1 bg-white/[0.03] border border-white/[0.05] rounded text-xs text-white/70 font-mono">
-                                                        {item}
-                                                    </div>
-                                                ))}
-                                            </div>
-                                        </div>
-                                    )}
-                                </div>)}
-                            <DeepAnalysisReveal status={status}>
-                                <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-                                    <div className="lg:col-span-3 space-y-12">
-                                        <div className="flex items-end justify-between border-b border-white/[0.12] pb-6 mb-12">
-                                            <h3 className="text-3xl font-bold tracking-tight text-[#f8fafc] flex items-center gap-4">
-                                                Tactical Action Plan
-                                                <span className="text-[14px] font-bold text-white/30 tracking-widest">[{report.tacticalFixes?.length || 0} ITEMS]</span>
-                                            </h3>
-                                            <div className="text-[12px] font-bold text-white/40 uppercase tracking-[0.2em] flex items-center gap-3">
-                                                Confidence Level: <span className={clsx("font-black", trustSignal > 80 ? "text-[#10b981]" : "text-[#f59e0b]")}>{trustSignal}%</span>
-                                            </div>
-                                        </div>
-
-                                        <div className="divide-y divide-[rgba(255,255,255,0.04)]">
-                                            {report.tacticalFixes?.map((fix, idx) => (
-                                                <div key={fix.id || idx} className="grid grid-cols-1 lg:grid-cols-2 gap-12 py-16 group">
-                                                    <div className="space-y-8">
-                                                        <div className="space-y-2">
-                                                            <div className="flex items-center gap-3">
-                                                                <span className={clsx("text-[11px] font-bold uppercase tracking-[0.15em]", getImpactColor(fix.impact))}>{fix.impact}</span>
-                                                                <span className="text-[11px] font-bold text-white/30 uppercase tracking-[0.15em]">{fix.category}</span>
-                                                            </div>
-                                                            <h4 className="text-2xl font-bold text-[#f8fafc] tracking-tight">{fix.title}</h4>
-                                                        </div>
-                                                        <div className="space-y-8">
-                                                            <div className="space-y-3">
-                                                                <span className="tech-label text-white/60">Observation</span>
-                                                                <p className="text-[16px] text-white/60 leading-relaxed font-medium">{fix.problem}</p>
-                                                            </div>
-                                                            <div className="space-y-3">
-                                                                <span className="tech-label text-[#f06c5b]/80">Recommendation</span>
-                                                                <p className="text-[16px] text-[#f8fafc] leading-relaxed font-semibold">{fix.recommendation}</p>
-                                                            </div>
+                                                {report.signals?.navigation && report.signals.navigation.length > 0 && (
+                                                    <div className="mt-6 pt-6 border-t border-white/[0.05]">
+                                                        <h3 className="text-[10px] font-mono font-medium text-[#a1a1aa] uppercase tracking-[0.12em] mb-3">Detected Navigation</h3>
+                                                        <div className="flex flex-wrap gap-2">
+                                                            {report.signals.navigation.map((item, i) => (
+                                                                <div key={i} className="px-2 py-1 bg-white/[0.03] border border-white/[0.05] rounded text-xs text-white/70 font-mono">
+                                                                    {item}
+                                                                </div>
+                                                            ))}
                                                         </div>
                                                     </div>
-                                                    <div className="space-y-8">
-                                                        <div className="grid grid-cols-2 gap-8">
-                                                            <div className="space-y-1.5">
-                                                                <span className="tech-label text-white/30">Effort Est.</span>
-                                                                <div className="text-[15px] font-bold text-[#f8fafc]">{fix.effortHours}h</div>
-                                                            </div>
-                                                            <div className="space-y-1.5">
-                                                                <span className="tech-label text-white/30">Target Outcome</span>
-                                                                <div className="text-[15px] font-bold text-[#f8fafc]">{fix.expectedOutcome}</div>
+                                                )}
+                                            </div>)}
+                                            <DeepAnalysisReveal status={status}>
+                                                <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+                                                    <div className="lg:col-span-3 space-y-12">
+                                                        <div className="flex items-end justify-between border-b border-white/[0.12] pb-6 mb-12">
+                                                            <h3 className="text-3xl font-bold tracking-tight text-[#f8fafc] flex items-center gap-4">
+                                                                Tactical Action Plan
+                                                                <span className="text-[14px] font-bold text-white/30 tracking-widest">[{report.tacticalFixes?.length || 0} ITEMS]</span>
+                                                            </h3>
+                                                            <div className="text-[12px] font-bold text-white/40 uppercase tracking-[0.2em] flex items-center gap-3">
+                                                                Confidence Level: <span className={clsx("font-black", trustSignal > 80 ? "text-[#10b981]" : "text-[#f59e0b]")}>{trustSignal}%</span>
                                                             </div>
                                                         </div>
-                                                        <div className="p-6 bg-white/[0.01] border border-white/[0.04] space-y-4 rounded-xl">
-                                                            <span className="tech-label opacity-40">Supporting Proof</span>
-                                                            <div className="grid grid-cols-1 gap-4">
-                                                                {(fix.evidence || []).slice(0, 4).map((ev, i) => (
-                                                                    <div key={i} className="flex flex-col gap-1">
-                                                                        <span className="text-[9px] font-medium text-white/30 uppercase tracking-widest">{ev.label}</span>
-                                                                        <span className="text-[12px] font-mono text-[#f06c5b] break-all">{ev.value}</span>
+
+                                                        <div className="divide-y divide-[rgba(255,255,255,0.04)]">
+                                                            {report.tacticalFixes?.map((fix, idx) => (
+                                                                <div key={fix.id || idx} className="grid grid-cols-1 lg:grid-cols-2 gap-12 py-16 group">
+                                                                    <div className="space-y-8">
+                                                                        <div className="space-y-2">
+                                                                            <div className="flex items-center gap-3">
+                                                                                <span className={clsx("text-[11px] font-bold uppercase tracking-[0.15em]", getImpactColor(fix.impact))}>{fix.impact}</span>
+                                                                                <span className="text-[11px] font-bold text-white/30 uppercase tracking-[0.15em]">{fix.category}</span>
+                                                                            </div>
+                                                                            <h4 className="text-2xl font-bold text-[#f8fafc] tracking-tight">{fix.title}</h4>
+                                                                        </div>
+                                                                        <div className="space-y-8">
+                                                                            <div className="space-y-3">
+                                                                                <span className="tech-label text-white/60">Observation</span>
+                                                                                <p className="text-[16px] text-white/60 leading-relaxed font-medium">{fix.problem}</p>
+                                                                            </div>
+                                                                            <div className="space-y-3">
+                                                                                <span className="tech-label text-[#f06c5b]/80">Recommendation</span>
+                                                                                <p className="text-[16px] text-[#f8fafc] leading-relaxed font-semibold">{fix.recommendation}</p>
+                                                                            </div>
+                                                                        </div>
                                                                     </div>
-                                                                ))}
-                                                            </div>
+                                                                    <div className="space-y-8">
+                                                                        <div className="grid grid-cols-2 gap-8">
+                                                                            <div className="space-y-1.5">
+                                                                                <span className="tech-label text-white/30">Effort Est.</span>
+                                                                                <div className="text-[15px] font-bold text-[#f8fafc]">{fix.effortHours}h</div>
+                                                                            </div>
+                                                                            <div className="space-y-1.5">
+                                                                                <span className="tech-label text-white/30">Target Outcome</span>
+                                                                                <div className="text-[15px] font-bold text-[#f8fafc]">{fix.expectedOutcome}</div>
+                                                                            </div>
+                                                                        </div>
+                                                                        <div className="p-6 bg-white/[0.01] border border-white/[0.04] space-y-4 rounded-xl">
+                                                                            <span className="tech-label opacity-40">Supporting Proof</span>
+                                                                            <div className="grid grid-cols-1 gap-4">
+                                                                                {(fix.evidence || []).slice(0, 4).map((ev, i) => (
+                                                                                    <div key={i} className="flex flex-col gap-1">
+                                                                                        <span className="text-[9px] font-medium text-white/30 uppercase tracking-widest">{ev.label}</span>
+                                                                                        <span className="text-[12px] font-mono text-[#f06c5b] break-all">{ev.value}</span>
+                                                                                    </div>
+                                                                                ))}
+                                                                            </div>
+                                                                        </div>
+                                                                    </div>
+                                                                </div>
+                                                            ))}
                                                         </div>
                                                     </div>
-                                                </div>
-                                            ))}
-                                        </div>
-                                    </div>
 
-                                    <div className="col-span-full mt-24 border border-[rgba(255,255,255,0.06)] bg-white/[0.01] p-12 text-center max-w-4xl mx-auto">
-                                        <div className="tech-label mb-6">Execution Support</div>
-                                        <h3 className="text-2xl font-semibold text-[#E8E8E8] mb-4 tracking-tight">Access Principal Strategist</h3>
-                                        <p className="text-[13px] text-[#909090] max-w-lg mx-auto mb-10 leading-relaxed">
-                                            Strategic pivots require precision instrumentation. Coordinate with our technical team for immediate implementation support.
-                                        </p>
-                                        <a href="mailto:madebyskovie@gmail.com?subject=Strategic%20Briefing%20Request" className="inline-flex items-center gap-3 px-10 py-3.5 bg-[#f06c5b] text-white text-[12px] font-bold uppercase tracking-widest hover:bg-[#ff7d6d] transition-all rounded-xl shadow-[0_0_20px_rgba(240,108,91,0.2)]">
-                                            Initialize Sync <Activity className="w-4 h-4" />
-                                        </a>
-                                    </div>
-                                </div>
-                            </DeepAnalysisReveal>
-                        </motion.div>
+                                                    <div className="col-span-full mt-24 border border-[rgba(255,255,255,0.06)] bg-white/[0.01] p-12 text-center max-w-4xl mx-auto">
+                                                        <div className="tech-label mb-6">Execution Support</div>
+                                                        <h3 className="text-2xl font-semibold text-[#E8E8E8] mb-4 tracking-tight">Access Principal Strategist</h3>
+                                                        <p className="text-[13px] text-[#909090] max-w-lg mx-auto mb-10 leading-relaxed">
+                                                            Strategic pivots require precision instrumentation. Coordinate with our technical team for immediate implementation support.
+                                                        </p>
+                                                        <a href="mailto:madebyskovie@gmail.com?subject=Strategic%20Briefing%20Request" className="inline-flex items-center gap-3 px-10 py-3.5 bg-[#f06c5b] text-white text-[12px] font-bold uppercase tracking-widest hover:bg-[#ff7d6d] transition-all rounded-xl shadow-[0_0_20px_rgba(240,108,91,0.2)]">
+                                                            Initialize Sync <Activity className="w-4 h-4" />
+                                                        </a>
+                                                    </div>
+                                                </div>
+                                            </DeepAnalysisReveal>
+                                        </motion.div>
                                     )}
-                    </AnimatePresence>
+                                </AnimatePresence>
                             )}
 
-                    {/* DETAIL MODAL (Unchanged) */}
-                    <AnimatePresence>
-                        {selectedSignal && (
-                            <motion.div
-                                initial={{ opacity: 0 }}
-                                animate={{ opacity: 1 }}
-                                exit={{ opacity: 0 }}
-                                className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm"
-                                onClick={() => setSelectedSignal(null)}
-                            >
-                                <motion.div
-                                    initial={{ opacity: 0 }}
-                                    animate={{ opacity: 1 }}
-                                    exit={{ opacity: 0 }}
-                                    className="bg-[#0A0A0A] border border-white/[0.2] w-full max-w-2xl flex flex-col max-h-[85vh]"
-                                    onClick={(e) => e.stopPropagation()}
-                                >
-                                    <div className="p-6 border-b border-white/[0.1] flex items-center justify-between bg-[#0A0A0A] shrink-0">
-                                        <div>
-                                            <div className="text-xs font-mono font-medium text-[#a1a1aa] uppercase tracking-[0.12em] mb-2">{'//'} {selectedSignal.title}</div>
-                                            <h3 className="text-xl font-light text-white max-w-lg leading-tight">{selectedSignal.data.summary}</h3>
-                                        </div>
-                                        <button onClick={() => setSelectedSignal(null)} className="p-2 hover:bg-white/[0.1] transition-colors border border-transparent hover:border-white/[0.1]">
-                                            <X className="w-5 h-5 text-[#a1a1aa]" />
-                                        </button>
-                                    </div>
-                                    <div className="p-8 space-y-8 overflow-y-auto bg-[#0A0A0A]">
-                                        <div className="flex items-start gap-8">
-                                            <div className="p-6 border border-white/[0.1] text-center min-w-[120px]">
-                                                <div className="text-[10px] font-mono font-medium text-[#64748B] uppercase tracking-[0.12em] mb-2">Grade Score</div>
-                                                <div className={clsx("text-4xl font-light tracking-tighter", getGradeColor(selectedSignal.data.grade).split(' ')[0])}>
-                                                    {selectedSignal.data.grade}
+                            {/* DETAIL MODAL (Unchanged) */}
+                            <AnimatePresence>
+                                {selectedSignal && (
+                                    <motion.div
+                                        initial={{ opacity: 0 }}
+                                        animate={{ opacity: 1 }}
+                                        exit={{ opacity: 0 }}
+                                        className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm"
+                                        onClick={() => setSelectedSignal(null)}
+                                    >
+                                        <motion.div
+                                            initial={{ opacity: 0 }}
+                                            animate={{ opacity: 1 }}
+                                            exit={{ opacity: 0 }}
+                                            className="bg-[#0A0A0A] border border-white/[0.2] w-full max-w-2xl flex flex-col max-h-[85vh]"
+                                            onClick={(e) => e.stopPropagation()}
+                                        >
+                                            <div className="p-6 border-b border-white/[0.1] flex items-center justify-between bg-[#0A0A0A] shrink-0">
+                                                <div>
+                                                    <div className="text-xs font-mono font-medium text-[#a1a1aa] uppercase tracking-[0.12em] mb-2">{'//'} {selectedSignal.title}</div>
+                                                    <h3 className="text-xl font-light text-white max-w-lg leading-tight">{selectedSignal.data.summary}</h3>
                                                 </div>
+                                                <button onClick={() => setSelectedSignal(null)} className="p-2 hover:bg-white/[0.1] transition-colors border border-transparent hover:border-white/[0.1]">
+                                                    <X className="w-5 h-5 text-[#a1a1aa]" />
+                                                </button>
                                             </div>
-                                            <div className="flex-1 pt-2">
-                                                <p className="text-sm text-[#E2E8F0] leading-relaxed font-mono">
-                                                    <span className="text-[#a1a1aa] uppercase select-none mr-2">{">>>"}</span>
-                                                    {selectedSignal.data.whyItMatters}
-                                                </p>
-                                            </div>
-                                        </div>
-                                        {selectedSignal.data.rationale && (
-                                            <div className="space-y-4">
-                                                <div className="text-xs font-semibold text-[#f06c5b] uppercase tracking-[0.2em] flex items-center gap-2 border-b border-[#f06c5b]/20 pb-2">
-                                                    <Microscope className="w-3.5 h-3.5" /> Detailed Rationale
+                                            <div className="p-8 space-y-8 overflow-y-auto bg-[#0A0A0A]">
+                                                <div className="flex items-start gap-8">
+                                                    <div className="p-6 border border-white/[0.1] text-center min-w-[120px]">
+                                                        <div className="text-[10px] font-mono font-medium text-[#64748B] uppercase tracking-[0.12em] mb-2">Grade Score</div>
+                                                        <div className={clsx("text-4xl font-light tracking-tighter", getGradeColor(selectedSignal.data.grade).split(' ')[0])}>
+                                                            {selectedSignal.data.grade}
+                                                        </div>
+                                                    </div>
+                                                    <div className="flex-1 pt-2">
+                                                        <p className="text-sm text-[#E2E8F0] leading-relaxed font-mono">
+                                                            <span className="text-[#a1a1aa] uppercase select-none mr-2">{">>>"}</span>
+                                                            {selectedSignal.data.whyItMatters}
+                                                        </p>
+                                                    </div>
                                                 </div>
-                                                <p className="text-sm text-[#a1a1aa] leading-loose whitespace-pre-wrap font-mono">
-                                                    {selectedSignal.data.rationale}
-                                                </p>
-                                                {status === 'complete' && (
-                                                    <button
-                                                        onClick={generateReport}
-                                                        className="text-xs font-mono font-medium text-white hover:underline transition-all flex items-center gap-2 mt-4"
-                                                    >
-                                                        Download Report <Share2 className="w-3.5 h-3.5" />
-                                                    </button>
+                                                {selectedSignal.data.rationale && (
+                                                    <div className="space-y-4">
+                                                        <div className="text-xs font-semibold text-[#f06c5b] uppercase tracking-[0.2em] flex items-center gap-2 border-b border-[#f06c5b]/20 pb-2">
+                                                            <Microscope className="w-3.5 h-3.5" /> Detailed Rationale
+                                                        </div>
+                                                        <p className="text-sm text-[#a1a1aa] leading-loose whitespace-pre-wrap font-mono">
+                                                            {selectedSignal.data.rationale}
+                                                        </p>
+                                                        {status === 'complete' && (
+                                                            <button
+                                                                onClick={generateReport}
+                                                                className="text-xs font-mono font-medium text-white hover:underline transition-all flex items-center gap-2 mt-4"
+                                                            >
+                                                                Download Report <Share2 className="w-3.5 h-3.5" />
+                                                            </button>
+                                                        )}
+                                                    </div>
+                                                )}
+                                                {selectedSignal.data.quickWin && (
+                                                    <div className="border border-emerald-500/30 p-6">
+                                                        <div className="text-xs font-mono font-medium text-emerald-400 uppercase tracking-[0.12em] mb-3 flex items-center gap-2">
+                                                            <Target className="w-3.5 h-3.5" /> Quick Win Protocol
+                                                        </div>
+                                                        <p className="text-sm text-[#CBD5E1] leading-relaxed">
+                                                            {selectedSignal.data.quickWin}
+                                                        </p>
+                                                    </div>
                                                 )}
                                             </div>
-                                        )}
-                                        {selectedSignal.data.quickWin && (
-                                            <div className="border border-emerald-500/30 p-6">
-                                                <div className="text-xs font-mono font-medium text-emerald-400 uppercase tracking-[0.12em] mb-3 flex items-center gap-2">
-                                                    <Target className="w-3.5 h-3.5" /> Quick Win Protocol
-                                                </div>
-                                                <p className="text-sm text-[#CBD5E1] leading-relaxed">
-                                                    {selectedSignal.data.quickWin}
-                                                </p>
+                                            <div className="p-4 border-t border-white/[0.08] flex justify-end shrink-0 bg-[#030712]">
+                                                <button
+                                                    onClick={() => setSelectedSignal(null)}
+                                                    className="px-8 py-2.5 bg-[#f8fafc] text-[#030712] text-[12px] font-bold uppercase tracking-widest hover:bg-[#64748b] hover:text-white transition-all rounded-lg"
+                                                >
+                                                    Dismiss
+                                                </button>
                                             </div>
-                                        )}
+                                        </motion.div>
+                                    </motion.div>
+                                )}
+                            </AnimatePresence>
+
+                            {/* VS MODE (COMPETITOR RESEARCH) */}
+                            {
+                                activeView === 'vs' && report && report.vs && (
+                                    <WarRoomView
+                                        selfReport={report.vs.self}
+                                        enemyReport={report.vs.enemy}
+                                    />
+                                )
+                            }
+
+                            {/* MONITOR / STRATEGY PLACEHOLDERS */}
+                            {activeView === 'monitor' && <MonitorView />}
+
+                            {
+                                (activeView === 'strategy' || activeView === 'settings') && (
+                                    <div className="max-w-4xl mx-auto py-12 text-center text-[#a1a1aa]">
+                                        <Settings className="w-12 h-12 mx-auto text-[#334155] mb-4" />
+                                        <h2 className="text-lg font-semibold text-white">System View</h2>
+                                        <p className="text-sm">This module is currently under development.</p>
                                     </div>
-                                    <div className="p-4 border-t border-white/[0.08] flex justify-end shrink-0 bg-[#030712]">
-                                        <button
-                                            onClick={() => setSelectedSignal(null)}
-                                            className="px-8 py-2.5 bg-[#f8fafc] text-[#030712] text-[12px] font-bold uppercase tracking-widest hover:bg-[#64748b] hover:text-white transition-all rounded-lg"
-                                        >
-                                            Dismiss
-                                        </button>
-                                    </div>
-                                </motion.div>
-                            </motion.div>
-                        )}
-                    </AnimatePresence>
+                                )
+                            }
 
-                    {/* VS MODE (COMPETITOR RESEARCH) */}
-                    {
-                        activeView === 'vs' && report && report.vs && (
-                            <WarRoomView
-                                selfReport={report.vs.self}
-                                enemyReport={report.vs.enemy}
-                            />
-                        )
-                    }
-
-                    {/* MONITOR / STRATEGY PLACEHOLDERS */}
-                    {activeView === 'monitor' && <MonitorView />}
-
-                    {
-                        (activeView === 'strategy' || activeView === 'settings') && (
-                            <div className="max-w-4xl mx-auto py-12 text-center text-[#a1a1aa]">
-                                <Settings className="w-12 h-12 mx-auto text-[#334155] mb-4" />
-                                <h2 className="text-lg font-semibold text-white">System View</h2>
-                                <p className="text-sm">This module is currently under development.</p>
-                            </div>
-                        )
-                    }
-
-                </div>
-        </div>
+                        </div>
+                    </div>
                 </div >
             </main >
         </div >
