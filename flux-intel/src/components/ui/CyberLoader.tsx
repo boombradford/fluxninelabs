@@ -1,5 +1,6 @@
 import { motion } from 'framer-motion';
 import React from 'react';
+import { clsx } from 'clsx';
 
 interface ScanPanelProps {
     text?: string;
