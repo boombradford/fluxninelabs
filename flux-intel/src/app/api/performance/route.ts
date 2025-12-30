@@ -15,27 +15,26 @@ async function fetchPageSpeedMetrics(url: string) {
         try {
             const res = await attemptFetch(true);
             data = res.data;
-        } catch (e: any) {
+        } catch (e) {
             console.warn(`[Flux PSI API] First attempt failed. Retrying without key...`);
             const res = await attemptFetch(false);
             data = res.data;
         }
 
-        const lighthouse = data.lighthouseResult?.categories?.performance?.score * 100 || 0;
-        const aud = data.lighthouseResult?.audits || {};
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        const audits = (data.lighthouseResult.audits || {}) as any;
 
         return {
-            lighthouseScore: Math.round(lighthouse),
-            lcp: aud['largest-contentful-paint']?.displayValue || 'N/A',
-            inp: aud['interaction-to-next-paint']?.displayValue || 'N/A',
-            cls: aud['cumulative-layout-shift']?.displayValue || 'N/A',
-            speedIndex: aud['speed-index']?.displayValue || 'N/A',
-            fcp: aud['first-contentful-paint']?.displayValue || 'N/A',
-            fid: aud['max-potential-fid']?.displayValue || 'N/A',
-            tti: aud['interactive']?.displayValue || 'N/A'
+            lighthouseScore: Math.round(data.lighthouseResult.categories.performance.score * 100),
+            lcp: audits['largest-contentful-paint']?.displayValue,
+            inp: audits['interactive']?.displayValue, // Proxy for INP
+            cls: audits['cumulative-layout-shift']?.displayValue,
+            speedIndex: audits['speed-index']?.displayValue,
+            fcp: audits['first-contentful-paint']?.displayValue,
         };
-    } catch (error: any) {
-        console.error(`[Flux PSI API] Failed: ${error.message}`);
+    } catch (error) {
+        const err = error instanceof Error ? error : new Error(String(error));
+        console.error(`[Flux PSI API] Failed: ${err.message}`);
         return null;
     }
 }

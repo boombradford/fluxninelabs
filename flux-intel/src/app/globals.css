@@ -2,90 +2,115 @@
 @import "tailwindcss";
 
 @theme {
-    /* Executive-Grade Color Palette */
-    --color-app-background: #0A0B0E;
-    --color-canvas-background: #12141A;
-    --color-card-surface: #1A1D25;
-    --color-text-primary: #F9FAFB;
-    --color-text-secondary: #9CA3AF;
-    --color-text-muted: #6B7280;
-    --color-accent-blue: #3B82F6;
-    --color-accent-cyan: #06B6D4;
-    --color-success: #10B981;
-    --color-warning: #F59E0B;
-    --color-error: #EF4444;
+    /* Flux Nine Labs - Premium Brand Alignment */
+    --color-app-background: #030712;
+    --color-canvas-background: #050914;
+    --color-card-surface: rgba(255, 255, 255, 0.03);
+    --color-text-primary: #ffffff;
+    --color-text-secondary: #cbd5e1;
+    /* Boosted from #94a3b8 */
+    --color-text-muted: #94a3b8;
+    /* Boosted from #8b96a5 */
+    /* Increased contrast for readability */
+    --color-accent: #f06c5b;
+    /* Brand Coral/Salmon */
+    --color-accent-blue: #6366f1;
+    /* Brand Indigo */
+    --color-success: #10b981;
+    --color-warning: #f59e0b;
+    --color-error: #ef4444;
     --color-divider: rgba(255, 255, 255, 0.08);
-    --color-divider-subtle: rgba(255, 255, 255, 0.04);
+    --color-divider-strong: rgba(255, 255, 255, 0.12);
 }
 
 @layer base {
     body {
         background-color: var(--color-app-background);
-        /* Subtle grain texture for premium feel */
-        background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='400' height='400'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='3' /%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)' opacity='0.02'/%3E%3C/svg%3E");
         color: var(--color-text-primary);
-        font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
-        font-feature-settings: 'cv02', 'cv03', 'cv04', 'cv11';
-        /* Inter stylistic sets for professional look */
+        font-family: var(--font-geist-sans), -apple-system, sans-serif;
+        font-feature-settings: 'cv01', 'cv02', 'cv03', 'cv04', 'cv11', 'ss01';
         -webkit-font-smoothing: antialiased;
-        -moz-osx-font-smoothing: grayscale;
         text-rendering: optimizeLegibility;
         letter-spacing: -0.011em;
-        /* Tighter tracking for executive feel */
+        position: relative;
+        overflow-x: hidden;
     }
 
-    /* Typography Scale - Executive Grade */
+    body::before {
+        content: "";
+        position: fixed;
+        inset: 0;
+        background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.65' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)'/%3E%3C/svg%3E");
+        opacity: 0.025;
+        pointer-events: none;
+        z-index: 100;
+    }
+
+    /* Typography Scale - Premium Alignment */
     h1 {
-        font-size: 2.25rem;
+        font-size: clamp(2rem, 4vw, 3.5rem);
         font-weight: 700;
-        line-height: 1.2;
-        letter-spacing: -0.02em;
+        line-height: 1.1;
+        letter-spacing: -0.04em;
+        color: var(--color-text-primary);
     }
 
     h2 {
-        font-size: 1.875rem;
-        font-weight: 700;
-        line-height: 1.25;
-        letter-spacing: -0.02em;
+        font-size: 1.5rem;
+        font-weight: 600;
+        line-height: 1.2;
+        letter-spacing: -0.025em;
+        color: var(--color-text-primary);
     }
 
     h3 {
-        font-size: 1.5rem;
+        font-size: 1.125rem;
         font-weight: 600;
-        line-height: 1.3;
-        letter-spacing: -0.015em;
-    }
-
-    h4 {
-        font-size: 1.25rem;
-        font-weight: 600;
-        line-height: 1.4;
+        line-height: 1.35;
+        letter-spacing: -0.02em;
+        color: var(--color-text-primary);
     }
 
     p {
-        line-height: 1.65;
+        line-height: 1.6;
         font-weight: 400;
+        color: var(--color-text-secondary);
+        font-size: 1rem;
     }
 
-    /* Data/Monospace for metrics */
     .font-mono {
-        font-family: 'SF Mono', 'Fira Code', 'Consolas', monospace;
+        font-family: var(--font-geist-mono), monospace;
         font-feature-settings: 'zero', 'ss01';
-        /* Slashed zero for clarity */
+        letter-spacing: -0.012em;
     }
 
-    @keyframes text-shimmer {
-        0% {
-            background-position: 0% 50%;
-        }
-
-        100% {
-            background-position: 100% 50%;
-        }
+    .tech-label {
+        font-size: 10px;
+        font-weight: 600;
+        letter-spacing: 0.15em;
+        color: var(--color-text-muted);
+        text-transform: uppercase;
+        font-family: var(--font-geist-sans);
     }
 
-    .animate-text-shimmer {
-        animation: text-shimmer 3s ease-in-out infinite alternate;
+    .glass-card {
+        background: var(--color-card-surface);
+        border: 1px solid var(--color-divider);
+        border-radius: 1rem;
+        /* 2xl transition */
+        transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        backdrop-filter: blur(12px);
+    }
+
+    .glass-card:hover {
+        border-color: rgba(255, 255, 255, 0.2);
+        background: rgba(255, 255, 255, 0.05);
+        transform: translateY(-2px);
+    }
+
+    .bg-flux-glow {
+        background: radial-gradient(circle at center, var(--color-accent) 0%, transparent 70%);
+        filter: blur(80px);
     }
 }
 

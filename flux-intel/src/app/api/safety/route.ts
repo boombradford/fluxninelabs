@@ -9,7 +9,20 @@ export async function POST(req: Request) {
             return NextResponse.json({ error: 'URL is required' }, { status: 400 });
         }
 
-        const apiKey = process.env.GOOGLE_PSI_API_KEY || ''; // Reusing the key
+        const apiKey = process.env.GOOGLE_PSI_API_KEY || '';
+
+        // FAIL GRACEFULLY: If no API key, assume safe (non-blocking)
+        if (!apiKey) {
+            console.warn('[Flux Safety API] No API key configured, assuming safe');
+            return NextResponse.json({
+                isSafe: true,
+                threats: [],
+                checkedAt: new Date().toISOString(),
+                degraded: true,
+                warning: 'Safety check unavailable (missing API key)'
+            });
+        }
+
         const apiUrl = `https://safebrowsing.googleapis.com/v4/threatMatches:find?key=${apiKey}`;
 
         // Construct the request body for Safe Browsing API
@@ -33,6 +46,7 @@ export async function POST(req: Request) {
         const matches = response.data.matches || [];
 
         const isSafe = matches.length === 0;
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         const threats = matches.map((m: any) => m.threatType);
 
         return NextResponse.json({
@@ -41,9 +55,18 @@ export async function POST(req: Request) {
             checkedAt: new Date().toISOString()
         });
 
-    } catch (error: any) {
-        console.error('[Flux Safety API] Error:', error.message);
-        // Fail open (don't block the user if the safety API fails, but report error)
-        return NextResponse.json({ error: 'Failed to verify safety status', details: error.message }, { status: 500 });
+    } catch (error) {
+        const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+        console.warn('[Flux Safety API] Error (non-blocking):', errorMessage);
+
+        // FAIL OPEN: Don't block the audit if safety check fails
+        // Return 200 with degraded mode instead of 500 error
+        return NextResponse.json({
+            isSafe: true,
+            threats: [],
+            checkedAt: new Date().toISOString(),
+            degraded: true,
+            warning: 'Safety check unavailable (API error)'
+        });
     }
 }

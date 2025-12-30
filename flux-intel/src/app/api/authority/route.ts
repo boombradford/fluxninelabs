@@ -38,8 +38,9 @@ export async function POST(req: Request) {
             checkedAt: new Date().toISOString()
         });
 
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
     } catch (error: any) {
-        console.error('[Flux Authority API] Error:', error.message);
-        return NextResponse.json({ error: 'Failed to verify authority', details: error.message }, { status: 500 });
+        console.error('Authority API Error:', error);
+        return NextResponse.json({ error: 'Failed to fetch authority data' }, { status: 500 });
     }
 }

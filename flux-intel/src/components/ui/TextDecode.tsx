@@ -22,7 +22,8 @@ export const TextDecode = ({ text, className, delay = 0, duration = 1.5 }: TextD
     const [isMounted, setIsMounted] = useState(false);
 
     useEffect(() => {
-        // eslint-disable-next-line react-hooks/exhaustive-deps
+
+        // eslint-disable-next-line react-hooks/set-state-in-effect
         setIsMounted(true);
     }, []);
 
@@ -31,10 +32,9 @@ export const TextDecode = ({ text, className, delay = 0, duration = 1.5 }: TextD
         hasStarted.current = true;
 
         let interval: NodeJS.Timeout;
-        let timeout: NodeJS.Timeout;
 
         // Start delay
-        timeout = setTimeout(() => {
+        const timeout = setTimeout(() => {
             let iteration = 0;
             const steps = text.length;
             const intervalDuration = (duration * 1000) / (steps * 2); // Calibrate speed

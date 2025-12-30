@@ -1,9 +1,7 @@
 import type { Metadata } from "next";
-import { Geist, JetBrains_Mono } from "next/font/google";
+import { GeistSans } from 'geist/font/sans';
+import { GeistMono } from 'geist/font/mono';
 import "./globals.css";
-
-const geist = Geist({ subsets: ["latin"], variable: "--font-geist" });
-const jetbrainsMono = JetBrains_Mono({ subsets: ["latin"], variable: "--font-mono" });
 
 export const metadata: Metadata = {
     title: "Flux Intelligence | St. Louis Local SEO & Digital Strategy",
@@ -42,8 +40,8 @@ export default function RootLayout({
     children: React.ReactNode;
 }>) {
     return (
-        <html lang="en" className={`${geist.variable} ${jetbrainsMono.variable}`} suppressHydrationWarning>
-            <body className="antialiased font-sans" suppressHydrationWarning>
+        <html lang="en" className={`${GeistSans.variable} ${GeistMono.variable}`} suppressHydrationWarning>
+            <body className="antialiased font-sans bg-[#030712] min-h-screen" suppressHydrationWarning>
                 {children}
             </body>
         </html>
