@@ -6,12 +6,16 @@ import * as cheerio from 'cheerio';
 import { parseStringPromise } from 'xml2js';
 import { STRATEGY_SYSTEM_PROMPT, FAST_SYSTEM_PROMPT, OUTPUT_INSTRUCTION_PROMPT } from '../../../lib/prompts/auditSystemPrompt';
 import { getCachedData, setCachedData, generateCacheKey } from '../../../lib/cache';
+import { runLighthouseAudit } from '../../../lib/lighthouse';
 
-export const maxDuration = 60; // Max execution time for Vercel (Hobby)
+export const maxDuration = 120; // Allow time for Lighthouse + deep scan
 
 // --- TYPES ---
 interface RoutePerformanceMetrics {
-  lighthouseScore: number; // 0-100
+  lighthouseScore: number; // 0-100 (Performance category)
+  seoScore?: number; // 0-100
+  accessibilityScore?: number; // 0-100
+  bestPracticesScore?: number; // 0-100
   lcp: string; // Largest Contentful Paint (s)
   inp: string; // Interaction to Next Paint (ms)
   cls: string; // Cumulative Layout Shift
@@ -19,31 +23,47 @@ interface RoutePerformanceMetrics {
   fcp: string; // First Contentful Paint
   fid: string; // First Input Delay
   tti: string; // Time to Interactive
-  isEstimate?: boolean; // Flag for estimated data
   domIssues?: {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     lcp?: { rect: any, snippet?: string };
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     cls?: Array<{ rect: any, snippet?: string }>;
   };
+  finalUrl?: string;
+  fetchTime?: string;
+  lighthouseVersion?: string;
+  crux?: {
+    lcp?: string;
+    inp?: string;
+    cls?: string;
+    dataSource?: string;
+    collectionPeriod?: { firstDate: string; lastDate: string };
+  };
 }
 
 interface PageSignals {
   url: string;
   statusCode: number;
+  blocked?: boolean;
+  blockedReason?: string;
   title?: string;
   metaDescription?: string;
+  metaKeywords?: string;
+  metaRobots?: string;
+  xRobotsTag?: string;
   h1?: string[];
   h2Count?: number;
   wordCount?: number;
   canonical?: string;
   primaryContentSnippet?: string; // Cleaned text from main/article
+  topKeywords?: Array<{ term: string; count: number }>;
   internalLinkCount?: number;
   externalLinkCount?: number;
   ctas?: { text: string; link: string }[]; // Detected CTAs
   schemaTypes?: string[]; // Detected JSON-LD types
   pageType?: string; // Heuristic label (blog, product, etc)
-  performance?: RoutePerformanceMetrics; // NEW: Real-world PSI metrics
+  performance?: RoutePerformanceMetrics; // Real Lighthouse metrics
+  crux?: RoutePerformanceMetrics['crux'];
   techStack?: {
     cms: string[];
     analytics: string[];
@@ -73,9 +93,158 @@ interface PageSignals {
 
 // --- CONFIG ---
 const MAX_PAGES_TO_ANALYZE = 3; // Reduced from 10 to avoid timeout (homepage + 2 key pages)
-const MICROLINK_API_KEY = process.env.MICROLINK_API_KEY;
+const DEFAULT_USER_AGENT = 'Mozilla/5.0 (compatible; FluxIntel/1.0)';
+
+interface SiteDiagnostics {
+  robotsTxt?: { status: number; contentPreview?: string; sitemapUrls?: string[]; error?: string };
+  llmsTxt?: { status: number; location: string; contentPreview?: string; error?: string };
+}
+
+const STOP_WORDS = new Set([
+  'the', 'and', 'for', 'with', 'that', 'this', 'you', 'your', 'are', 'was', 'were', 'from', 'have', 'has', 'had',
+  'but', 'not', 'our', 'their', 'they', 'them', 'his', 'her', 'she', 'him', 'its', 'can', 'will', 'just', 'about',
+  'into', 'over', 'under', 'more', 'less', 'than', 'then', 'when', 'what', 'why', 'how', 'who', 'where', 'which',
+  'a', 'an', 'to', 'of', 'in', 'on', 'at', 'by', 'or', 'as', 'is', 'it', 'be', 'if', 'we', 'us', 'do', 'does', 'did'
+]);
 
 // --- STEP 1: FACT EXTRACTION (LAYER 0) ---
+function normalizeUrl(input: string): string {
+  const trimmed = input.trim();
+  if (!trimmed) return trimmed;
+  if (trimmed.startsWith('http://') || trimmed.startsWith('https://')) return trimmed;
+  return `https://${trimmed}`;
+}
+
+function extractTopKeywords(text: string, limit = 12): Array<{ term: string; count: number }> {
+  const counts = new Map<string, number>();
+  const words = text
+    .toLowerCase()
+    .replace(/[^a-z0-9\s-]/g, ' ')
+    .split(/\s+/)
+    .filter(word => word.length > 2 && !STOP_WORDS.has(word));
+
+  for (const word of words) {
+    counts.set(word, (counts.get(word) || 0) + 1);
+  }
+
+  return Array.from(counts.entries())
+    .sort((a, b) => b[1] - a[1])
+    .slice(0, limit)
+    .map(([term, count]) => ({ term, count }));
+}
+
+async function fetchTextResource(url: string, timeout = 6000) {
+  try {
+    const response = await axios.get(url, {
+      timeout,
+      validateStatus: () => true,
+      headers: { 'User-Agent': DEFAULT_USER_AGENT }
+    });
+    const content = typeof response.data === 'string' ? response.data : '';
+    return {
+      status: response.status,
+      content
+    };
+  } catch (error) {
+    const err = error as Error;
+    return {
+      status: 0,
+      content: '',
+      error: err.message
+    };
+  }
+}
+
+async function fetchSiteDiagnostics(baseUrl: string): Promise<SiteDiagnostics> {
+  const origin = new URL(baseUrl).origin;
+  const robotsUrl = `${origin}/robots.txt`;
+  const robotsRes = await fetchTextResource(robotsUrl);
+  const robotsPreview = robotsRes.content ? robotsRes.content.slice(0, 2000) : undefined;
+  const sitemapUrls = robotsRes.content
+    ? robotsRes.content
+      .split('\n')
+      .map(line => line.trim())
+      .filter(line => /^sitemap:/i.test(line))
+      .map(line => line.replace(/^sitemap:\s*/i, '').trim())
+      .filter(Boolean)
+    : [];
+
+  const llmsLocations = [`${origin}/llms.txt`, `${origin}/.well-known/llms.txt`];
+  let llmsResult: SiteDiagnostics['llmsTxt'];
+  for (const location of llmsLocations) {
+    const res = await fetchTextResource(location);
+    if (res.status === 200) {
+      llmsResult = {
+        status: res.status,
+        location,
+        contentPreview: res.content.slice(0, 2000)
+      };
+      break;
+    }
+    if (!llmsResult) {
+      llmsResult = {
+        status: res.status,
+        location,
+        error: res.error
+      };
+    }
+  }
+
+  return {
+    robotsTxt: {
+      status: robotsRes.status,
+      contentPreview: robotsPreview,
+      sitemapUrls,
+      error: robotsRes.error
+    },
+    llmsTxt: llmsResult
+  };
+}
+
+function formatMs(value?: number): string | undefined {
+  if (!value) return undefined;
+  const seconds = value / 1000;
+  return `${seconds.toFixed(2)} s`;
+}
+
+async function fetchCruxMetrics(url: string) {
+  const apiKey = process.env.GOOGLE_CRUX_API_KEY || '';
+  if (!apiKey) return undefined;
+
+  const endpoint = `https://chromeuxreport.googleapis.com/v1/records:queryRecord?key=${apiKey}`;
+  try {
+    const response = await axios.post(endpoint, {
+      url,
+      formFactor: 'PHONE'
+    }, {
+      timeout: 10000,
+      headers: { 'Content-Type': 'application/json' }
+    });
+
+    const record = response.data?.record;
+    const metrics = record?.metrics || {};
+    const lcp = metrics?.LARGEST_CONTENTFUL_PAINT_MS?.percentiles?.p75;
+    const inp = metrics?.INTERACTION_TO_NEXT_PAINT_MS?.percentiles?.p75;
+    const cls = metrics?.CUMULATIVE_LAYOUT_SHIFT_SCORE?.percentiles?.p75;
+
+    return {
+      lcp: formatMs(lcp),
+      inp: inp ? `${inp} ms` : undefined,
+      cls: cls ? cls.toFixed(2) : undefined,
+      dataSource: record?.collectionPeriod ? 'CrUX' : undefined,
+      collectionPeriod: record?.collectionPeriod
+        ? {
+          firstDate: `${record.collectionPeriod.firstDate.year}-${String(record.collectionPeriod.firstDate.month).padStart(2, '0')}`,
+          lastDate: `${record.collectionPeriod.lastDate.year}-${String(record.collectionPeriod.lastDate.month).padStart(2, '0')}`
+        }
+        : undefined
+    };
+  } catch (error) {
+    const err = error as Error;
+    console.warn('[Flux CrUX] Failed to fetch field data:', err.message);
+    return undefined;
+  }
+}
 
 function extractPrimaryContent($: cheerio.CheerioAPI): string {
   // Try to find the main content area
@@ -150,153 +319,9 @@ function heuristicPageType(url: string, h1: string): string {
 }
 
 
-async function fetchPageSpeedMetrics(url: string): Promise<RoutePerformanceMetrics | undefined> {
-  // Graceful degradation: If PSI fails, return undefined.
-  const attemptFetch = async (useKey: boolean) => {
-    const apiKey = process.env.GOOGLE_PSI_API_KEY || '';
-    const keyParam = useKey && apiKey ? `&key=${apiKey}` : '';
-    const apiUrl = `https://www.googleapis.com/pagespeedonline/v5/runPagespeed?url=${encodeURIComponent(url)}&strategy=mobile${keyParam}`;
-    return axios.get(apiUrl, { timeout: 30000 }); // Increased timeout to 30s
-  };
-
-  try {
-    console.log(`[Flux PSI] Fetching metrics for ${url}...`);
-    let data;
-
-    try {
-      const res = await attemptFetch(true);
-      data = res.data;
-    } catch (e) {
-      const errMsg = e instanceof Error ? e.message : String(e);
-      console.warn(`[Flux PSI] First attempt failed (${errMsg}). Retrying without key/proxy...`);
-      // Retry logic: sometimes key fails, or transient network issue
-      const res = await attemptFetch(false); // Fallback to public quota
-      data = res.data;
-    }
-
-    const lighthouse = data.lighthouseResult?.categories?.performance?.score * 100 || 0;
-    const aud = data.lighthouseResult?.audits || {};
-
-    // Extract Core Web Vitals (prefer field data via loadingExperience if available, but audits are more detailed for Lighthouse)
-    const lcp = aud['largest-contentful-paint']?.displayValue || 'N/A';
-    const cls = aud['cumulative-layout-shift']?.displayValue || 'N/A';
-    const speedIndex = aud['speed-index']?.displayValue || 'N/A';
-    const inp = aud['interaction-to-next-paint']?.displayValue || 'N/A'; // Lighthouse 12+ audit
-    const fcp = aud['first-contentful-paint']?.displayValue || 'N/A';
-    const fid = aud['max-potential-fid']?.displayValue || 'N/A';
-    const tti = aud['interactive']?.displayValue || 'N/A';
-
-
-    // --- NEW: DOM FORENSICS (Phase 2) ---
-    const domIssues: RoutePerformanceMetrics['domIssues'] = {};
-
-    // 1. LCP Element
-    try {
-      const lcpAudit = aud['largest-contentful-paint-element'];
-      if (lcpAudit?.details?.items?.[0]?.node) {
-        // Note: Lighthouse sometimes returns different structures. We try to grab the bounding box.
-        // But raw API often hides the full rect in 'node'. We might need to check 'items'.
-        // Actually, in PSI v5, 'items' usually has 'node' which has 'boundingRect' ONLY if Full Page Screenshot is enabled?
-        // Standard PSI mobile strategy defaults might not give full rects unless we dig deep.
-        // Let's try to extract what's there. Usually snippets are reliably present.
-        // Rects might be in a different audit or require parsing path.
-        // For now, let's map what we can see.
-        // EDIT: PSI v5 'node' object usually has 'lhId', 'path', 'selector', 'snippet', 'nodeLabel'. 
-        // Rects are often in 'metrics' or separate 'trace'. 
-        // However, 'layout-shift-elements' DOES return rects in 'node' often if formatted correctly.
-        // We will attempt to parse.
-
-        // MOCKING REAL DATA extraction for safely until we confirm structure:
-        // Use heuristic parsing or just pass the snippet for now.
-        // Wait, without rects, TacticalVision can't verify.
-        // Let's assume for this MVP we extract the snippet to display, and maybe simulated rects if real ones are missing?
-        // No, the user asked for REAL TIME DOM ANALYSIS.
-        // If PSI doesn't return rects by default without flags, we might be blocked.
-        // But 'layout-shift-elements' definitely usually returns 'score' and 'node'.
-
-        // Let's try to grab the Rect if it exists (it exists in Lightrider/Lighthouse internals, hopefully exposed).
-        // If not, we will rely on 'selector' and use Puppeteer later? No, we need it now.
-        // Actually, the user's prompt implies we do this.
-
-        // Let's look for known PSI structure:
-        // items: [ { node: { type: 'node', lhId: '...', boundingRect: { ... } } } ]
-
-        const node = lcpAudit.details.items[0].node;
-        if (node && node.boundingRect) {
-          domIssues.lcp = {
-            rect: node.boundingRect,
-            snippet: node.snippet
-          };
-        }
-      }
-    } catch (e) { }
-
-    // 2. CLS Elements
-    try {
-      const clsAudit = aud['layout-shift-elements'];
-      if (clsAudit?.details?.items?.length) {
-        interface PerformanceAuditItem {
-          node?: {
-            boundingRect?: { top: number; left: number; width: number; height: number };
-            snippet?: string;
-          };
-        }
-        domIssues.cls = clsAudit.details.items.map((item: PerformanceAuditItem) => {
-          const node = item.node;
-          if (node && node.boundingRect) {
-            return {
-              rect: node.boundingRect,
-              snippet: node.snippet
-            };
-          }
-          return null;
-        }).filter(Boolean);
-      }
-    } catch (e) {
-      console.warn('Failed to parse navigation items from Claude response', e);
-    }
-
-
-    console.log(`[Flux PSI] Success: Score ${lighthouse}`);
-
-    return {
-      lighthouseScore: Math.round(lighthouse),
-      lcp,
-      inp,
-      cls,
-      speedIndex,
-      fcp,
-      fid,
-      tti,
-      domIssues
-    };
-  } catch (error) {
-    const err = error as { message: string; response?: { data: { error?: { status?: string } } } };
-    console.warn(`[Flux PSI] Fatal Failure: ${err.message || String(error)}`);
-
-    if (err.response?.data?.error?.status === "RESOURCE_EXHAUSTED") {
-      console.warn(`[Flux PSI] Quota exceeded. Skipping retries.`);
-    }
-
-    // Return fallback estimated metrics instead of undefined
-    console.log(`[Flux PSI] Using estimated metrics as fallback`);
-    return {
-      lighthouseScore: 75,
-      lcp: "2.5s",
-      inp: "100ms",
-      cls: "0.1",
-      speedIndex: "3.0s",
-      fcp: "1.5s",
-      fid: "50ms",
-      tti: "4.0s",
-      isEstimate: true,
-      domIssues: {
-        // Fallback simulation so the UI isn't empty on error
-        lcp: { rect: { top: 100, left: 20, width: 300, height: 200 }, snippet: '<img src="hero.jpg">' },
-        cls: [{ rect: { top: 400, left: 20, width: 300, height: 50 }, snippet: '<div class="banner">' }]
-      }
-    };
-  }
+async function fetchPageSpeedMetrics(url: string): Promise<RoutePerformanceMetrics> {
+  const result = await runLighthouseAudit(url);
+  return result;
 }
 
 async function discoverPages(baseUrl: string): Promise<string[]> {
@@ -323,7 +348,7 @@ async function discoverPages(baseUrl: string): Promise<string[]> {
   if (pages.size === 1) {
     try {
       const { data } = await axios.get(baseUrl, {
-        headers: { 'User-Agent': 'Mozilla/5.0 (compatible; FluxIntel/1.0)' },
+        headers: { 'User-Agent': DEFAULT_USER_AGENT },
         timeout: 5000
       });
       const $ = cheerio.load(data);
@@ -509,14 +534,44 @@ function extractNavigation($: cheerio.CheerioAPI): string[] {
 
 async function analyzePage(url: string, includePerformance = false): Promise<PageSignals> {
   try {
-    // Parallel Extraction: Cheat code for speed. fetch HTML and PSI at same time if needed.
-    const [htmlRes, performance] = await Promise.all([
+    // Parallel Extraction: fetch HTML and Lighthouse metrics at same time if needed.
+    const [htmlResResult, performanceResult, cruxResult] = await Promise.allSettled([
       axios.get(url, {
-        headers: { 'User-Agent': 'Mozilla/5.0 (compatible; FluxIntel/1.0)' },
-        timeout: 5000
+        headers: { 'User-Agent': DEFAULT_USER_AGENT },
+        timeout: 10000,
+        validateStatus: () => true
       }),
-      includePerformance ? fetchPageSpeedMetrics(url) : Promise.resolve(undefined)
+      includePerformance ? fetchPageSpeedMetrics(url) : Promise.resolve(undefined),
+      includePerformance ? fetchCruxMetrics(url) : Promise.resolve(undefined)
     ]);
+
+    if (htmlResResult.status !== 'fulfilled') {
+      throw htmlResResult.reason;
+    }
+
+    const performance = performanceResult.status === 'fulfilled' ? performanceResult.value : undefined;
+    const crux = cruxResult.status === 'fulfilled' ? cruxResult.value : undefined;
+    if (performanceResult.status === 'rejected') {
+      console.warn(`[Flux Lighthouse] Performance audit failed for ${url}:`, performanceResult.reason);
+    }
+    if (cruxResult.status === 'rejected') {
+      console.warn(`[Flux CrUX] Field data fetch failed for ${url}:`, cruxResult.reason);
+    }
+
+    if (performance && crux) {
+      performance.crux = crux;
+    }
+
+    const htmlRes = htmlResResult.value;
+    const statusCode = htmlRes.status;
+    if (statusCode < 200 || statusCode >= 300) {
+      return {
+        url,
+        statusCode,
+        blocked: [401, 403, 429, 503].includes(statusCode),
+        blockedReason: `HTTP ${statusCode}`
+      };
+    }
 
     const html = htmlRes.data;
     const $ = cheerio.load(html);
@@ -524,10 +579,16 @@ async function analyzePage(url: string, includePerformance = false): Promise<Pag
     // Core Metadata
     const title = $('title').text().trim();
     const metaDesc = $('meta[name="description"]').attr('content') || '';
+    const metaKeywords = $('meta[name="keywords"]').attr('content') || '';
+    const metaRobots = $('meta[name="robots"]').attr('content') || $('meta[name="googlebot"]').attr('content') || '';
+    const xRobotsTag = Array.isArray(htmlRes.headers?.['x-robots-tag'])
+      ? htmlRes.headers['x-robots-tag'].join(', ')
+      : (htmlRes.headers?.['x-robots-tag'] as string | undefined);
     const h1s = $('h1').map((_, el) => $(el).text().trim()).get();
 
     // Extracted Signals
     const primaryContent = extractPrimaryContent($);
+    const topKeywords = extractTopKeywords(primaryContent);
     const ctas = detectCtas($);
     const schemaTypes = detectSchema($);
     const internalLinks = $('a[href^="/"], a[href^="' + url + '"]').length; // Rough internal link count
@@ -542,19 +603,24 @@ async function analyzePage(url: string, includePerformance = false): Promise<Pag
 
     return {
       url,
-      statusCode: 200,
+      statusCode,
       title,
       metaDescription: metaDesc,
+      metaKeywords,
+      metaRobots,
+      xRobotsTag,
       h1: h1s,
       h2Count: $('h2').length,
       wordCount: primaryContent.split(/\s+/).length,
       canonical: $('link[rel="canonical"]').attr('href'),
       primaryContentSnippet: primaryContent,
+      topKeywords,
       internalLinkCount: internalLinks,
       ctas,
       schemaTypes,
       pageType: heuristicPageType(url, h1s[0] || ''),
       performance, // Inject Real World Metrics if requested
+      crux,
       techStack, // NEW Phase 2
       authority, // NEW Phase 2
       metaGovernance, // NEW Phase 3
@@ -566,58 +632,13 @@ async function analyzePage(url: string, includePerformance = false): Promise<Pag
     const errMsg = e instanceof Error ? e.message : String(e);
     const status = (e as { response?: { status: number } }).response?.status || 500;
     console.error(`[Flux Analyze] Failed ${url}: ${errMsg}`);
-    return { url, statusCode: status };
+    return { url, statusCode: status, blocked: [401, 403, 429, 503].includes(status), blockedReason: errMsg };
   }
 }
 
 
-// --- HELPER: Ensure Report Structure ---
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-function ensureReportStructure(raw: any, domain: string): any {
-  const base = {
-    meta: { url: domain, scanTimestamp: new Date().toISOString() },
-    coreSignals: {
-      vibeScore: { grade: "C", score: 50, label: "Calibrating...", summary: "Analyzing signal resonance..." },
-      headlineSignal: { grade: "C", score: 50, label: "Pending", summary: "Extracting Core Narrative...", whyItMatters: "Analyzing alignment with user intent..." },
-      visualArchitecture: { grade: "C", score: 50, label: "Pending", summary: "Mapping Visual Hierarchy...", whyItMatters: "Evaluating cognitive load..." }
-    },
-    clientReadySummary: {
-      executiveSummary: "Flux Engine is synthesizing the initial data stream. Deep tactical analysis is running in background.",
-      top3WinsThisWeek: ["Pending analysis...", "Pending analysis...", "Pending analysis..."]
-    },
-    tacticalFixes: [], // Empty array triggers Skeleton in UI
-    strategicIntelligence: undefined // Undefined triggers Skeleton in UI
-  };
-
-  // Deep Merge (Simple level)
-  const merged = {
-    ...base,
-    ...raw,
-    meta: { ...base.meta, ...raw?.meta },
-    coreSignals: {
-      vibeScore: (raw?.coreSignals?.vibeScore?.summary && raw.coreSignals.vibeScore.summary !== "Analyzing signal resonance...")
-        ? { ...base.coreSignals.vibeScore, ...raw.coreSignals.vibeScore }
-        : base.coreSignals.vibeScore,
-      headlineSignal: (raw?.coreSignals?.headlineSignal?.summary && !raw.coreSignals.headlineSignal.summary.includes("Extracting Core Narrative"))
-        ? { ...base.coreSignals.headlineSignal, ...raw.coreSignals.headlineSignal }
-        : base.coreSignals.headlineSignal,
-      visualArchitecture: (raw?.coreSignals?.visualArchitecture?.summary && !raw.coreSignals.visualArchitecture.summary.includes("Mapping Visual Hierarchy"))
-        ? { ...base.coreSignals.visualArchitecture, ...raw.coreSignals.visualArchitecture }
-        : base.coreSignals.visualArchitecture,
-    },
-    tacticalFixes: raw?.tacticalFixes && raw.tacticalFixes.length > 0 ? raw.tacticalFixes : base.tacticalFixes,
-    strategicIntelligence: raw?.strategicIntelligence || base.strategicIntelligence,
-    clientReadySummary: (raw?.clientReadySummary?.executiveSummary && !raw.clientReadySummary.executiveSummary.includes("Flux Engine is synthesizing"))
-      ? { ...base.clientReadySummary, ...raw.clientReadySummary }
-      : base.clientReadySummary
-  };
-
-  return merged;
-}
-
 // --- STEP 2: STRATEGIST (AI WITH 3-LAYER ARCHITECTURE) ---
-async function generateAuditReport(pages: PageSignals[], domain: string, mode: 'fast' | 'deep') {
-  const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
+async function generateAuditReport(pages: PageSignals[], domain: string, mode: 'fast' | 'deep', siteDiagnostics?: SiteDiagnostics) {
   const isFast = mode === 'fast';
 
   // Prepare structured dataset for the AI
@@ -625,6 +646,12 @@ async function generateAuditReport(pages: PageSignals[], domain: string, mode: '
     url: p.url,
     type: p.pageType,
     meta: { title: p.title, description: p.metaDescription, canonical: p.canonical },
+    seo: {
+      metaKeywords: p.metaKeywords,
+      metaRobots: p.metaRobots,
+      xRobotsTag: p.xRobotsTag,
+      topKeywords: p.topKeywords
+    },
     structure: { h1: p.h1, h2Count: p.h2Count, wordCount: p.wordCount },
     signals: {
       ctas: p.ctas?.map(c => c.text).join(', '),
@@ -642,8 +669,15 @@ async function generateAuditReport(pages: PageSignals[], domain: string, mode: '
     performance: p.performance ? {
       score: p.performance.lighthouseScore,
       lcp: p.performance.lcp,
-      inp: p.performance.inp
+      inp: p.performance.inp,
+      cls: p.performance.cls,
+      fcp: p.performance.fcp,
+      speedIndex: p.performance.speedIndex,
+      seoScore: p.performance.seoScore,
+      accessibilityScore: p.performance.accessibilityScore,
+      bestPracticesScore: p.performance.bestPracticesScore
     } : undefined,
+    crux: p.crux,
     contentSnippet: p.primaryContentSnippet ? p.primaryContentSnippet.substring(0, isFast ? 1000 : 2500) + '...' : 'No content extracted'
   }));
 
@@ -681,108 +715,12 @@ async function generateAuditReport(pages: PageSignals[], domain: string, mode: '
     calculatedScore = Math.min(calculatedScore, 98);
   }
 
-  // --- SAFETY NET: GUARANTEED FALLBACK GENERATION ---
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const ensureTacticalFallbacks = (report: any, homepageData: any): any[] => {
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const fallbacks: any[] = [];
-    const safeReport = report || {};
-    const existing = safeReport.tacticalFixes || [];
-
-    // If we already have 3 or more, we are good.
-    if (existing.length >= 3) return existing;
-
-    console.log(`[Flux Safety] Only found ${existing.length} tactical fixes. Generating fallbacks...`);
-
-    // 1. PERFORMANCE FALLBACK
-    if (homepageData?.performance?.score < 90) {
-      fallbacks.push({
-        id: 'fallback-perf-1',
-        title: 'Optimize Core Web Vitals for Mobile Speed',
-        category: 'performance',
-        impact: 'High',
-        effort: 'Medium',
-        effortHours: 12,
-        problem: `Current mobile LCP is ${homepageData?.performance?.lcp || 'slow'}, which increases bounce rate by an estimated 20-30%.`,
-        recommendation: 'Implement modern image formats (WebP) and defer off-screen images to improve initial load time.',
-        expectedOutcome: 'Reduce LCP to <2.5s, potentially recovering ~15% of lost mobile traffic.',
-        evidence: [
-          { label: 'Current Score', value: `${homepageData?.performance?.score}/100` },
-          { label: 'Standard', value: '90+/100' }
-        ],
-        validationCriteria: 'PageSpeed Insights Score > 90'
-      });
-    }
-
-    // 2. CONVERSION FALLBACK
-    if (!homepageData?.signals?.ctas || homepageData.signals.ctas.length === 0) {
-      fallbacks.push({
-        id: 'fallback-conv-1',
-        title: 'Implement High-Visibility Call-to-Actions (CTAs)',
-        category: 'conversion',
-        impact: 'High',
-        effort: 'Low',
-        effortHours: 4,
-        problem: 'No clear conversion paths detected above the fold. Visitors often leave without knowing the next step.',
-        recommendation: 'Add a contrasting primary CTA ("Get Started" or "Book Demo") within the hero section.',
-        expectedOutcome: 'Typical conversion lift of 15-25% from clear hero CTAs.',
-        evidence: [
-          { label: 'CTAs Found', value: '0' },
-          { label: 'Best Practice', value: 'Primary CTA above fold' }
-        ],
-        validationCriteria: 'Click-through rate tracking > 2%'
-      });
-    }
-
-    // 3. SEO FALLBACK
-    if (!homepageData?.meta?.description || homepageData.meta.description.length < 50) {
-      fallbacks.push({
-        id: 'fallback-seo-1',
-        title: 'Calibrate Meta Narrative for Search Intent',
-        category: 'seo',
-        impact: 'Medium',
-        effort: 'Low',
-        effortHours: 2,
-        problem: `Meta description is missing or non-performant (${homepageData?.meta?.description?.length || 0} chars). This yields a generic SERP snippet that fails to differentiate the brand in high-intent organic search result sets.`,
-        recommendation: `Architect a 155-character meta narrative that mirrors the user's search query and includes a high-friction-reducing CTA.`,
-        expectedOutcome: 'Typical CTR lift of 4-7% by controlling the search snippet narrative.',
-        evidence: [
-          { label: 'Current State', value: `${homepageData?.meta?.description?.length || 0} chars (Sub-optimal)` },
-          { label: 'Benchmark', value: '150-160 chars with keyword density' }
-        ],
-        validationCriteria: 'Monitor GSC CTR for top 10 ranking queries.'
-      });
-    }
-
-    // 4. GENERIC STRATEGY FALLBACK (Last Resort)
-    if (fallbacks.length + existing.length < 3) {
-      fallbacks.push({
-        id: 'fallback-strat-1',
-        title: 'Develop Content Strategy for Organic Growth',
-        category: 'acquisition',
-        impact: 'High',
-        effort: 'High',
-        effortHours: 40,
-        problem: 'Limited indexed content limits organic entry points for top-of-funnel traffic.',
-        recommendation: 'Launch a blog or resource center targeting "awareness" stage keywords to capture early intent.',
-        expectedOutcome: 'Increase organic impressions by 40% within 6 months.',
-        evidence: [
-          { label: 'Indexed Pages', value: 'Low' },
-          { label: 'Benchmark', value: 'Active content hub' }
-        ],
-        validationCriteria: 'Organic traffic growth > 10% MoM'
-      });
-    }
-
-    return [...existing, ...fallbacks].slice(0, 6); // Combine and limit to 6
-  };
-
-
   // Build specific, forceful instruction for Claude
   const userInstruction = isFast
     ? {
       instruction: "Analyze the homepage ONLY. Provide a Vibe Check and Top 3 Wins.",
       siteContext: { domain, scanTimestamp: new Date().toISOString() },
+      siteDiagnostics,
       dataset
     }
     : {
@@ -791,9 +729,10 @@ async function generateAuditReport(pages: PageSignals[], domain: string, mode: '
 CRITICAL REQUIREMENTS:
 1. QUOTE ACTUAL CONTENT from the site (H1s, CTAs, meta tags, body text). This is not optional.
 2. Reference SPECIFIC METRICS (word counts, LCP values, etc.)
-3. VOLUME IS MANDATORY: You must write 150-250 words for every 'problem' field and 100-150 words for every 'recommendation' field.
-4. EXPLAIN WHY cada find is a revenue-killer.
-5. Provide exactly 6-8 Tactical Fixes.
+3. SEO MUST be FACT-BASED. Use the provided metadata, robots.txt, llms.txt, and keyword frequency data only.
+4. VOLUME IS MANDATORY: You must write 150-250 words for every 'problem' field and 100-150 words for every 'recommendation' field.
+5. EXPLAIN WHY cada find is a revenue-killer.
+6. Provide exactly 6-8 Tactical Fixes.
 
 BANNED PHRASES: "tactical maneuver", "asymmetric advantage", "optimize performance" (generic), "improve SEO" (generic).
 
@@ -810,16 +749,52 @@ MANDATORY SCORE: ${calculatedScore}/100. (DO NOT CHANGE)
 USE THIS DATA. Quote the exact snippets.`,
       outputRequirement: OUTPUT_INSTRUCTION_PROMPT,
       siteContext: { domain, scanTimestamp: new Date().toISOString() },
+      siteDiagnostics,
       dataset
     };
 
+  const buildDeterministicReport = () => {
+    const homepage = pages.find(p => p.url === domain || p.url === domain + '/') || pages[0];
+    const pageSignals = homepage ? {
+      title: homepage.title,
+      metaDescription: homepage.metaDescription,
+      metaKeywords: homepage.metaKeywords,
+      metaRobots: homepage.metaRobots,
+      xRobotsTag: homepage.xRobotsTag,
+      canonical: homepage.canonical,
+      h1: homepage.h1,
+      topKeywords: homepage.topKeywords
+    } : undefined;
+    return {
+      meta: {
+        url: domain,
+        scanTimestamp: new Date().toISOString(),
+        performance: homepage?.performance,
+        crux: homepage?.crux,
+        scanDiagnostics: siteDiagnostics
+      },
+      type: mode,
+      analysisMode: 'deterministic',
+      scannedPages: pages.map(p => p.url),
+      signals: {
+        navigation: homepage?.navigation
+      },
+      pageSignals,
+      domIssues: homepage?.performance?.domIssues
+    };
+  };
+
   try {
-    let response;
     let content;
 
     if (isFast) {
       // FAST MODE: Use gpt-4o-mini for quick technical extraction
-      response = await openai.chat.completions.create({
+      if (!process.env.OPENAI_API_KEY) {
+        console.warn('[Flux AI] OPENAI_API_KEY missing. Returning deterministic scan data.');
+        return buildDeterministicReport();
+      }
+      const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
+      const response = await openai.chat.completions.create({
         model: "gpt-4o-mini",
         messages: [
           { role: "system", content: FAST_SYSTEM_PROMPT },
@@ -836,7 +811,8 @@ USE THIS DATA. Quote the exact snippets.`,
       console.log('[Flux Debug] ANTHROPIC_API_KEY length:', process.env.ANTHROPIC_API_KEY?.length || 0);
 
       if (!process.env.ANTHROPIC_API_KEY) {
-        throw new Error('ANTHROPIC_API_KEY is not set in environment variables. Please add it to .env.local');
+        console.warn('[Flux AI] ANTHROPIC_API_KEY missing. Returning deterministic scan data.');
+        return buildDeterministicReport();
       }
 
       const anthropic = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
@@ -859,63 +835,57 @@ USE THIS DATA. Quote the exact snippets.`,
     }
     console.log('[Flux AI] Raw response length:', content.length);
 
-    let parsed;
+    let parsed: unknown;
     try {
       parsed = JSON.parse(content);
-      console.log('[Flux AI] Parsed tacticalFixes count:', parsed?.tacticalFixes?.length || 0);
+      console.log('[Flux AI] Parsed tacticalFixes count:', (parsed as { tacticalFixes?: unknown[] })?.tacticalFixes?.length || 0);
     } catch (parseError) {
       console.error('[Flux AI] JSON Parse Error:', parseError);
-      parsed = {};
+      throw new Error('AI response was not valid JSON.');
     }
 
-    // FORCE INJECT PERFORMANCE TRUTH (Do not rely on AI echo)
+    if (!parsed || typeof parsed !== 'object') {
+      throw new Error('AI response was empty or invalid.');
+    }
+
     const homepage = pages.find(p => p.url === domain || p.url === domain + '/') || pages[0];
-    const report = ensureReportStructure(parsed, domain);
+    const report = parsed as Record<string, unknown>;
+    const pageSignals = homepage ? {
+      title: homepage.title,
+      metaDescription: homepage.metaDescription,
+      metaKeywords: homepage.metaKeywords,
+      metaRobots: homepage.metaRobots,
+      xRobotsTag: homepage.xRobotsTag,
+      canonical: homepage.canonical,
+      h1: homepage.h1,
+      topKeywords: homepage.topKeywords
+    } : undefined;
 
-    // --- SAFETY NET: INJECT FALLBACKS IF AI FAILED ---
-    // This ensures the user NEVER sees an empty dashboard
-    report.tacticalFixes = ensureTacticalFallbacks(report, homepage);
+    const meta = (report.meta as Record<string, unknown>) || {};
+    report.meta = {
+      ...meta,
+      url: domain,
+      scanTimestamp: new Date().toISOString(),
+      performance: homepage?.performance,
+      crux: homepage?.crux,
+      scanDiagnostics: siteDiagnostics
+    };
 
-    if (homepage?.performance) {
-      report.meta.performance = homepage.performance;
-    } else {
-      // Guaranteed performance fallback so UI doesn't show "-"
-      report.meta.performance = { lighthouseScore: 75, lcp: "2.5s", fid: "100ms", cls: "0.1", tti: "3.0s" };
-    }
+    report.scannedPages = pages.map(p => p.url);
+    report.type = mode;
+    report.analysisMode = 'ai';
+    report.signals = {
+      ...(report.signals as Record<string, unknown>),
+      navigation: homepage?.navigation
+    };
+    report.pageSignals = pageSignals;
+    report.domIssues = homepage?.performance?.domIssues;
 
-    console.log('[Flux AI] Final report tacticalFixes count:', report?.tacticalFixes?.length || 0);
     return report;
 
   } catch (error: unknown) {
-    // If it's an API error (not a parse error), rethrow it
-    if (error.status || error.type === 'not_found_error' || error.message?.includes('authentication')) {
-      throw error;
-    }
-
-    console.warn("JSON Parse failed, attempting repair...", error);
-
-    // Fallback for Fast Mode Failure
-    if (isFast) {
-      console.warn("[Flux Fast] AI failed, returning guaranteed fallback.");
-      return ensureReportStructure({}, domain);
-    }
-
-    // Attempt Repair for Deep Mode
-    try {
-      const retryResponse = await openai.chat.completions.create({
-        model: "gpt-4o-mini",
-        messages: [
-          { role: "system", content: "You are a JSON repair bot. Fix the syntax of the following JSON. Return ONLY the JSON object." },
-          { role: "user", content: error instanceof Error ? error.message : "Fix invalid JSON output" }
-        ],
-        response_format: { type: "json_object" }
-      });
-      const retryParsed = JSON.parse(retryResponse.choices[0].message.content || '{}');
-      return ensureReportStructure(retryParsed, domain);
-    } catch (finalError) {
-      console.error("Critical Failure in AI Generation");
-      return ensureReportStructure({}, domain);
-    }
+    console.warn('[Flux AI] Generation failed, returning deterministic scan data only.', error);
+    return buildDeterministicReport();
   }
 }
 
@@ -925,55 +895,73 @@ export async function POST(req: Request) {
     const { url, mode = 'deep', forceRefresh = false } = await req.json(); // Default to deep for backward compatibility
     if (!url) return NextResponse.json({ error: 'URL is required' }, { status: 400 });
 
-    console.log(`[Flux Intel] Audit started for: ${url} (Mode: ${mode}, Refresh: ${forceRefresh})`);
+    let normalizedUrl = '';
+    try {
+      normalizedUrl = normalizeUrl(url);
+      new URL(normalizedUrl);
+    } catch {
+      return NextResponse.json({ error: 'Invalid URL format.' }, { status: 400 });
+    }
+
+    console.log(`[Flux Intel] Audit started for: ${normalizedUrl} (Mode: ${mode}, Refresh: ${forceRefresh})`);
+
+    const siteDiagnostics = await fetchSiteDiagnostics(normalizedUrl);
 
     // CACHE CHECK: Do we have the homepage extracted already?
-    const cacheKey = generateCacheKey(url);
+    const cacheKey = generateCacheKey(normalizedUrl);
     const cachedEntry = getCachedData(cacheKey);
 
     let mainPageSignal: PageSignals;
 
     if (cachedEntry && !forceRefresh) {
-      console.log(`[Flux Cache] Hit for ${url}`);
+      console.log(`[Flux Cache] Hit for ${normalizedUrl}`);
       mainPageSignal = cachedEntry;
     } else {
       if (forceRefresh) console.log(`[Flux Cache] Force Refresh detected. Bypassing cache.`);
-      // Fetch Homepage (No PSI for Fast Mode to save time)
-      // If Deep mode, we fetch PSI here to save time for sub-pages later
-      mainPageSignal = await analyzePage(url, mode === 'deep');
+      // Fetch Homepage (No Lighthouse for Fast Mode to save time)
+      // If Deep mode, we fetch Lighthouse here to save time for sub-pages later
+      mainPageSignal = await analyzePage(normalizedUrl, mode === 'deep');
       setCachedData(cacheKey, mainPageSignal);
+    }
+
+    if (mainPageSignal.statusCode !== 200) {
+      const reason = mainPageSignal.blockedReason || `HTTP ${mainPageSignal.statusCode}`;
+      return NextResponse.json({
+        error: `Unable to scan ${normalizedUrl}: ${reason}`,
+        scanDiagnostics: siteDiagnostics
+      }, { status: 502 });
     }
 
     if (mode === 'fast') {
       // --- FAST PASS: LIVE IN < 3s ---
-      const report = await generateAuditReport([mainPageSignal], url, 'fast');
+      const report = await generateAuditReport([mainPageSignal], normalizedUrl, 'fast', siteDiagnostics);
       return NextResponse.json({ ...report, type: 'fast' });
     } else {
       // --- DEEP PASS: ASYNC BACKFILL ---
       console.log(`[Flux Deep] Backend processing (Parallelized)...`);
 
-      // OPTIMIZATION: Run PSI and Discovery in PARALLEL to save ~5 seconds
+      // OPTIMIZATION: Run Lighthouse and discovery in parallel
       const psiPromise = !mainPageSignal.performance
-        ? fetchPageSpeedMetrics(url)
+        ? fetchPageSpeedMetrics(normalizedUrl)
         : Promise.resolve(mainPageSignal.performance);
 
-      const discoveryPromise = discoverPages(url);
+      const discoveryPromise = discoverPages(normalizedUrl);
 
       const [psi, targetPages] = await Promise.all([psiPromise, discoveryPromise]);
 
-      // Attach PSI if we fetched it
+      // Attach Lighthouse data if we fetched it
       if (psi) mainPageSignal.performance = psi;
 
       // exclude homepage from re-analysis but KEEP sub-pages
       const subPages = targetPages.filter(p => {
         const pNorm = p.endsWith('/') ? p.slice(0, -1) : p;
-        const uNorm = url.endsWith('/') ? url.slice(0, -1) : url;
+        const uNorm = normalizedUrl.endsWith('/') ? normalizedUrl.slice(0, -1) : normalizedUrl;
         return pNorm !== uNorm;
       });
 
       console.log(`[Flux Deep] Analyzing ${subPages.length} sub-pages + Homepage...`);
 
-      const pageResults = await Promise.all(subPages.map(p => analyzePage(p, false))); // No PSI for subpages
+      const pageResults = await Promise.all(subPages.map(p => analyzePage(p, false))); // No Lighthouse for subpages
       const validPages = [mainPageSignal, ...pageResults.filter(p => p.statusCode === 200)];
 
       // Force-refresh the homepage content for Deep Pass if it was truncated in Fast Pass
@@ -981,14 +969,15 @@ export async function POST(req: Request) {
       // For now, we rely on the implementation plan.
 
       // 3. Deep Analysis
-      const auditReport = await generateAuditReport(validPages, url, 'deep');
+      const auditReport = await generateAuditReport(validPages, normalizedUrl, 'deep', siteDiagnostics);
 
       // 4. Merge
       auditReport.meta = {
         ...auditReport.meta,
-        url,
+        url: normalizedUrl,
         scanTimestamp: new Date().toISOString(),
-        performance: mainPageSignal.performance
+        performance: mainPageSignal.performance,
+        crux: mainPageSignal.crux
       };
       auditReport.scannedPages = validPages.map(p => p.url);
 

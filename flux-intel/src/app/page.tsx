@@ -23,6 +23,9 @@ import ResearchStream, { DeepScanningLine } from '../components/ResearchStream';
 // --- TYPES ---
 interface PerformanceMetrics {
     lighthouseScore: number;
+    seoScore?: number;
+    accessibilityScore?: number;
+    bestPracticesScore?: number;
     lcp: string;
     inp: string;
     cls: string;
@@ -30,7 +33,6 @@ interface PerformanceMetrics {
     fcp?: string;
     fid?: string;
     tti?: string;
-    isEstimate?: boolean; // NEW: Flag to indicate heuristic data
 }
 
 interface CoreSignal {
@@ -68,10 +70,21 @@ interface AnalysisReport {
         url: string;
         scanTimestamp: string;
         performance?: PerformanceMetrics;
+        crux?: {
+            lcp?: string;
+            inp?: string;
+            cls?: string;
+            dataSource?: string;
+            collectionPeriod?: { firstDate: string; lastDate: string };
+        };
+        scanDiagnostics?: {
+            robotsTxt?: { status: number; contentPreview?: string; sitemapUrls?: string[]; error?: string };
+            llmsTxt?: { status: number; location: string; contentPreview?: string; error?: string };
+        };
     };
     error?: string; // Added to handle error state
     scannedPages?: string[];
-    coreSignals: {
+    coreSignals?: {
         vibeScore: CoreSignal;
         headlineSignal: CoreSignal;
         visualArchitecture: CoreSignal;
@@ -85,11 +98,22 @@ interface AnalysisReport {
     signals?: {
         navigation?: string[];
     };
-    clientReadySummary: {
+    pageSignals?: {
+        title?: string;
+        metaDescription?: string;
+        metaKeywords?: string;
+        metaRobots?: string;
+        xRobotsTag?: string;
+        canonical?: string;
+        h1?: string[];
+        topKeywords?: Array<{ term: string; count: number }>;
+    };
+    clientReadySummary?: {
         executiveSummary: string;
         top3WinsThisWeek: string[];
     };
     type?: 'fast' | 'deep'; // Track which stage we are at
+    analysisMode?: 'ai' | 'deterministic';
     domIssues?: {
         lcp?: { rect: { width: number; height: number; top: number; left: number }; snippet?: string };
         cls?: Array<{ rect: { width: number; height: number; top: number; left: number }; snippet?: string }>;
@@ -131,10 +155,9 @@ const calculateTrustSignal = (fixes?: TacticalFix[]) => {
 
 
 
-// Client-Side PSI Fetch Hook - DISABLED
-// Reason: Cannot securely pass API key to client without exposing it.
-// The server-side /api/audit route already fetches PSI data with the API key in deep mode.
-// Client-Side PSI Fetch Hook
+// Client-Side Lighthouse Fetch Hook
+// Reason: Avoid exposing API keys or running Lighthouse directly in the browser.
+// The server-side /api/audit route already fetches Lighthouse data in deep mode.
 const useClientSidePerformance = (url: string, trigger: boolean) => {
     const [metrics, setMetrics] = useState<PerformanceMetrics | null>(null);
     const [loading, setLoading] = useState(false);
@@ -153,7 +176,7 @@ const useClientSidePerformance = (url: string, trigger: boolean) => {
 
                 setMetrics(data); // API returns exact structure expected
             } catch (err) {
-                console.warn("[Flux Client Fallback] Failed to fetch PSI", err);
+                console.warn("[Flux Client Fallback] Failed to fetch Lighthouse metrics", err);
             } finally {
                 setLoading(false);
             }
@@ -256,87 +279,6 @@ const useSafetyCheck = (url: string, trigger: boolean) => {
 // };
 
 
-const MOCK_REPORT: AnalysisReport = {
-    meta: {
-        url: "https://demo.flux-intel.com",
-        scanTimestamp: new Date().toISOString(),
-        performance: {
-            lighthouseScore: 88,
-            lcp: "1.2s",
-            inp: "45ms",
-            cls: "0.01",
-            speedIndex: "1.5s"
-        }
-    },
-    coreSignals: {
-        vibeScore: { grade: "B", score: 82, label: "Solid Foundation", summary: "Good base, needs polish." },
-        headlineSignal: { grade: "A", label: "Example Signal", summary: "Strong messaging." },
-        visualArchitecture: { grade: "B-", label: "Visuals", summary: "Clean but generic." }
-    },
-    clientReadySummary: {
-        executiveSummary: "This is a demonstration of the Flux Intelligence Engine's terminal aesthetic. The system has detected strong structural integrity but suggests targeted optimizations in visual hierarchy and interaction depth.",
-        top3WinsThisWeek: ["Optimize LCP", "Refine Typography", "Enhance Animations"]
-    },
-    strategicIntelligence: {
-        onSiteStrategy: { summary: "Enhance core web vitals.", actions: ["Minify JS", "Optimize Images"] },
-        offSiteGrowth: { summary: "Expand backlink profile.", actions: ["Guest posts", "Social signals"] },
-        aiOpportunities: { summary: "Leverage AI for content.", actions: ["Auto-blogging", "Smart replies"] }
-    },
-    tacticalFixes: [
-        {
-            id: "fix-1",
-            title: "Render blocking resources",
-            category: "Performance",
-            problem: "Critical CSS is not inlined.",
-            recommendation: "Inline critical CSS and defer the rest.",
-            impact: "High",
-            severity: "Critical",
-            effortHours: 4,
-            owners: ["DevOps"],
-            expectedOutcome: "Faster FCP",
-            evidence: [{ label: "Blocking Time", value: "1200ms" }]
-        },
-        {
-            id: "fix-2",
-            title: "Low contrast text",
-
-            category: "Accessibility",
-            problem: "Gray text on white background.",
-            recommendation: "Darken text color to meet WCAG AA.",
-            impact: "Medium",
-            severity: "High",
-            effortHours: 2,
-            owners: ["Design"],
-            expectedOutcome: "Better readability"
-        },
-        {
-            id: "fix-3",
-            title: "Missing Alt Tags",
-            category: "SEO",
-            problem: "Images missing descriptive alt text.",
-            recommendation: "Add alt tags to all images.",
-            impact: "Low",
-            severity: "Medium",
-            effortHours: 1,
-            owners: ["Content"],
-            expectedOutcome: "Improved SEO"
-        }
-    ],
-    type: "deep",
-    vs: {
-        self: {
-            meta: { url: "https://demo.flux-intel.com", scanTimestamp: new Date().toISOString(), performance: { lighthouseScore: 88, lcp: "1.2s", inp: "45ms", cls: "0.01", speedIndex: "1.5s" } },
-            coreSignals: { vibeScore: { grade: "B" }, headlineSignal: { grade: "A" }, visualArchitecture: { grade: "B-" } },
-            clientReadySummary: { executiveSummary: "Self summary", top3WinsThisWeek: [] }
-        },
-        enemy: {
-            meta: { url: "https://competitor.com", scanTimestamp: new Date().toISOString(), performance: { lighthouseScore: 75, lcp: "2.5s", inp: "80ms", cls: "0.05", speedIndex: "2.8s" } },
-            coreSignals: { vibeScore: { grade: "C" }, headlineSignal: { grade: "B" }, visualArchitecture: { grade: "C+" } },
-            clientReadySummary: { executiveSummary: "Enemy summary", top3WinsThisWeek: [] }
-        }
-    }
-};
-
 export default function Dashboard() {
     const [url, setUrl] = useState('');
     const [enemyUrl, setEnemyUrl] = useState(''); // VS Mode: Competitor URL
@@ -373,6 +315,13 @@ export default function Dashboard() {
 
     // Merge client metrics if available
     const displayPerformance = report?.meta?.performance || clientMetrics;
+    const executiveSummary = report?.clientReadySummary?.executiveSummary
+        || (report?.analysisMode === 'deterministic'
+            ? 'AI analysis unavailable. Showing raw scan data only.'
+            : 'AI analysis unavailable.');
+    const safetyStatus = safety
+        ? (safety.isSafe ? 'PASS' : 'FAIL')
+        : (safetyError ? 'UNAVAILABLE' : '-');
 
     // Persistence: Clean up legacy URL storage
     useEffect(() => {
@@ -920,106 +869,145 @@ export default function Dashboard() {
                                                         <div className="px-4 py-2 bg-[#f06c5b]/10 border border-[#f06c5b]/20 text-[#f06c5b] text-[11px] uppercase font-bold tracking-widest rounded-full">
                                                             {report.type === 'fast' ? "Standard Audit" : "Deep Analysis"}
                                                         </div>
+                                                        {report.analysisMode === 'deterministic' && (
+                                                            <div className="px-4 py-2 bg-white/[0.02] border border-white/[0.08] text-white/50 text-[11px] uppercase font-bold tracking-widest rounded-full">
+                                                                Raw Scan
+                                                            </div>
+                                                        )}
                                                     </div>
                                                 </div>
-                                                <div className="flex justify-center px-4">
-                                                    <p className="text-[16px] text-[#94a3b8] leading-relaxed max-w-3xl text-center font-medium">
-                                                        {report.clientReadySummary.executiveSummary}
-                                                    </p>
-                                                </div>
+                                                    <div className="flex justify-center px-4">
+                                                        <p className="text-[16px] text-[#94a3b8] leading-relaxed max-w-3xl text-center font-medium">
+                                                        {executiveSummary}
+                                                        </p>
+                                                    </div>
                                             </section>
 
-
-
-                                            {report.strategicIntelligence && (
-                                                <section className="pt-12 border-t border-white/[0.05]">
-                                                    <div className="flex items-center gap-3 mb-8">
-                                                        <Target className="w-3.5 h-3.5 text-[#f06c5b]" />
-                                                        <h2 className="text-lg font-semibold text-[#E8E8E8] tracking-tight">Strategic Intelligence</h2>
+                                            {report.meta.scanDiagnostics && (
+                                                <section className="pt-8 border-t border-white/[0.05]">
+                                                    <div className="flex items-center gap-3 mb-6">
+                                                        <Database className="w-3.5 h-3.5 text-[#f06c5b]" />
+                                                        <h2 className="text-lg font-semibold text-[#E8E8E8] tracking-tight">Scan Diagnostics</h2>
                                                     </div>
-
-                                                    <div className="grid grid-cols-1 md:grid-cols-3 gap-10">
-                                                        {/* On-Site Optimization */}
-                                                        <div className="space-y-5">
-                                                            <div className="tech-label border-b border-white/[0.08] pb-2 flex items-center justify-between">
-                                                                <span className="text-white/60">On-Site Vectors</span>
-                                                                <span className="text-[#f06c5b]">01</span>
+                                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6 text-[12px] text-white/60">
+                                                        <div className="glass-card p-5 rounded-2xl border border-white/[0.06]">
+                                                            <div className="text-[10px] uppercase tracking-[0.2em] text-white/30 mb-2">robots.txt</div>
+                                                            <div className="font-semibold text-white/70">
+                                                                Status: {report.meta.scanDiagnostics.robotsTxt?.status ?? 'N/A'}
                                                             </div>
-                                                            <p className="text-[14px] text-[#94a3b8] leading-relaxed font-medium">
-                                                                {report.strategicIntelligence.onSiteStrategy?.summary}
-                                                            </p>
-                                                            <div className="space-y-3">
-                                                                {report.strategicIntelligence.onSiteStrategy?.actions?.map((action, i) => (
-                                                                    <button
-                                                                        key={i}
-                                                                        onClick={() => setSelectedSignal({
-                                                                            title: 'On-Site Strategy',
-                                                                            data: { summary: action, grade: 'PR-1', whyItMatters: "Technical foundation reinforcement.", rationale: "Critical infrastructure path." }
-                                                                        })}
-                                                                        className="w-full text-left text-[12px] text-white/50 leading-relaxed flex items-start gap-3 hover:text-[#f8fafc] transition-colors group"
-                                                                    >
-                                                                        <span className="text-[#f06c5b] font-bold select-none text-[14px]">›</span>
-                                                                        <span className="font-medium">{action}</span>
-                                                                    </button>
-                                                                ))}
+                                                            <div className="mt-2 text-white/50">
+                                                                Sitemaps: {report.meta.scanDiagnostics.robotsTxt?.sitemapUrls?.length ?? 0}
                                                             </div>
+                                                            {report.meta.scanDiagnostics.robotsTxt?.contentPreview && (
+                                                                <pre className="mt-3 text-[10px] leading-relaxed whitespace-pre-wrap text-white/40 bg-black/40 p-2 rounded border border-white/5 max-h-32 overflow-auto">
+                                                                    {report.meta.scanDiagnostics.robotsTxt.contentPreview}
+                                                                </pre>
+                                                            )}
                                                         </div>
-
-                                                        {/* Off-Site Growth */}
-                                                        <div className="space-y-5">
-                                                            <div className="tech-label border-b border-white/[0.08] pb-2 flex items-center justify-between">
-                                                                <span className="text-white/60">Off-Site Authority</span>
-                                                                <span className="text-[#f06c5b]">02</span>
+                                                        <div className="glass-card p-5 rounded-2xl border border-white/[0.06]">
+                                                            <div className="text-[10px] uppercase tracking-[0.2em] text-white/30 mb-2">llms.txt</div>
+                                                            <div className="font-semibold text-white/70">
+                                                                Status: {report.meta.scanDiagnostics.llmsTxt?.status ?? 'N/A'}
                                                             </div>
-                                                            <p className="text-[14px] text-[#94a3b8] leading-relaxed font-medium">
-                                                                {report.strategicIntelligence.offSiteGrowth?.summary}
-                                                            </p>
-                                                            <div className="space-y-3">
-                                                                {report.strategicIntelligence.offSiteGrowth?.actions?.map((action, i) => (
-                                                                    <button
-                                                                        key={i}
-                                                                        onClick={() => setSelectedSignal({
-                                                                            title: 'Off-Site Growth',
-                                                                            data: { summary: action, grade: 'GR-1', whyItMatters: "External resonance expansion.", rationale: "Domain authority signal." }
-                                                                        })}
-                                                                        className="w-full text-left text-[12px] text-white/50 leading-relaxed flex items-start gap-3 hover:text-[#f8fafc] transition-colors group"
-                                                                    >
-                                                                        <span className="text-[#f06c5b] font-bold select-none text-[14px]">›</span>
-                                                                        <span className="font-medium">{action}</span>
-                                                                    </button>
-                                                                ))}
+                                                            <div className="mt-2 text-white/50">
+                                                                Location: {report.meta.scanDiagnostics.llmsTxt?.location || 'N/A'}
                                                             </div>
-                                                        </div>
-
-                                                        {/* AI & Automation */}
-                                                        <div className="space-y-5">
-                                                            <div className="tech-label border-b border-white/[0.08] pb-2 flex items-center justify-between">
-                                                                <span className="text-white/60">AI Protocols</span>
-                                                                <span className="text-[#f06c5b]">03</span>
-                                                            </div>
-                                                            <p className="text-[14px] text-[#94a3b8] leading-relaxed font-medium">
-                                                                {report.strategicIntelligence.aiOpportunities?.summary}
-                                                            </p>
-                                                            <div className="space-y-3">
-                                                                {report.strategicIntelligence.aiOpportunities?.actions?.map((action, i) => (
-                                                                    <button
-                                                                        key={i}
-                                                                        onClick={() => setSelectedSignal({
-                                                                            title: 'AI Automation',
-                                                                            data: { summary: action, grade: 'AI-1', whyItMatters: "Scalability and precision enhancement.", rationale: "Forward-looking optimization." }
-                                                                        })}
-                                                                        className="w-full text-left text-[12px] text-white/50 leading-relaxed flex items-start gap-3 hover:text-[#f8fafc] transition-colors group"
-                                                                    >
-                                                                        <span className="text-[#f06c5b] font-bold select-none text-[14px]">›</span>
-                                                                        <span className="font-medium">{action}</span>
-                                                                    </button>
-                                                                ))}
-                                                            </div>
+                                                            {report.meta.scanDiagnostics.llmsTxt?.contentPreview && (
+                                                                <pre className="mt-3 text-[10px] leading-relaxed whitespace-pre-wrap text-white/40 bg-black/40 p-2 rounded border border-white/5 max-h-32 overflow-auto">
+                                                                    {report.meta.scanDiagnostics.llmsTxt.contentPreview}
+                                                                </pre>
+                                                            )}
                                                         </div>
                                                     </div>
                                                 </section>
                                             )}
 
+                                            {report.meta.crux && (
+                                                <section className="pt-8 border-t border-white/[0.05]">
+                                                    <div className="flex items-center gap-3 mb-6">
+                                                        <Gauge className="w-3.5 h-3.5 text-[#f06c5b]" />
+                                                        <h2 className="text-lg font-semibold text-[#E8E8E8] tracking-tight">Field Performance (CrUX)</h2>
+                                                    </div>
+                                                    <div className="glass-card p-5 rounded-2xl border border-white/[0.06] text-[12px] text-white/60 space-y-3">
+                                                        <div className="flex items-center justify-between">
+                                                            <span className="text-white/40 uppercase tracking-[0.2em] text-[10px]">LCP</span>
+                                                            <span className="text-white/80 font-semibold">{report.meta.crux.lcp || 'NOT OBSERVED'}</span>
+                                                        </div>
+                                                        <div className="flex items-center justify-between">
+                                                            <span className="text-white/40 uppercase tracking-[0.2em] text-[10px]">INP</span>
+                                                            <span className="text-white/80 font-semibold">{report.meta.crux.inp || 'NOT OBSERVED'}</span>
+                                                        </div>
+                                                        <div className="flex items-center justify-between">
+                                                            <span className="text-white/40 uppercase tracking-[0.2em] text-[10px]">CLS</span>
+                                                            <span className="text-white/80 font-semibold">{report.meta.crux.cls || 'NOT OBSERVED'}</span>
+                                                        </div>
+                                                        <div className="text-white/40 text-[10px] uppercase tracking-[0.2em]">
+                                                            {report.meta.crux.collectionPeriod
+                                                                ? `Period ${report.meta.crux.collectionPeriod.firstDate} → ${report.meta.crux.collectionPeriod.lastDate}`
+                                                                : 'Collection period not observed'}
+                                                        </div>
+                                                    </div>
+                                                </section>
+                                            )}
+
+                                            {report.pageSignals && (
+                                                <section className="pt-8 border-t border-white/[0.05]">
+                                                    <div className="flex items-center gap-3 mb-6">
+                                                        <Microscope className="w-3.5 h-3.5 text-[#f06c5b]" />
+                                                        <h2 className="text-lg font-semibold text-[#E8E8E8] tracking-tight">On-Page Signals</h2>
+                                                    </div>
+                                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6 text-[12px] text-white/60">
+                                                        <div className="glass-card p-5 rounded-2xl border border-white/[0.06] space-y-3">
+                                                            <div>
+                                                                <div className="text-[10px] uppercase tracking-[0.2em] text-white/30 mb-1">Title</div>
+                                                                <div className="text-white/70 font-semibold break-words">
+                                                                    {report.pageSignals.title || 'NOT OBSERVED'}
+                                                                </div>
+                                                            </div>
+                                                            <div>
+                                                                <div className="text-[10px] uppercase tracking-[0.2em] text-white/30 mb-1">Meta Description</div>
+                                                                <div className="text-white/60 break-words">
+                                                                    {report.pageSignals.metaDescription || 'NOT OBSERVED'}
+                                                                </div>
+                                                            </div>
+                                                            <div>
+                                                                <div className="text-[10px] uppercase tracking-[0.2em] text-white/30 mb-1">Meta Keywords</div>
+                                                                <div className="text-white/60 break-words">
+                                                                    {report.pageSignals.metaKeywords || 'NOT OBSERVED'}
+                                                                </div>
+                                                            </div>
+                                                            <div>
+                                                                <div className="text-[10px] uppercase tracking-[0.2em] text-white/30 mb-1">Canonical</div>
+                                                                <div className="text-white/60 break-words">
+                                                                    {report.pageSignals.canonical || 'NOT OBSERVED'}
+                                                                </div>
+                                                            </div>
+                                                        </div>
+                                                        <div className="glass-card p-5 rounded-2xl border border-white/[0.06] space-y-3">
+                                                            <div>
+                                                                <div className="text-[10px] uppercase tracking-[0.2em] text-white/30 mb-1">H1</div>
+                                                                <div className="text-white/70 font-semibold break-words">
+                                                                    {report.pageSignals.h1?.length ? report.pageSignals.h1.join(' | ') : 'NOT OBSERVED'}
+                                                                </div>
+                                                            </div>
+                                                            <div>
+                                                                <div className="text-[10px] uppercase tracking-[0.2em] text-white/30 mb-1">Meta Robots / X-Robots-Tag</div>
+                                                                <div className="text-white/60 break-words">
+                                                                    {report.pageSignals.metaRobots || report.pageSignals.xRobotsTag || 'NOT OBSERVED'}
+                                                                </div>
+                                                            </div>
+                                                            <div>
+                                                                <div className="text-[10px] uppercase tracking-[0.2em] text-white/30 mb-1">Top Keywords</div>
+                                                                <div className="text-white/60 break-words">
+                                                                    {report.pageSignals.topKeywords?.length
+                                                                        ? report.pageSignals.topKeywords.map(k => `${k.term} (${k.count})`).join(', ')
+                                                                        : 'NOT OBSERVED'}
+                                                                </div>
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                </section>
+                                            )}
 
                                             {/* STRATEGIC INDEX - TERMINAL STYLE */}
                                             {/* OLD LOCATION OF STRATEGIC INDEX - REMOVED */}
@@ -1104,8 +1092,11 @@ export default function Dashboard() {
                                                             </button>
                                                             <div className="text-center px-4 py-3 rounded-2xl">
                                                                 <div className="text-[9px] font-bold mb-2 text-white/30 uppercase tracking-[0.15em]">Integrity</div>
-                                                                <div className={clsx("text-3xl font-black", safety?.isSafe ? "text-[#10b981]" : "text-red-400")}>
-                                                                    {safety ? (safety.isSafe ? "PASS" : "FAIL") : "-"}
+                                                                <div className={clsx(
+                                                                    "text-3xl font-black",
+                                                                    safety?.isSafe ? "text-[#10b981]" : safety ? "text-red-400" : "text-white/40"
+                                                                )}>
+                                                                    {safetyStatus}
                                                                 </div>
                                                             </div>
                                                         </div>
@@ -1127,7 +1118,10 @@ export default function Dashboard() {
                                                                 </div>
                                                             ) : (
                                                                 <p className="text-[15px] leading-relaxed font-medium text-[#f8fafc]/90">
-                                                                    {report.coreSignals?.vibeScore?.summary || "Analyzing signal resonance..."}
+                                                                    {report.coreSignals?.vibeScore?.summary
+                                                                        || (report.analysisMode === 'deterministic'
+                                                                            ? 'No AI narrative available for this scan.'
+                                                                            : 'Summary unavailable.')}
                                                                 </p>
                                                             )}
                                                         </div>

@@ -1,13 +1,8 @@
 "use client";
 
 import React, { useState, useEffect } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
-import {
-    Activity, Plus, Search, MoreVertical,
-    ArrowUpRight, ArrowDownRight, Clock,
-    ShieldCheck, AlertTriangle, Trash2, Globe
-} from 'lucide-react';
-import { clsx } from 'clsx';
+import { motion } from 'framer-motion';
+import { Trash2 } from 'lucide-react';
 
 // --- TYPES ---
 
@@ -28,14 +23,6 @@ export interface MonitoredTarget {
         score: number;
     }[];
 }
-
-// --- MOCK DATA GENERATOR ---
-const generateMockHistory = (baseScore: number) => {
-    return Array.from({ length: 12 }).map((_, i) => ({
-        timestamp: Date.now() - (11 - i) * 86400000,
-        score: Math.min(100, Math.max(0, baseScore + (Math.random() * 8 - 4)))
-    }));
-};
 
 const TrendSparkline = ({ data, color }: { data: { score: number }[], color: string }) => {
     if (!data || data.length < 2) return null;
@@ -104,31 +91,6 @@ export const MonitorView = () => {
         const saved = localStorage.getItem('flux_monitor_targets');
         if (saved) {
             setTargets(JSON.parse(saved));
-        } else {
-            const demoData: MonitoredTarget[] = [
-                {
-                    id: '1',
-                    url: 'stripe.com',
-                    frequency: 'daily',
-                    status: 'healthy',
-                    lastScan: Date.now() - 3600000,
-                    strategicIndex: 94,
-                    metrics: { lcp: '0.8s', cls: '0.00', seo: 98 },
-                    history: generateMockHistory(94)
-                },
-                {
-                    id: '2',
-                    url: 'linear.app',
-                    frequency: 'daily',
-                    status: 'healthy',
-                    lastScan: Date.now() - 86400000,
-                    strategicIndex: 88,
-                    metrics: { lcp: '1.2s', cls: '0.01', seo: 92 },
-                    history: generateMockHistory(88)
-                }
-            ];
-            setTargets(demoData);
-            localStorage.setItem('flux_monitor_targets', JSON.stringify(demoData));
         }
     }, []);
 

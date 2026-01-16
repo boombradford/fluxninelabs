@@ -9,18 +9,12 @@ export async function POST(req: Request) {
             return NextResponse.json({ error: 'URL is required' }, { status: 400 });
         }
 
-        const apiKey = process.env.GOOGLE_PSI_API_KEY || '';
+        const apiKey = process.env.GOOGLE_SAFE_BROWSING_API_KEY || '';
 
-        // FAIL GRACEFULLY: If no API key, assume safe (non-blocking)
         if (!apiKey) {
-            console.warn('[Flux Safety API] No API key configured, assuming safe');
             return NextResponse.json({
-                isSafe: true,
-                threats: [],
-                checkedAt: new Date().toISOString(),
-                degraded: true,
-                warning: 'Safety check unavailable (missing API key)'
-            });
+                error: 'Safety check unavailable: GOOGLE_SAFE_BROWSING_API_KEY is not configured.'
+            }, { status: 503 });
         }
 
         const apiUrl = `https://safebrowsing.googleapis.com/v4/threatMatches:find?key=${apiKey}`;
@@ -62,11 +56,7 @@ export async function POST(req: Request) {
         // FAIL OPEN: Don't block the audit if safety check fails
         // Return 200 with degraded mode instead of 500 error
         return NextResponse.json({
-            isSafe: true,
-            threats: [],
-            checkedAt: new Date().toISOString(),
-            degraded: true,
-            warning: 'Safety check unavailable (API error)'
-        });
+            error: 'Safety check unavailable due to API error.'
+        }, { status: 503 });
     }
 }

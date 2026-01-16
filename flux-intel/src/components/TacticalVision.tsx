@@ -45,7 +45,7 @@ export const TacticalVision = ({ url, fixes = [], isScanning = false, domIssues 
                         </span>
                     </div>
                     <div className="flex gap-4 text-[9px] font-mono text-[#555555]">
-                        <span>REC::{(Math.random() * 1000).toFixed(0)}</span>
+                        <span>REC::ACTIVE</span>
                         <span>[STREAMING]</span>
                     </div>
                 </div>
