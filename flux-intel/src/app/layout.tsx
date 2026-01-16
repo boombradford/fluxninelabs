@@ -7,10 +7,19 @@ export const metadata: Metadata = {
     title: "Flux Intelligence | Real-Data Website Audits",
     description: "Real-data website audits powered by PSI, CrUX, and on-page SEO signals. Clear recommendations without guesswork.",
     keywords: ["St. Louis SEO", "Local SEO St. Louis", "Digital Marketing St. Louis", "Website Audit", "AI SEO Tool", "Flux Nine Labs"],
+    metadataBase: new URL("https://engine.fluxninelabs.com"),
+    alternates: {
+        canonical: "/",
+    },
+    icons: {
+        icon: "/favicon.svg",
+        shortcut: "/favicon.svg",
+        apple: "/brand/logo.jpg",
+    },
     openGraph: {
         title: "Flux Intelligence | Real-Data Website Audits",
         description: "Run a real-data website audit with PSI, CrUX, and on-page SEO signals.",
-        url: "https://fluxninelabs.com",
+        url: "https://engine.fluxninelabs.com",
         siteName: "Flux Nine Labs",
         locale: "en_US",
         type: "website",

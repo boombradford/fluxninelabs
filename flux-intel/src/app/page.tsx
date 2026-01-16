@@ -426,14 +426,22 @@ export default function Dashboard() {
                     {/* PERSISTENT SIDEBAR RAIL */}
                     <aside className="w-14 border-r border-white/[0.04] bg-[#030712] flex flex-col items-center py-6 gap-6 shrink-0">
                         <div className="p-2.5 text-[#f06c5b] bg-[#f06c5b]/10 rounded-xl transition-all hover:scale-110">
-                            <Activity className="w-4 h-4" />
+                            <Activity className="w-4 h-4" aria-hidden="true" />
                         </div>
-                        <div className="p-2.5 text-[#555555] hover:text-[#8B8B8B] transition-colors cursor-pointer">
-                            <Search className="w-4 h-4" />
-                        </div>
-                        <div className="p-2.5 text-[#555555] hover:text-[#8B8B8B] transition-colors cursor-pointer">
-                            <Globe className="w-4 h-4" />
-                        </div>
+                        <button
+                            type="button"
+                            className="p-2.5 text-[#555555] hover:text-[#8B8B8B] transition-colors cursor-pointer"
+                            aria-label="Search"
+                        >
+                            <Search className="w-4 h-4" aria-hidden="true" />
+                        </button>
+                        <button
+                            type="button"
+                            className="p-2.5 text-[#555555] hover:text-[#8B8B8B] transition-colors cursor-pointer"
+                            aria-label="Global view"
+                        >
+                            <Globe className="w-4 h-4" aria-hidden="true" />
+                        </button>
                     </aside>
 
                     <div className="flex-1 overflow-y-auto bg-[#0D1117]" id="main-content">
@@ -481,6 +489,7 @@ export default function Dashboard() {
                                                                     }}
                                                                     placeholder="domain.com"
                                                                     className="w-full bg-transparent text-white py-2 focus:outline-none placeholder:text-white/20 text-[16px]"
+                                                                    aria-label="Website domain"
                                                                     autoFocus
                                                                 />
                                                             </div>
