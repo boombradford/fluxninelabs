@@ -415,6 +415,12 @@ export default function Dashboard() {
                     )}
 
                     <div className="flex items-center gap-4">
+                        <a
+                            href="/drift"
+                            className="px-3 py-1 text-[10px] font-mono text-[#f8fafc] border border-white/[0.08] bg-white/[0.02] uppercase tracking-[0.2em] hover:border-[#f06c5b]/50 hover:text-[#f06c5b] transition-colors"
+                        >
+                            Project Drift
+                        </a>
                         <div className="flex items-center gap-2 px-3 py-1 border border-[rgba(255,255,255,0.04)]">
                             <div className="w-1 h-1 rounded-full bg-[#3D8B6E]" />
                             <span className="text-[10px] font-mono text-[#555555]">Online</span>
