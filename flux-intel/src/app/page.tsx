@@ -220,6 +220,10 @@ export default function Dashboard() {
         }
     }, []);
 
+    useEffect(() => {
+        if (report) setError(null);
+    }, [report]);
+
     const handleSetReport = (newReport: AnalysisReport | null) => {
         setReport(newReport);
     };
@@ -471,7 +475,10 @@ export default function Dashboard() {
                                                                 <input
                                                                     type="text"
                                                                     value={url}
-                                                                    onChange={(e) => setUrl(e.target.value)}
+                                                                    onChange={(e) => {
+                                                                        if (error) setError(null);
+                                                                        setUrl(e.target.value);
+                                                                    }}
                                                                     placeholder="domain.com"
                                                                     className="w-full bg-transparent text-white py-2 focus:outline-none placeholder:text-white/20 text-[16px]"
                                                                     autoFocus
