@@ -6,20 +6,19 @@ import clsx from "clsx";
 
 // Process-oriented language, not AI theater
 const SCAN_STEPS = [
-    { id: 'resolve', label: "Resolving target", detail: "DNS lookup complete" },
-    { id: 'headers', label: "Reading headers", detail: "Response validated" },
-    { id: 'content', label: "Extracting content", detail: "Primary content isolated" },
-    { id: 'structure', label: "Mapping structure", detail: "Semantic hierarchy indexed" },
-    { id: 'performance', label: "Measuring performance", detail: "Core vitals captured" },
-    { id: 'signals', label: "Compiling signals", detail: "Data synthesis in progress" },
+    { id: 'resolve', label: "Resolving target", detail: "Domain validated" },
+    { id: 'headers', label: "Reading headers", detail: "Response OK" },
+    { id: 'content', label: "Extracting content", detail: "Primary text isolated" },
+    { id: 'structure', label: "Mapping structure", detail: "Headings indexed" },
+    { id: 'performance', label: "Measuring performance", detail: "PSI metrics captured" },
+    { id: 'signals', label: "Compiling signals", detail: "Recommendations queued" },
 ];
 
 const DEEP_STEPS = [
     { id: 'expand', label: "Expanding scope", detail: "Sub-pages identified" },
-    { id: 'cross-ref', label: "Cross-referencing", detail: "Messaging consistency check" },
-    { id: 'benchmark', label: "Benchmarking", detail: "Industry comparisons loaded" },
-    { id: 'synthesis', label: "Synthesizing findings", detail: "Strategic analysis underway" },
-    { id: 'assembly', label: "Assembling report", detail: "Tactical fixes prioritized" },
+    { id: 'crux', label: "Fetching field data", detail: "CrUX p75 checked" },
+    { id: 'recs', label: "Drafting recommendations", detail: "Evidence attached" },
+    { id: 'assembly', label: "Assembling report", detail: "Finalizing output" },
 ];
 
 export default function ReasoningLog({ status, centered = false }: { status: string, centered?: boolean }) {
@@ -111,8 +110,4 @@ export default function ReasoningLog({ status, centered = false }: { status: str
             </div>
         </div>
     );
-}
-
-export function DeepScanningLine() {
-    return null;
 }

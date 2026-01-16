@@ -1,7 +1,6 @@
 "use client";
 
 import { motion, AnimatePresence } from "framer-motion";
-import { CheckCircle2, Loader2, XCircle, Clock } from "lucide-react";
 import clsx from "clsx";
 
 export type MilestoneStatus = 'pending' | 'active' | 'complete' | 'error';

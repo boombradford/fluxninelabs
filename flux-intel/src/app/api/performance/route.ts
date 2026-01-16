@@ -58,7 +58,7 @@ async function fetchPageSpeedMetrics(url: string) {
         return await runLighthouseAudit(url);
     } catch (error) {
         const err = error instanceof Error ? error : new Error(String(error));
-        console.error(`[Flux Lighthouse API] Failed: ${err.message}`);
+        console.error(`[Flux PSI API] Failed: ${err.message}`);
         return null;
     }
 }

@@ -1,24 +1,17 @@
 "use client";
 
-import { useState, useRef, useEffect } from 'react';
-import Image from 'next/image';
-import Link from 'next/link';
+import { useState, useEffect } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
 import {
-    Share2, Search, Zap, Globe, Gauge, Activity, Target, ArrowRight, Settings, AlertTriangle, Monitor, Database, Lock, Loader2, Microscope, Maximize2, X, Trophy, LayoutTemplate, RefreshCw, ShieldCheck, Info, Printer, Check
+    Search, Zap, Globe, Gauge, Activity, Database, Microscope, AlertTriangle
 } from 'lucide-react';
-import { TextDecode } from "../components/ui/TextDecode";
 import clsx from 'clsx';
 import { DeepAnalysisReveal } from '../components/DeepAnalysisReveal';
-import { TechIcon } from '../components/ui/TechIcon';
 import { CyberLoader } from '../components/ui/CyberLoader';
 
-import { MonitorView } from '../components/MonitorView';
-import { CountUp } from '../components/CountUp';
-import { WarRoomView } from '../components/WarRoomView';
 import { TacticalVision } from '../components/TacticalVision';
-import ThinkingLog from '../components/ThinkingLog';
-import ResearchStream, { DeepScanningLine } from '../components/ResearchStream';
+import ThinkingLog, { Milestone } from '../components/ThinkingLog';
+import ResearchStream from '../components/ResearchStream';
 
 // --- TYPES ---
 interface PerformanceMetrics {
@@ -35,34 +28,18 @@ interface PerformanceMetrics {
     tti?: string;
 }
 
-interface CoreSignal {
-    grade?: string;
-    score?: number;
-    label?: string;
-    summary?: string;
-    rationale?: string;
-    whyItMatters?: string;
-    quickWin?: string;
-}
-
-interface TacticalFix {
+interface Recommendation {
     id: string;
     title: string;
-    category?: 'SEO' | 'Content' | 'UX' | 'Performance' | 'Accessibility';
-    problem: string;
+    category: 'Performance' | 'SEO' | 'Content' | 'CTA' | 'Best Practices';
+    priority: 'High' | 'Medium' | 'Low';
+    evidence: string[];
     recommendation: string;
-    impact: 'High' | 'Medium' | 'Low';
-    severity: 'Critical' | 'High' | 'Medium' | 'Low';
-    effortHours: number;
-    owners: string[];
-    expectedOutcome: string;
-    validationCriteria?: string;
-    evidence?: Array<{ label: string; value: string }>;
 }
 
-interface StrategicSection {
-    summary: string;
-    actions: string[];
+interface DataSourceStatus {
+    status: 'ok' | 'unavailable' | 'error';
+    detail: string;
 }
 
 interface AnalysisReport {
@@ -81,23 +58,14 @@ interface AnalysisReport {
             robotsTxt?: { status: number; contentPreview?: string; sitemapUrls?: string[]; error?: string };
             llmsTxt?: { status: number; location: string; contentPreview?: string; error?: string };
         };
+        dataSources?: {
+            psi: DataSourceStatus;
+            crux: DataSourceStatus;
+            onPage: DataSourceStatus;
+        };
     };
-    error?: string; // Added to handle error state
+    error?: string;
     scannedPages?: string[];
-    coreSignals?: {
-        vibeScore: CoreSignal;
-        headlineSignal: CoreSignal;
-        visualArchitecture: CoreSignal;
-    };
-    tacticalFixes?: TacticalFix[]; // Optional initially in Fast Mode
-    strategicIntelligence?: {
-        onSiteStrategy?: { summary: string, actions: string[] };
-        offSiteGrowth?: { summary: string, actions: string[] };
-        aiOpportunities?: { summary: string, actions: string[] };
-    };
-    signals?: {
-        navigation?: string[];
-    };
     pageSignals?: {
         title?: string;
         metaDescription?: string;
@@ -106,58 +74,46 @@ interface AnalysisReport {
         xRobotsTag?: string;
         canonical?: string;
         h1?: string[];
+        h2Count?: number;
+        wordCount?: number;
         topKeywords?: Array<{ term: string; count: number }>;
-    };
-    clientReadySummary?: {
-        executiveSummary: string;
-        top3WinsThisWeek: string[];
+        ctas?: Array<{ text: string; link: string }>;
     };
     type?: 'fast' | 'deep'; // Track which stage we are at
-    analysisMode?: 'ai' | 'deterministic';
+    analysisMode?: 'deterministic';
+    summary?: string;
+    recommendations?: Recommendation[];
     domIssues?: {
         lcp?: { rect: { width: number; height: number; top: number; left: number }; snippet?: string };
         cls?: Array<{ rect: { width: number; height: number; top: number; left: number }; snippet?: string }>;
     };
-    vs?: { // New property for VS mode
-        self: AnalysisReport;
-        enemy: AnalysisReport;
-    };
 }
 
 // --- HELPERS ---
-const getGradeColor = (grade: string = 'C') => {
-    const g = grade?.toUpperCase().charAt(0) || 'C';
-    if (g === 'A') return 'text-emerald-400 bg-emerald-500/10 border-emerald-500/20';
-    if (g === 'B') return 'text-blue-400 bg-blue-500/10 border-blue-500/20';
-    if (g === 'C') return 'text-orange-300 bg-orange-500/10 border-orange-500/20';
-    return 'text-red-400 bg-red-500/10 border-red-500/20';
-};
-
-const getImpactColor = (impact: string) => {
-    switch (impact) {
-        case 'High': return 'text-red-300 border-red-500/30 bg-red-500/10';
-        case 'Medium': return 'text-orange-300 border-orange-500/30 bg-orange-500/10';
-        default: return 'text-emerald-300 border-emerald-500/30 bg-emerald-500/10';
-    }
-};
-
 const getPerformanceColor = (score: number) => {
     if (score >= 90) return 'text-emerald-400';
     if (score >= 50) return 'text-orange-300';
     return 'text-red-400';
 };
 
-const calculateTrustSignal = (fixes?: TacticalFix[]) => {
-    if (!fixes || fixes.length === 0) return 0;
-    const backedByEvidence = fixes.filter(f => f.evidence && f.evidence.length > 0).length;
-    return Math.round((backedByEvidence / fixes.length) * 100);
+const getPriorityColor = (priority: Recommendation['priority']) => {
+    switch (priority) {
+        case 'High': return 'text-red-300 border-red-500/30 bg-red-500/10';
+        case 'Medium': return 'text-orange-300 border-orange-500/30 bg-orange-500/10';
+        default: return 'text-emerald-300 border-emerald-500/30 bg-emerald-500/10';
+    }
+};
+
+const getSourceStatusColor = (status: DataSourceStatus['status']) => {
+    if (status === 'ok') return 'text-emerald-400';
+    if (status === 'error') return 'text-red-400';
+    return 'text-white/40';
 };
 
 
 
-// Client-Side Lighthouse Fetch Hook
-// Reason: Avoid exposing API keys or running Lighthouse directly in the browser.
-// The server-side /api/audit route already fetches Lighthouse data in deep mode.
+// Client-side PSI fetch hook
+// Reason: Avoid exposing API keys; /api/audit fetches PSI in deep mode when available.
 const useClientSidePerformance = (url: string, trigger: boolean) => {
     const [metrics, setMetrics] = useState<PerformanceMetrics | null>(null);
     const [loading, setLoading] = useState(false);
@@ -176,7 +132,7 @@ const useClientSidePerformance = (url: string, trigger: boolean) => {
 
                 setMetrics(data); // API returns exact structure expected
             } catch (err) {
-                console.warn("[Flux Client Fallback] Failed to fetch Lighthouse metrics", err);
+                console.warn("[Flux Client Fallback] Failed to fetch PSI metrics", err);
             } finally {
                 setLoading(false);
             }
@@ -186,46 +142,6 @@ const useClientSidePerformance = (url: string, trigger: boolean) => {
     }, [url, trigger]);
 
     return { metrics, loading };
-};
-
-const useSafetyCheck = (url: string, trigger: boolean) => {
-    const [safety, setSafety] = useState<{ isSafe: boolean; threats: string[] } | null>(null);
-    const [loading, setLoading] = useState(false);
-    const [error, setError] = useState<string | null>(null);
-
-    useEffect(() => {
-        if (!trigger || !url) {
-            // Reset state if not triggering
-            setSafety(null);
-            setError(null);
-            return;
-        }
-        const checkSafety = async () => {
-            console.log("[Flux Safety] Triggering check for:", url);
-            setLoading(true);
-            setError(null);
-            setSafety(null); // Clear previous result before new fetch
-            try {
-                const res = await fetch('/api/safety', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ url })
-                });
-                const data = await res.json();
-                if (data.error) throw new Error(data.error);
-                console.log("[Flux Safety] Success:", data);
-                setSafety(data);
-                // eslint-disable-next-line @typescript-eslint/no-explicit-any
-            } catch (err: any) {
-                console.warn("[Flux Safety] Failed", err);
-                setError(err.message || "Unknown error");
-            } finally {
-                setLoading(false);
-            }
-        };
-        checkSafety();
-    }, [url, trigger]);
-    return { safety, loading, error };
 };
 
 // REMOVED: Brand Authority feature (Knowledge Graph data kept private)
@@ -281,23 +197,11 @@ const useSafetyCheck = (url: string, trigger: boolean) => {
 
 export default function Dashboard() {
     const [url, setUrl] = useState('');
-    const [enemyUrl, setEnemyUrl] = useState(''); // VS Mode: Competitor URL
-    const [isVsMode, setIsVsMode] = useState(false); // VS Mode Toggle
     const [status, setStatus] = useState<'idle' | 'scouting' | 'analyzing' | 'analyzing_deep' | 'complete'>('idle');
-    const [scanStatusMessage, setScanStatusMessage] = useState('Initializing Flux Engine...');
-    const [milestones, setMilestones] = useState<Milestone[]>([]);
+    const [scanStatusMessage, setScanStatusMessage] = useState('Initializing scan...');
+    const [, setMilestones] = useState<Milestone[]>([]);
     const [report, setReport] = useState<AnalysisReport | null>(null);
-    const [enemyReport, setEnemyReport] = useState<AnalysisReport | null>(null); // VS Mode: Competitor Report
     const [error, setError] = useState<string | null>(null);
-    const [activeView, setActiveView] = useState<'audit' | 'monitor' | 'strategy' | 'settings' | 'vs'>('audit');
-    const [selectedSignal, setSelectedSignal] = useState<{
-        title: string;
-        data: CoreSignal;
-        grade?: string;
-        summary?: string;
-        rationale?: string;
-        whyItMatters?: string;
-    } | null>(null);
 
     // Client-Side Performance Fetcher (Triggers when report is ready but missing performance)
     const { metrics: clientMetrics, loading: clientMetricsLoading } = useClientSidePerformance(
@@ -305,23 +209,9 @@ export default function Dashboard() {
         status === 'complete' && !report?.meta?.performance
     );
 
-    const { safety, loading: safetyLoading, error: safetyError } = useSafetyCheck(
-        url,
-        status !== 'idle'
-    );
-
-    // REMOVED: Brand Authority (keeping KG data private)
-    // const { authority, loading: authorityLoading, error: authorityError } = useBrandAuthority(url, status !== 'idle');
-
     // Merge client metrics if available
     const displayPerformance = report?.meta?.performance || clientMetrics;
-    const executiveSummary = report?.clientReadySummary?.executiveSummary
-        || (report?.analysisMode === 'deterministic'
-            ? 'AI analysis unavailable. Showing raw scan data only.'
-            : 'AI analysis unavailable.');
-    const safetyStatus = safety
-        ? (safety.isSafe ? 'PASS' : 'FAIL')
-        : (safetyError ? 'UNAVAILABLE' : '-');
+    const summary = report?.summary || 'Scan complete. Showing verified data and recommendations only.';
 
     // Persistence: Clean up legacy URL storage
     useEffect(() => {
@@ -340,11 +230,11 @@ export default function Dashboard() {
     useEffect(() => {
         if (status !== 'scouting') return;
         const messages = [
-            "Initializing Website Scan",
-            "Resolving Target Domain...",
-            "Extracting **DOM Signals**...",
-            "Analyzing **Visual Hierarchy**...",
-            "Synthesizing **Final Check**..."
+            "Initializing scan",
+            "Resolving target domain...",
+            "Extracting on-page data...",
+            "Measuring performance...",
+            "Building recommendations..."
         ];
         let i = 0;
         setScanStatusMessage(messages[0]);
@@ -354,22 +244,9 @@ export default function Dashboard() {
         }, 3500); // 3.5s to allow typewriter to finish
         return () => clearInterval(interval);
     }, [status]);
-    const prefetchRef = useRef<Promise<Response> | null>(null);
-
-    // Speculative Prefetch (Hover)
-    const prefetchAudit = () => {
-        if (!url || status !== 'idle' || prefetchRef.current) return;
-        prefetchRef.current = fetch('/api/audit', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ url, mode: 'fast' }),
-        });
-    };
-
     const runAudit = async (e?: React.FormEvent, forceRefresh = false) => {
         if (e) e.preventDefault();
 
-        // Normalize URL (User convenience: allow "example.com")
         let targetUrl = url.trim();
         if (!targetUrl) {
             setError('Please enter a website domain to begin the analysis.');
@@ -378,231 +255,102 @@ export default function Dashboard() {
 
         if (!/^https?:\/\//i.test(targetUrl)) {
             targetUrl = `https://${targetUrl}`;
-            setUrl(targetUrl); // Update UI
+            setUrl(targetUrl);
         }
 
         setStatus('scouting');
         setError(null);
         handleSetReport(null);
-        setEnemyReport(null); // Reset enemy report
-        setActiveView('audit');
 
-        // Initialize milestones
         setMilestones([
-            { id: 'init', message: isVsMode ? 'Initializing War Room...' : 'Initializing Flux Engine...', status: 'active', timestamp: Date.now() },
-            { id: 'dns', message: isVsMode ? 'Acquiring multiple targets...' : 'Resolving domain...', status: 'pending' },
-            { id: 'scrape', message: 'Extracting intelligence...', status: 'pending' },
-            { id: 'analyze', message: 'Running comparative analysis...', status: 'pending' },
-            { id: 'complete', message: 'Generating tactical report...', status: 'pending' }
+            { id: 'init', message: 'Initializing scan...', status: 'active', timestamp: Date.now() },
+            { id: 'resolve', message: 'Resolving domain...', status: 'pending' },
+            { id: 'extract', message: 'Extracting on-page data...', status: 'pending' },
+            { id: 'performance', message: 'Running PSI & CrUX...', status: 'pending' },
+            { id: 'recommend', message: 'Building recommendations...', status: 'pending' }
         ]);
 
         try {
-            // Update: DNS resolved
             setMilestones(m => m.map(mile =>
                 mile.id === 'init' ? { ...mile, status: 'complete' } :
-                    mile.id === 'dns' ? { ...mile, status: 'active', timestamp: Date.now() } :
+                    mile.id === 'resolve' ? { ...mile, status: 'active', timestamp: Date.now() } :
                         mile
             ));
 
-            // VS MODE: PARALLEL EXECUTION
-            if (isVsMode && enemyUrl) {
-                // PHASE 1: DUAL FAST PASS
-                const [selfRes, enemyRes] = await Promise.all([
-                    fetch('/api/audit', {
-                        method: 'POST',
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({ url: targetUrl, mode: 'fast', forceRefresh }),
-                    }),
-                    fetch('/api/audit', {
-                        method: 'POST',
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({ url: enemyUrl, mode: 'fast', forceRefresh }),
-                    })
-                ]);
+            const fastRes = await fetch('/api/audit', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ url: targetUrl, mode: 'fast', forceRefresh }),
+            });
 
-                // Update: Scraped
-                setMilestones(m => m.map(mile =>
-                    mile.id === 'dns' ? { ...mile, status: 'complete' } :
-                        mile.id === 'scrape' ? { ...mile, status: 'active', timestamp: Date.now(), detail: 'Intercepting rival signals...' } :
-                            mile
-                ));
+            setMilestones(m => m.map(mile =>
+                mile.id === 'resolve' ? { ...mile, status: 'complete' } :
+                    mile.id === 'extract' ? { ...mile, status: 'active', timestamp: Date.now(), detail: 'HTML parsed' } :
+                        mile
+            ));
 
-                const selfData = await selfRes.json();
-                const enemyData = await enemyRes.json();
+            const fastData = (await fastRes.json()) as AnalysisReport;
+            if (!fastRes.ok) throw new Error((fastData as unknown as { error: string }).error || 'Initial scan failed');
 
-                if (!selfRes.ok) throw new Error((selfData as { error?: string }).error || 'Self scan failed');
-                // Note: If enemy fails, we could potentially just show self, but for now we fail hard.
+            setMilestones(m => m.map(mile =>
+                mile.id === 'extract' ? { ...mile, status: 'complete' } :
+                    mile.id === 'performance' ? { ...mile, status: 'active', timestamp: Date.now() } :
+                        mile
+            ));
 
-                // Update: Analyzed
-                setMilestones(m => m.map(mile =>
-                    mile.id === 'scrape' ? { ...mile, status: 'complete' } :
-                        mile.id === 'analyze' ? { ...mile, status: 'active', timestamp: Date.now() } :
-                            mile
-                ));
+            handleSetReport(fastData);
+            setStatus('analyzing_deep');
 
-                // Render Fast Results (Self) - We don't render Enemy Fast yet, we wait for Deep
-                handleSetReport(selfData);
-                setEnemyReport(enemyData);
-                setStatus('analyzing_deep');
+            const [deepRes] = await Promise.all([
+                fetch('/api/audit', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ url: targetUrl, mode: 'deep', forceRefresh }),
+                }),
+                new Promise(resolve => setTimeout(resolve, 500))
+            ]);
 
-                // PHASE 2: DUAL DEEP PASS
-                const [deepSelf, deepEnemy] = await Promise.all([
-                    fetch('/api/audit', {
-                        method: 'POST',
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({ url: targetUrl, mode: 'deep', forceRefresh }),
-                    }),
-                    fetch('/api/audit', {
-                        method: 'POST',
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({ url: enemyUrl, mode: 'deep', forceRefresh }),
-                    }),
-                    new Promise(resolve => setTimeout(resolve, 5000)) // 5s War Room Delay
-                ]);
-
-                const deepSelfData = await deepSelf.json();
-                const deepEnemyData = await deepEnemy.json();
-
-                // Update: Complete
-                setMilestones(m => m.map(mile =>
-                    mile.id === 'analyze' ? { ...mile, status: 'complete' } :
-                        mile.id === 'complete' ? { ...mile, status: 'complete', timestamp: Date.now() } :
-                            mile
-                ));
-
-                // Combine self and enemy reports into a single report object for the 'vs' view
-                handleSetReport({
-                    ...deepSelfData,
-                    vs: {
-                        self: deepSelfData,
-                        enemy: deepEnemyData
-                    }
-                });
+            let deepData: AnalysisReport;
+            try {
+                deepData = (await deepRes.json()) as AnalysisReport;
+            } catch (parseErr) {
                 setStatus('complete');
-                setActiveView('vs'); // Switch to VS view
-
-            } else {
-                // SINGLE MODE (Legacy)
-                // PHASE 1: FAST PASS
-                let fastRes;
-                if (prefetchRef.current && !forceRefresh) {
-                    fastRes = await prefetchRef.current;
-                    prefetchRef.current = null;
-                } else {
-                    fastRes = await fetch('/api/audit', {
-                        method: 'POST',
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({ url: targetUrl, mode: 'fast', forceRefresh }),
-                    });
-                }
-
-                // Update: Scraped
                 setMilestones(m => m.map(mile =>
-                    mile.id === 'dns' ? { ...mile, status: 'complete' } :
-                        mile.id === 'scrape' ? { ...mile, status: 'active', timestamp: Date.now(), detail: 'Parsing HTML, extracting metadata...' } :
+                    mile.id === 'performance' ? { ...mile, status: 'complete' } :
+                        mile.id === 'recommend' ? { ...mile, status: 'complete', timestamp: Date.now(), detail: 'Deep scan unavailable' } :
                             mile
                 ));
-
-                const fastData = (await fastRes.json()) as AnalysisReport;
-                if (!fastRes.ok) throw new Error((fastData as unknown as { error: string }).error || 'Initial scan failed');
-
-                // Update: Analyzed
-                setMilestones(m => m.map(mile =>
-                    mile.id === 'scrape' ? { ...mile, status: 'complete' } :
-                        mile.id === 'analyze' ? { ...mile, status: 'active', timestamp: Date.now() } :
-                            mile
-                ));
-
-                // Render Fast Results Immediately
-                handleSetReport(fastData);
-                setStatus('analyzing_deep');
-
-                console.log('[Flux Debug] Starting Deep Analysis fetch...');
-                // PHASE 2: DEEP PASS
-                const [deepRes] = await Promise.all([
-                    fetch('/api/audit', {
-                        method: 'POST',
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({ url: targetUrl, mode: 'deep', forceRefresh }),
-                    }),
-                    new Promise(resolve => setTimeout(resolve, 500)) // Smooth transition without artificial slowdown
-                ]);
-                console.log('[Flux Debug] Deep Analysis fetch completed. Status:', deepRes.status);
-
-                // Improved error handling for timeouts
-
-                let deepData;
-                try {
-                    deepData = (await deepRes.json()) as AnalysisReport;
-                } catch (parseErr) {
-                    // Likely got HTML error page due to timeout
-                    console.warn('[Flux] Deep analysis timed out or returned invalid JSON');
-                    // Keep fast mode results and mark as complete
-                    setStatus('complete');
-                    setMilestones(m => m.map(mile =>
-                        mile.id === 'analyze' ? { ...mile, status: 'complete' } :
-                            mile.id === 'complete' ? { ...mile, status: 'complete', timestamp: Date.now() } :
-                                mile
-                    ));
-                    // Show warning but don't break the whole experience
-                    console.warn('Fast mode results retained. Deep analysis unavailable.');
-                    return; // Exit early, keep fast results
-                }
-
-                if (!deepRes.ok) {
-                    const errorMsg = deepRes.status === 504
-                        ? 'Analysis timed out. Showing quick insights instead. Try re-scanning with a simpler site or refresh the page.'
-                        : deepData.error || 'Deep analysis failed';
-                    // Don't throw - keep the fast results we already have
-                    console.warn('[Flux]', errorMsg);
-                    setStatus('complete');
-                    setMilestones(m => m.map(mile =>
-                        mile.id === 'analyze' ? { ...mile, status: 'complete' } :
-                            mile.id === 'complete' ? { ...mile, status: 'complete', timestamp: Date.now() } :
-                                mile
-                    ));
-                    return; // Exit early, keep fast results
-                }
-
-                // Update: Complete
-                setMilestones(m => m.map(mile =>
-                    mile.id === 'analyze' ? { ...mile, status: 'complete' } :
-                        mile.id === 'complete' ? { ...mile, status: 'complete', timestamp: Date.now() } :
-                            mile
-                ));
-
-                console.log('[Flux Debug] Deep Analysis Response:', {
-                    hasTacticalFixes: !!deepData?.tacticalFixes,
-                    tacticalFixesCount: deepData?.tacticalFixes?.length || 0,
-                    hasStrategicIntel: !!deepData?.strategicIntelligence,
-                    fullData: deepData
-                });
-                handleSetReport(deepData);
-                console.log('[Flux Debug] Report state should update now with deep data');
-                setStatus('complete');
+                return;
             }
 
-            // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        } catch (err: any) {
-            console.error(err);
-            // Provide helpful error messages for common scenarios
-            let errorMessage = err.message || 'An unexpected error occurred';
-            if (err.message?.includes('Failed to fetch') || err.message?.includes('timed out')) {
-                errorMessage = 'Connection timed out. The analysis may be taking longer than expected. Please try again with a simpler website.';
+            if (!deepRes.ok) {
+                const errorMsg = deepRes.status === 504
+                    ? 'Analysis timed out. Showing quick insights instead. Try re-scanning with a simpler site or refresh the page.'
+                    : deepData.error || 'Deep analysis failed';
+                console.warn('[Flux]', errorMsg);
+                setStatus('complete');
+                setMilestones(m => m.map(mile =>
+                    mile.id === 'performance' ? { ...mile, status: 'complete' } :
+                        mile.id === 'recommend' ? { ...mile, status: 'complete', timestamp: Date.now(), detail: 'Deep scan unavailable' } :
+                            mile
+                ));
+                return;
             }
+
+            setMilestones(m => m.map(mile =>
+                mile.id === 'performance' ? { ...mile, status: 'complete' } :
+                    mile.id === 'recommend' ? { ...mile, status: 'complete', timestamp: Date.now() } :
+                        mile
+            ));
+
+            handleSetReport(deepData);
+            setStatus('complete');
+        } catch (err: unknown) {
+            const errorMessage = err instanceof Error ? err.message : 'An unexpected error occurred';
             setError(errorMessage);
-            if (report) {
-                // If we have partial data (Fast Pass), don't reset to idle.
-                setStatus('complete');
-            } else {
-                setStatus('idle');
-            }
+            setStatus(report ? 'complete' : 'idle');
         }
     };
-
-
-
-    const trustSignal = calculateTrustSignal(report?.tacticalFixes);
 
     // Report Generation Function - Triggers Print Dialog for PDF Export
     const generateReport = () => {
@@ -688,8 +436,7 @@ export default function Dashboard() {
                         <div className="p-6 lg:p-10">
 
                             {/* --- AUDIT VIEW --- */}
-                            {activeView === 'audit' && (
-                                <AnimatePresence>
+                            <AnimatePresence>
 
                                     {/* ERROR STATE */}
                                     {error && (
@@ -710,10 +457,10 @@ export default function Dashboard() {
                                                     <div className="flex flex-col items-center gap-6">
                                                         <div className="flex items-center gap-3">
                                                             <div className="w-1.5 h-1.5 bg-[#f06c5b] rounded-full" />
-                                                            <span className="text-[12px] font-medium text-[#f06c5b] uppercase tracking-[0.2em]">Research Lab</span>
+                                                            <span className="text-[12px] font-medium text-[#f06c5b] uppercase tracking-[0.2em]">Trusted Audit</span>
                                                         </div>
                                                         <h1 className="text-5xl font-bold tracking-tighter text-white max-w-2xl mx-auto leading-[1.05]">
-                                                            Website forensics and strategic analysis.
+                                                            Real-data website audit. No guesswork.
                                                         </h1>
                                                     </div>
 
@@ -763,50 +510,40 @@ export default function Dashboard() {
                                                     </form>
                                                 </div>
 
-                                                {/* Instrument Grid - Balanced & Centered */}
-                                                <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                                                    <div className="glass-card p-6 space-y-4">
-                                                        <span className="tech-label">Regional Latency</span>
-                                                        <div className="flex items-end gap-2">
-                                                            <div className="text-2xl font-bold text-[#f8fafc]">12.4ms</div>
-                                                            <span className="text-[10px] text-[#10b981] font-semibold pb-1 uppercase tracking-wider">Nominal</span>
-                                                        </div>
-                                                        <div className="h-1 bg-white/[0.04] overflow-hidden rounded-full">
-                                                            <div className="h-full bg-[#10b981] w-[85%]" />
-                                                        </div>
+                                                {/* Evidence Grid */}
+                                                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+                                                    <div className="glass-card p-6 space-y-3">
+                                                        <span className="tech-label">Performance (PSI)</span>
+                                                        <p className="text-[12px] text-white/60 leading-relaxed">Lab scores and vitals from PageSpeed Insights.</p>
                                                     </div>
-                                                    <div className="glass-card p-6 space-y-4">
-                                                        <span className="tech-label">Intelligence Score</span>
-                                                        <div className="flex items-end gap-2">
-                                                            <div className="text-2xl font-bold text-[#f8fafc]">98.2</div>
-                                                            <span className="text-[10px] text-[#f06c5b] font-semibold pb-1 uppercase tracking-wider">Elite</span>
-                                                        </div>
-                                                        <div className="h-1 bg-white/[0.04] overflow-hidden rounded-full">
-                                                            <div className="h-full bg-[#f06c5b] w-[98%]" />
-                                                        </div>
+                                                    <div className="glass-card p-6 space-y-3">
+                                                        <span className="tech-label">Field Data (CrUX)</span>
+                                                        <p className="text-[12px] text-white/60 leading-relaxed">Real user p75 metrics where Google has origin data.</p>
                                                     </div>
-                                                    <div className="glass-card p-6 space-y-4">
-                                                        <span className="tech-label text-white/40">Identity Cache</span>
-                                                        <div className="flex items-end gap-2">
-                                                            <div className="text-2xl font-bold text-white">4.2gb</div>
-                                                            <span className="text-[10px] text-white/40 font-semibold pb-1 uppercase tracking-wider">Cold</span>
-                                                        </div>
-                                                        <div className="h-1 bg-white/[0.08] overflow-hidden rounded-full">
-                                                            <div className="h-full bg-white/20 w-[42%]" />
-                                                        </div>
+                                                    <div className="glass-card p-6 space-y-3">
+                                                        <span className="tech-label">On-Page SEO</span>
+                                                        <p className="text-[12px] text-white/60 leading-relaxed">Title, meta, canonical, headings, and keywords.</p>
+                                                    </div>
+                                                    <div className="glass-card p-6 space-y-3">
+                                                        <span className="tech-label">CTA Extraction</span>
+                                                        <p className="text-[12px] text-white/60 leading-relaxed">Primary calls-to-action and next-step clarity.</p>
                                                     </div>
                                                 </div>
 
-                                                {/* Side Intelligence - Now Row Based & Balanced */}
                                                 <div className="grid grid-cols-1 lg:grid-cols-2 gap-10">
-                                                    <MonitorView />
                                                     <div className="p-6 border border-[rgba(255,255,255,0.04)] space-y-6 bg-white/[0.01]">
-                                                        <span className="tech-label">System Feed</span>
+                                                        <span className="tech-label">What you get</span>
                                                         <ThinkingLog milestones={[
-                                                            { id: '1', message: 'Encryption layer valid', status: 'complete' },
-                                                            { id: '2', message: 'Sandbox isolation active', status: 'complete' },
-                                                            { id: '3', message: 'Ready for intake', status: 'active' }
+                                                            { id: '1', message: 'Verified PSI performance metrics', status: 'complete' },
+                                                            { id: '2', message: 'CrUX field data when available', status: 'complete' },
+                                                            { id: '3', message: 'On-page SEO + CTA inventory', status: 'active' }
                                                         ]} />
+                                                    </div>
+                                                    <div className="p-6 border border-[rgba(255,255,255,0.04)] space-y-4 bg-white/[0.01]">
+                                                        <span className="tech-label">Trust-first output</span>
+                                                        <p className="text-[13px] text-white/60 leading-relaxed">
+                                                            Recommendations only cite observed data. If something is missing, we say so instead of guessing.
+                                                        </p>
                                                     </div>
                                                 </div>
                                             </div>
@@ -832,7 +569,7 @@ export default function Dashboard() {
                                                     <ResearchStream status={status} centered />
                                                 </div>
                                                 <div className="text-center space-y-2 opacity-50">
-                                                    <p className="text-[10px] uppercase tracking-[0.3em] font-bold text-white/40">Neural Link Established</p>
+                                                    <p className="text-[10px] uppercase tracking-[0.3em] font-bold text-white/40">Scan in progress</p>
                                                     <div className="flex gap-1 justify-center">
                                                         {[0, 1, 2].map(i => (
                                                             <div key={i} className="w-1.5 h-[1px] bg-[#f06c5b]" />
@@ -855,7 +592,7 @@ export default function Dashboard() {
                                                     <div className="space-y-2 flex flex-col items-center">
                                                         <div className="flex items-center gap-3">
                                                             <div className="w-2 h-2 rounded-full bg-[#f06c5b] shadow-[0_0_10px_rgba(240,108,91,0.4)]" />
-                                                            <span className="text-[12px] font-bold text-white/40 uppercase tracking-[0.25em]">Forensic Signal Isolation</span>
+                                                            <span className="text-[12px] font-bold text-white/40 uppercase tracking-[0.25em]">Verified Report</span>
                                                         </div>
                                                         <h1 className="text-5xl font-bold tracking-tight text-[#f8fafc]">
                                                             {new URL(report.meta.url).hostname.replace('www.', '')}
@@ -867,21 +604,54 @@ export default function Dashboard() {
                                                             {new Date().toLocaleDateString(undefined, { year: 'numeric', month: 'short', day: '2-digit' }).toUpperCase()}
                                                         </div>
                                                         <div className="px-4 py-2 bg-[#f06c5b]/10 border border-[#f06c5b]/20 text-[#f06c5b] text-[11px] uppercase font-bold tracking-widest rounded-full">
-                                                            {report.type === 'fast' ? "Standard Audit" : "Deep Analysis"}
+                                                            {report.type === 'fast' ? "Initial Scan" : "Full Scan"}
                                                         </div>
-                                                        {report.analysisMode === 'deterministic' && (
-                                                            <div className="px-4 py-2 bg-white/[0.02] border border-white/[0.08] text-white/50 text-[11px] uppercase font-bold tracking-widest rounded-full">
-                                                                Raw Scan
-                                                            </div>
-                                                        )}
                                                     </div>
                                                 </div>
                                                     <div className="flex justify-center px-4">
                                                         <p className="text-[16px] text-[#94a3b8] leading-relaxed max-w-3xl text-center font-medium">
-                                                        {executiveSummary}
+                                                        {summary}
                                                         </p>
                                                     </div>
                                             </section>
+
+                                            {report.meta.dataSources && (
+                                                <section className="pt-8 border-t border-white/[0.05]">
+                                                    <div className="flex items-center gap-3 mb-6">
+                                                        <Database className="w-3.5 h-3.5 text-[#f06c5b]" />
+                                                        <h2 className="text-lg font-semibold text-[#E8E8E8] tracking-tight">Data Sources</h2>
+                                                    </div>
+                                                    <div className="grid grid-cols-1 md:grid-cols-3 gap-6 text-[12px] text-white/60">
+                                                        {([
+                                                            { label: 'PageSpeed Insights', data: report.meta.dataSources.psi },
+                                                            { label: 'CrUX Field Data', data: report.meta.dataSources.crux },
+                                                            { label: 'On-Page Crawl', data: report.meta.dataSources.onPage }
+                                                        ] as const).map(source => (
+                                                            <div key={source.label} className="glass-card p-5 rounded-2xl border border-white/[0.06] space-y-2">
+                                                                <div className="text-[10px] uppercase tracking-[0.2em] text-white/30">{source.label}</div>
+                                                                <div className={clsx("text-[12px] font-semibold uppercase tracking-[0.2em]", getSourceStatusColor(source.data.status))}>
+                                                                    {source.data.status}
+                                                                </div>
+                                                                <div className="text-white/60">{source.data.detail}</div>
+                                                            </div>
+                                                        ))}
+                                                    </div>
+                                                </section>
+                                            )}
+
+                                            {report.scannedPages && report.scannedPages.length > 0 && (
+                                                <section className="pt-8 border-t border-white/[0.05]">
+                                                    <div className="flex items-center gap-3 mb-6">
+                                                        <Globe className="w-3.5 h-3.5 text-[#f06c5b]" />
+                                                        <h2 className="text-lg font-semibold text-[#E8E8E8] tracking-tight">Pages Scanned</h2>
+                                                    </div>
+                                                    <div className="glass-card p-5 rounded-2xl border border-white/[0.06] text-[12px] text-white/60 space-y-2">
+                                                        {report.scannedPages.map((page) => (
+                                                            <div key={page} className="text-white/70 break-all">{page}</div>
+                                                        ))}
+                                                    </div>
+                                                </section>
+                                            )}
 
                                             {report.meta.scanDiagnostics && (
                                                 <section className="pt-8 border-t border-white/[0.05]">
@@ -997,6 +767,18 @@ export default function Dashboard() {
                                                                 </div>
                                                             </div>
                                                             <div>
+                                                                <div className="text-[10px] uppercase tracking-[0.2em] text-white/30 mb-1">Word Count</div>
+                                                                <div className="text-white/60 break-words">
+                                                                    {report.pageSignals.wordCount !== undefined ? report.pageSignals.wordCount : 'NOT OBSERVED'}
+                                                                </div>
+                                                            </div>
+                                                            <div>
+                                                                <div className="text-[10px] uppercase tracking-[0.2em] text-white/30 mb-1">H2 Count</div>
+                                                                <div className="text-white/60 break-words">
+                                                                    {report.pageSignals.h2Count !== undefined ? report.pageSignals.h2Count : 'NOT OBSERVED'}
+                                                                </div>
+                                                            </div>
+                                                            <div>
                                                                 <div className="text-[10px] uppercase tracking-[0.2em] text-white/30 mb-1">Top Keywords</div>
                                                                 <div className="text-white/60 break-words">
                                                                     {report.pageSignals.topKeywords?.length
@@ -1009,121 +791,80 @@ export default function Dashboard() {
                                                 </section>
                                             )}
 
-                                            {/* STRATEGIC INDEX - TERMINAL STYLE */}
-                                            {/* OLD LOCATION OF STRATEGIC INDEX - REMOVED */}
-                                            {/* (Moved to Top Grid) */}
+                                            {report.pageSignals?.ctas && (
+                                                <section className="pt-8 border-t border-white/[0.05]">
+                                                    <div className="flex items-center gap-3 mb-6">
+                                                        <Zap className="w-3.5 h-3.5 text-[#f06c5b]" />
+                                                        <h2 className="text-lg font-semibold text-[#E8E8E8] tracking-tight">CTA Extraction</h2>
+                                                    </div>
+                                                    <div className="glass-card p-5 rounded-2xl border border-white/[0.06] text-[12px] text-white/60 space-y-3">
+                                                        {report.pageSignals.ctas.length === 0 && (
+                                                            <div className="text-white/50">No CTAs detected on the scanned page.</div>
+                                                        )}
+                                                        {report.pageSignals.ctas.map((cta, idx) => (
+                                                            <div key={`${cta.text}-${idx}`} className="flex items-start justify-between gap-4">
+                                                                <div className="text-white/80 font-semibold">{cta.text || 'Untitled CTA'}</div>
+                                                                <div className="text-white/40 text-[10px] break-all">{cta.link}</div>
+                                                            </div>
+                                                        ))}
+                                                    </div>
+                                                </section>
+                                            )}
 
-
-
-                                            {/* MAIN CONTENT GRID - WAR ROOM MODE */}
-
-
-                                            {/* MAIN CONTENT GRID - STANDARD MODE */}
-                                            {!isVsMode && (<div className="standard-mode-wrapper">
-                                                {/* SPLIT HERO: VISUAL + SCORE - Re-Balanced for Symmetry */}
+                                            {/* MAIN CONTENT GRID */}
+                                            <div className="standard-mode-wrapper">
                                                 <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-16">
-
-                                                    {/* VISUAL AUDIT */}
                                                     <div className="flex flex-col space-y-6">
                                                         <div className="flex items-center justify-center pb-6 border-b border-white/[0.06]">
-                                                            <span className="tech-label text-white/50">Visual Surface Forensics</span>
+                                                            <span className="tech-label text-white/50">Page Preview</span>
                                                         </div>
                                                         <div className="flex-1">
                                                             <TacticalVision
                                                                 url={report.meta.url}
-                                                                fixes={report.tacticalFixes}
                                                                 isScanning={status !== 'complete'}
                                                                 domIssues={report.domIssues}
                                                             />
                                                         </div>
                                                     </div>
 
-                                                    {/* INTELLIGENCE SIDEBAR - Styled for Premium SaaS feel */}
                                                     <div className={clsx(
                                                         "glass-card p-10 flex flex-col h-full bg-white/[0.01] border-white/[0.08] rounded-3xl",
                                                         status === 'analyzing_deep' && "ring-1 ring-[#f06c5b]/30 shadow-[0_0_40px_rgba(240,108,91,0.15)]"
                                                     )}>
-                                                        <div className="flex items-center justify-center mb-10 pb-6 border-b border-white/[0.06]">
-                                                            <span className="tech-label text-white/50">Intelligence Matrix</span>
-                                                        </div>
-
-                                                        <div className="grid grid-cols-2 gap-12 mb-12 flex-1 items-center">
-                                                            <div className="flex flex-col items-center text-center space-y-3">
-                                                                <div className="tech-label text-white/30 lowercase">Performance Density</div>
-                                                                <div className="flex flex-col items-center">
-                                                                    <span className={clsx("text-7xl font-black tracking-tighter", getPerformanceColor(displayPerformance?.lighthouseScore || 0))}>
-                                                                        {displayPerformance?.lighthouseScore || "-"}
-                                                                    </span>
-                                                                    <span className="text-[10px] font-bold text-white/30 uppercase tracking-[0.2em] mt-2">Base</span>
-                                                                </div>
-                                                            </div>
-                                                            <div className="flex flex-col items-center text-center space-y-3">
-                                                                <div className="tech-label text-white/30 lowercase">
-                                                                    {report.coreSignals?.vibeScore?.label || "Strategic Grade"}
-                                                                </div>
-                                                                <div className="flex flex-col items-center">
-                                                                    <span className={clsx("text-7xl font-black tracking-tighter", getGradeColor(report.coreSignals?.vibeScore?.grade))}>
-                                                                        {report.coreSignals?.vibeScore?.grade || "-"}
-                                                                    </span>
-                                                                    <span className="text-[10px] font-bold text-white/30 uppercase tracking-[0.2em] mt-2">Core</span>
-                                                                </div>
-                                                            </div>
-                                                        </div>
-
-                                                        {/* SECONDARY SIGNALS - iOS Inspired Grid */}
-                                                        <div className="grid grid-cols-3 gap-4 py-6 border-t border-white/[0.06] mt-auto">
-                                                            <button
-                                                                onClick={() => setSelectedSignal({ title: 'Headline Strength', data: report.coreSignals?.headlineSignal })}
-                                                                className="text-center group px-4 py-3 rounded-2xl hover:bg-white/[0.02] transition-all"
-                                                            >
-                                                                <div className="text-[9px] font-bold mb-2 text-white/30 uppercase tracking-[0.15em] group-hover:text-[#f06c5b] transition-colors">Narrative</div>
-                                                                <div className={clsx("text-3xl font-black", getGradeColor(report.coreSignals?.headlineSignal?.grade))}>
-                                                                    {report.coreSignals?.headlineSignal?.grade || "-"}
-                                                                </div>
-                                                            </button>
-                                                            <button
-                                                                onClick={() => setSelectedSignal({ title: 'Visual Quality', data: report.coreSignals?.visualArchitecture })}
-                                                                className="text-center group px-4 py-3 rounded-2xl hover:bg-white/[0.02] transition-all"
-                                                            >
-                                                                <div className="text-[9px] font-bold mb-2 text-white/30 uppercase tracking-[0.15em] group-hover:text-[#f06c5b] transition-colors">Visual</div>
-                                                                <div className={clsx("text-3xl font-black", getGradeColor(report.coreSignals?.visualArchitecture?.grade))}>
-                                                                    {report.coreSignals?.visualArchitecture?.grade || "-"}
-                                                                </div>
-                                                            </button>
-                                                            <div className="text-center px-4 py-3 rounded-2xl">
-                                                                <div className="text-[9px] font-bold mb-2 text-white/30 uppercase tracking-[0.15em]">Integrity</div>
-                                                                <div className={clsx(
-                                                                    "text-3xl font-black",
-                                                                    safety?.isSafe ? "text-[#10b981]" : safety ? "text-red-400" : "text-white/40"
-                                                                )}>
-                                                                    {safetyStatus}
-                                                                </div>
-                                                            </div>
-                                                        </div>
-
-                                                        <div className="flex-1 flex flex-col justify-center space-y-4">
-                                                            <div className="flex items-center justify-between">
-                                                                <span className="text-[11px] font-bold text-white/40 uppercase tracking-[0.2em]">Strategic Verdict</span>
-                                                                {status === 'analyzing_deep' && (
-                                                                    <div className="flex items-center gap-2">
-                                                                        <div className="w-1.5 h-1.5 rounded-full bg-[#f06c5b] animate-pulse" />
-                                                                        <span className="text-[10px] text-[#f06c5b] font-bold uppercase tracking-widest">Synthesis active</span>
-                                                                    </div>
-                                                                )}
-                                                            </div>
-
-                                                            {status === 'analyzing_deep' ? (
-                                                                <div className="pt-2">
-                                                                    <ResearchStream status={status} />
-                                                                </div>
-                                                            ) : (
-                                                                <p className="text-[15px] leading-relaxed font-medium text-[#f8fafc]/90">
-                                                                    {report.coreSignals?.vibeScore?.summary
-                                                                        || (report.analysisMode === 'deterministic'
-                                                                            ? 'No AI narrative available for this scan.'
-                                                                            : 'Summary unavailable.')}
-                                                                </p>
+                                                        <div className="flex items-center justify-between mb-8 pb-6 border-b border-white/[0.06]">
+                                                            <span className="tech-label text-white/50">Performance Snapshot</span>
+                                                            {clientMetricsLoading && (
+                                                                <span className="text-[10px] uppercase tracking-[0.2em] text-white/40">Updating</span>
                                                             )}
+                                                        </div>
+
+                                                        <div className="grid grid-cols-2 gap-6">
+                                                            <div className="space-y-2">
+                                                                <div className="text-[10px] uppercase tracking-[0.2em] text-white/30">PSI Score</div>
+                                                                <div className={clsx("text-4xl font-black tracking-tight", getPerformanceColor(displayPerformance?.lighthouseScore || 0))}>
+                                                                    {displayPerformance?.lighthouseScore ?? '--'}
+                                                                </div>
+                                                            </div>
+                                                            <div className="space-y-2">
+                                                                <div className="text-[10px] uppercase tracking-[0.2em] text-white/30">Speed Index</div>
+                                                                <div className="text-2xl font-semibold text-white/80">{displayPerformance?.speedIndex || 'N/A'}</div>
+                                                            </div>
+                                                            <div className="space-y-2">
+                                                                <div className="text-[10px] uppercase tracking-[0.2em] text-white/30">LCP</div>
+                                                                <div className="text-2xl font-semibold text-white/80">{displayPerformance?.lcp || 'N/A'}</div>
+                                                            </div>
+                                                            <div className="space-y-2">
+                                                                <div className="text-[10px] uppercase tracking-[0.2em] text-white/30">INP</div>
+                                                                <div className="text-2xl font-semibold text-white/80">{displayPerformance?.inp || 'N/A'}</div>
+                                                            </div>
+                                                            <div className="space-y-2">
+                                                                <div className="text-[10px] uppercase tracking-[0.2em] text-white/30">CLS</div>
+                                                                <div className="text-2xl font-semibold text-white/80">{displayPerformance?.cls || 'N/A'}</div>
+                                                            </div>
+                                                            <div className="space-y-2">
+                                                                <div className="text-[10px] uppercase tracking-[0.2em] text-white/30">SEO Score</div>
+                                                                <div className="text-2xl font-semibold text-white/80">{displayPerformance?.seoScore ?? 'N/A'}</div>
+                                                            </div>
                                                         </div>
                                                     </div>
                                                 </div>
@@ -1139,205 +880,51 @@ export default function Dashboard() {
                                                         </div>
                                                     </div>
                                                 )}
+                                            </div>
 
-                                                {report.signals?.navigation && report.signals.navigation.length > 0 && (
-                                                    <div className="mt-6 pt-6 border-t border-white/[0.05]">
-                                                        <h3 className="text-[10px] font-mono font-medium text-[#a1a1aa] uppercase tracking-[0.12em] mb-3">Detected Navigation</h3>
-                                                        <div className="flex flex-wrap gap-2">
-                                                            {report.signals.navigation.map((item, i) => (
-                                                                <div key={i} className="px-2 py-1 bg-white/[0.03] border border-white/[0.05] rounded text-xs text-white/70 font-mono">
-                                                                    {item}
-                                                                </div>
-                                                            ))}
-                                                        </div>
-                                                    </div>
-                                                )}
-                                            </div>)}
                                             <DeepAnalysisReveal status={status}>
-                                                <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-                                                    <div className="lg:col-span-3 space-y-12">
-                                                        <div className="flex items-end justify-between border-b border-white/[0.12] pb-6 mb-12">
-                                                            <h3 className="text-3xl font-bold tracking-tight text-[#f8fafc] flex items-center gap-4">
-                                                                Tactical Action Plan
-                                                                <span className="text-[14px] font-bold text-white/30 tracking-widest">[{report.tacticalFixes?.length || 0} ITEMS]</span>
-                                                            </h3>
-                                                            <div className="text-[12px] font-bold text-white/40 uppercase tracking-[0.2em] flex items-center gap-3">
-                                                                Confidence Level: <span className={clsx("font-black", trustSignal > 80 ? "text-[#10b981]" : "text-[#f59e0b]")}>{trustSignal}%</span>
-                                                            </div>
-                                                        </div>
+                                                <div className="space-y-10">
+                                                    <div className="flex items-end justify-between border-b border-white/[0.12] pb-6">
+                                                        <h3 className="text-3xl font-bold tracking-tight text-[#f8fafc] flex items-center gap-4">
+                                                            Recommendations
+                                                            <span className="text-[14px] font-bold text-white/30 tracking-widest">[{report.recommendations?.length || 0} ITEMS]</span>
+                                                        </h3>
+                                                    </div>
 
-                                                        <div className="divide-y divide-[rgba(255,255,255,0.04)]">
-                                                            {report.tacticalFixes?.map((fix, idx) => (
-                                                                <div key={fix.id || idx} className="grid grid-cols-1 lg:grid-cols-2 gap-12 py-16 group">
-                                                                    <div className="space-y-8">
-                                                                        <div className="space-y-2">
-                                                                            <div className="flex items-center gap-3">
-                                                                                <span className={clsx("text-[11px] font-bold uppercase tracking-[0.15em]", getImpactColor(fix.impact))}>{fix.impact}</span>
-                                                                                <span className="text-[11px] font-bold text-white/30 uppercase tracking-[0.15em]">{fix.category}</span>
-                                                                            </div>
-                                                                            <h4 className="text-2xl font-bold text-[#f8fafc] tracking-tight">{fix.title}</h4>
-                                                                        </div>
-                                                                        <div className="space-y-8">
-                                                                            <div className="space-y-3">
-                                                                                <span className="tech-label text-white/60">Observation</span>
-                                                                                <p className="text-[16px] text-white/60 leading-relaxed font-medium">{fix.problem}</p>
-                                                                            </div>
-                                                                            <div className="space-y-3">
-                                                                                <span className="tech-label text-[#f06c5b]/80">Recommendation</span>
-                                                                                <p className="text-[16px] text-[#f8fafc] leading-relaxed font-semibold">{fix.recommendation}</p>
-                                                                            </div>
-                                                                        </div>
+                                                    <div className="divide-y divide-[rgba(255,255,255,0.04)]">
+                                                        {(report.recommendations || []).map((rec) => (
+                                                            <div key={rec.id} className="py-10 grid grid-cols-1 lg:grid-cols-2 gap-10">
+                                                                <div className="space-y-4">
+                                                                    <div className="flex items-center gap-3">
+                                                                        <span className={clsx("text-[11px] font-bold uppercase tracking-[0.15em]", getPriorityColor(rec.priority))}>{rec.priority}</span>
+                                                                        <span className="text-[11px] font-bold text-white/30 uppercase tracking-[0.15em]">{rec.category}</span>
                                                                     </div>
-                                                                    <div className="space-y-8">
-                                                                        <div className="grid grid-cols-2 gap-8">
-                                                                            <div className="space-y-1.5">
-                                                                                <span className="tech-label text-white/30">Effort Est.</span>
-                                                                                <div className="text-[15px] font-bold text-[#f8fafc]">{fix.effortHours}h</div>
-                                                                            </div>
-                                                                            <div className="space-y-1.5">
-                                                                                <span className="tech-label text-white/30">Target Outcome</span>
-                                                                                <div className="text-[15px] font-bold text-[#f8fafc]">{fix.expectedOutcome}</div>
-                                                                            </div>
-                                                                        </div>
-                                                                        <div className="p-6 bg-white/[0.01] border border-white/[0.04] space-y-4 rounded-xl">
-                                                                            <span className="tech-label opacity-40">Supporting Proof</span>
-                                                                            <div className="grid grid-cols-1 gap-4">
-                                                                                {(fix.evidence || []).slice(0, 4).map((ev, i) => (
-                                                                                    <div key={i} className="flex flex-col gap-1">
-                                                                                        <span className="text-[9px] font-medium text-white/30 uppercase tracking-widest">{ev.label}</span>
-                                                                                        <span className="text-[12px] font-mono text-[#f06c5b] break-all">{ev.value}</span>
-                                                                                    </div>
-                                                                                ))}
-                                                                            </div>
+                                                                    <h4 className="text-2xl font-bold text-[#f8fafc] tracking-tight">{rec.title}</h4>
+                                                                    <p className="text-[15px] text-white/60 leading-relaxed font-medium">{rec.recommendation}</p>
+                                                                </div>
+                                                                <div className="space-y-4">
+                                                                    <div className="p-5 bg-white/[0.01] border border-white/[0.04] rounded-xl">
+                                                                        <span className="tech-label opacity-40">Evidence</span>
+                                                                        <div className="grid grid-cols-1 gap-3 mt-4">
+                                                                            {rec.evidence.map((item, idx) => (
+                                                                                <div key={`${rec.id}-ev-${idx}`} className="text-[12px] font-mono text-[#f06c5b] break-all">
+                                                                                    {item}
+                                                                                </div>
+                                                                            ))}
                                                                         </div>
                                                                     </div>
                                                                 </div>
-                                                            ))}
-                                                        </div>
-                                                    </div>
-
-                                                    <div className="col-span-full mt-24 border border-[rgba(255,255,255,0.06)] bg-white/[0.01] p-12 text-center max-w-4xl mx-auto">
-                                                        <div className="tech-label mb-6">Execution Support</div>
-                                                        <h3 className="text-2xl font-semibold text-[#E8E8E8] mb-4 tracking-tight">Access Principal Strategist</h3>
-                                                        <p className="text-[13px] text-[#909090] max-w-lg mx-auto mb-10 leading-relaxed">
-                                                            Strategic pivots require precision instrumentation. Coordinate with our technical team for immediate implementation support.
-                                                        </p>
-                                                        <a href="mailto:madebyskovie@gmail.com?subject=Strategic%20Briefing%20Request" className="inline-flex items-center gap-3 px-10 py-3.5 bg-[#f06c5b] text-white text-[12px] font-bold uppercase tracking-widest hover:bg-[#ff7d6d] transition-all rounded-xl shadow-[0_0_20px_rgba(240,108,91,0.2)]">
-                                                            Initialize Sync <Activity className="w-4 h-4" />
-                                                        </a>
+                                                            </div>
+                                                        ))}
+                                                        {(!report.recommendations || report.recommendations.length === 0) && (
+                                                            <div className="py-10 text-white/60">No recommendations generated for this scan.</div>
+                                                        )}
                                                     </div>
                                                 </div>
                                             </DeepAnalysisReveal>
                                         </motion.div>
                                     )}
                                 </AnimatePresence>
-                            )}
-
-                            {/* DETAIL MODAL (Unchanged) */}
-                            <AnimatePresence>
-                                {selectedSignal && (
-                                    <motion.div
-                                        initial={{ opacity: 0 }}
-                                        animate={{ opacity: 1 }}
-                                        exit={{ opacity: 0 }}
-                                        className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm"
-                                        onClick={() => setSelectedSignal(null)}
-                                    >
-                                        <motion.div
-                                            initial={{ opacity: 0 }}
-                                            animate={{ opacity: 1 }}
-                                            exit={{ opacity: 0 }}
-                                            className="bg-[#0A0A0A] border border-white/[0.2] w-full max-w-2xl flex flex-col max-h-[85vh]"
-                                            onClick={(e) => e.stopPropagation()}
-                                        >
-                                            <div className="p-6 border-b border-white/[0.1] flex items-center justify-between bg-[#0A0A0A] shrink-0">
-                                                <div>
-                                                    <div className="text-xs font-mono font-medium text-[#a1a1aa] uppercase tracking-[0.12em] mb-2">{'//'} {selectedSignal.title}</div>
-                                                    <h3 className="text-xl font-light text-white max-w-lg leading-tight">{selectedSignal.data.summary}</h3>
-                                                </div>
-                                                <button onClick={() => setSelectedSignal(null)} className="p-2 hover:bg-white/[0.1] transition-colors border border-transparent hover:border-white/[0.1]">
-                                                    <X className="w-5 h-5 text-[#a1a1aa]" />
-                                                </button>
-                                            </div>
-                                            <div className="p-8 space-y-8 overflow-y-auto bg-[#0A0A0A]">
-                                                <div className="flex items-start gap-8">
-                                                    <div className="p-6 border border-white/[0.1] text-center min-w-[120px]">
-                                                        <div className="text-[10px] font-mono font-medium text-[#64748B] uppercase tracking-[0.12em] mb-2">Grade Score</div>
-                                                        <div className={clsx("text-4xl font-light tracking-tighter", getGradeColor(selectedSignal.data.grade).split(' ')[0])}>
-                                                            {selectedSignal.data.grade}
-                                                        </div>
-                                                    </div>
-                                                    <div className="flex-1 pt-2">
-                                                        <p className="text-sm text-[#E2E8F0] leading-relaxed font-mono">
-                                                            <span className="text-[#a1a1aa] uppercase select-none mr-2">{">>>"}</span>
-                                                            {selectedSignal.data.whyItMatters}
-                                                        </p>
-                                                    </div>
-                                                </div>
-                                                {selectedSignal.data.rationale && (
-                                                    <div className="space-y-4">
-                                                        <div className="text-xs font-semibold text-[#f06c5b] uppercase tracking-[0.2em] flex items-center gap-2 border-b border-[#f06c5b]/20 pb-2">
-                                                            <Microscope className="w-3.5 h-3.5" /> Detailed Rationale
-                                                        </div>
-                                                        <p className="text-sm text-[#a1a1aa] leading-loose whitespace-pre-wrap font-mono">
-                                                            {selectedSignal.data.rationale}
-                                                        </p>
-                                                        {status === 'complete' && (
-                                                            <button
-                                                                onClick={generateReport}
-                                                                className="text-xs font-mono font-medium text-white hover:underline transition-all flex items-center gap-2 mt-4"
-                                                            >
-                                                                Download Report <Share2 className="w-3.5 h-3.5" />
-                                                            </button>
-                                                        )}
-                                                    </div>
-                                                )}
-                                                {selectedSignal.data.quickWin && (
-                                                    <div className="border border-emerald-500/30 p-6">
-                                                        <div className="text-xs font-mono font-medium text-emerald-400 uppercase tracking-[0.12em] mb-3 flex items-center gap-2">
-                                                            <Target className="w-3.5 h-3.5" /> Quick Win Protocol
-                                                        </div>
-                                                        <p className="text-sm text-[#CBD5E1] leading-relaxed">
-                                                            {selectedSignal.data.quickWin}
-                                                        </p>
-                                                    </div>
-                                                )}
-                                            </div>
-                                            <div className="p-4 border-t border-white/[0.08] flex justify-end shrink-0 bg-[#030712]">
-                                                <button
-                                                    onClick={() => setSelectedSignal(null)}
-                                                    className="px-8 py-2.5 bg-[#f8fafc] text-[#030712] text-[12px] font-bold uppercase tracking-widest hover:bg-[#64748b] hover:text-white transition-all rounded-lg"
-                                                >
-                                                    Dismiss
-                                                </button>
-                                            </div>
-                                        </motion.div>
-                                    </motion.div>
-                                )}
-                            </AnimatePresence>
-
-                            {/* VS MODE (COMPETITOR RESEARCH) */}
-                            {
-                                activeView === 'vs' && report && report.vs && (
-                                    <WarRoomView
-                                        selfReport={report.vs.self}
-                                        enemyReport={report.vs.enemy}
-                                    />
-                                )
-                            }
-
-                            {/* MONITOR / STRATEGY PLACEHOLDERS */}
-                            {activeView === 'monitor' && <MonitorView />}
-
-                            {
-                                (activeView === 'strategy' || activeView === 'settings') && (
-                                    <div className="max-w-4xl mx-auto py-12 text-center text-[#a1a1aa]">
-                                        <Settings className="w-12 h-12 mx-auto text-[#334155] mb-4" />
-                                        <h2 className="text-lg font-semibold text-white">System View</h2>
-                                        <p className="text-sm">This module is currently under development.</p>
-                                    </div>
-                                )
-                            }
 
                         </div>
                     </div>

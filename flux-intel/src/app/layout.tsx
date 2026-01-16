@@ -4,12 +4,12 @@ import { GeistMono } from 'geist/font/mono';
 import "./globals.css";
 
 export const metadata: Metadata = {
-    title: "Flux Intelligence | St. Louis Local SEO & Digital Strategy",
-    description: "The premier AI-driven SEO and digital intelligence engine for St. Louis businesses. Optimize your local search presence with forensic precision.",
+    title: "Flux Intelligence | Real-Data Website Audits",
+    description: "Real-data website audits powered by PSI, CrUX, and on-page SEO signals. Clear recommendations without guesswork.",
     keywords: ["St. Louis SEO", "Local SEO St. Louis", "Digital Marketing St. Louis", "Website Audit", "AI SEO Tool", "Flux Nine Labs"],
     openGraph: {
-        title: "Flux Intelligence | St. Louis Local SEO",
-        description: "Dominate the St. Louis market with military-grade digital intelligence. Run a free forensic audit now.",
+        title: "Flux Intelligence | Real-Data Website Audits",
+        description: "Run a real-data website audit with PSI, CrUX, and on-page SEO signals.",
         url: "https://fluxninelabs.com",
         siteName: "Flux Nine Labs",
         locale: "en_US",
@@ -17,8 +17,8 @@ export const metadata: Metadata = {
     },
     twitter: {
         card: "summary_large_image",
-        title: "Flux Intelligence | St. Louis SEO",
-        description: "Forensic digital auditing for the modern strategist.",
+        title: "Flux Intelligence | Real-Data Website Audits",
+        description: "Real-data website audits with PSI, CrUX, and on-page SEO signals.",
         creator: "@fluxninelabs",
     },
     robots: {

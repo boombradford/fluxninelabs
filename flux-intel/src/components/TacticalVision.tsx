@@ -2,19 +2,9 @@
 
 import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { clsx } from 'clsx';
-import { Maximize2, AlertTriangle, Info, Crosshair, Target, Scan } from 'lucide-react';
-
-interface TacticalFix {
-    id: string;
-    title: string;
-    category?: 'SEO' | 'Content' | 'UX' | 'Performance' | 'Accessibility';
-    severity: 'Critical' | 'High' | 'Medium' | 'Low';
-}
 
 interface TacticalVisionProps {
     url: string;
-    fixes?: TacticalFix[];
     isScanning?: boolean;
     domIssues?: {
         lcp?: { rect: { width: number; height: number; top: number; left: number }; snippet?: string };
@@ -22,7 +12,7 @@ interface TacticalVisionProps {
     };
 }
 
-export const TacticalVision = ({ url, fixes = [], isScanning = false, domIssues }: TacticalVisionProps) => {
+export const TacticalVision = ({ url, isScanning = false, domIssues }: TacticalVisionProps) => {
     const hasRealData = !!(domIssues?.lcp || domIssues?.cls?.length);
 
     const mapRect = (rect: { top: number; left: number; width: number; height: number }) => ({
@@ -38,15 +28,15 @@ export const TacticalVision = ({ url, fixes = [], isScanning = false, domIssues 
 
                 {/* HUD HEADER */}
                 <div className="absolute top-0 left-0 w-full h-7 z-20 bg-[#0B0F14]/80 border-b border-[rgba(255,255,255,0.04)] flex items-center justify-between px-3">
-                    <div className="flex items-center gap-2">
-                        <div className="w-1.5 h-1.5 bg-[#6B9AC4]/60 rounded-full" />
-                        <span className="text-[10px] font-mono text-[#8B8B8B] tracking-normal uppercase">
-                            Vision_{url ? new URL(url).hostname.replace('www.', '').split('.')[0].toUpperCase() : 'NULL'}
-                        </span>
-                    </div>
+                        <div className="flex items-center gap-2">
+                            <div className="w-1.5 h-1.5 bg-[#6B9AC4]/60 rounded-full" />
+                            <span className="text-[10px] font-mono text-[#8B8B8B] tracking-normal uppercase">
+                            Preview_{url ? new URL(url).hostname.replace('www.', '').split('.')[0].toUpperCase() : 'UNKNOWN'}
+                            </span>
+                        </div>
                     <div className="flex gap-4 text-[9px] font-mono text-[#555555]">
-                        <span>REC::ACTIVE</span>
-                        <span>[STREAMING]</span>
+                        <span>LIVE</span>
+                        <span>[PREVIEW]</span>
                     </div>
                 </div>
 
@@ -80,7 +70,7 @@ export const TacticalVision = ({ url, fixes = [], isScanning = false, domIssues 
                                         style={mapRect(domIssues.lcp.rect)}
                                     >
                                         <div className="absolute -top-5 left-0 text-[9px] font-mono text-[#A85454] uppercase bg-[#0B0F14] px-1 border border-[#A85454]/20">
-                                            LCP_Candidate
+                                            LCP candidate
                                         </div>
                                     </div>
                                 )}
@@ -92,8 +82,8 @@ export const TacticalVision = ({ url, fixes = [], isScanning = false, domIssues 
                 {/* HUD FOOTER */}
                 <div className="h-6 bg-[#0B0F14] border-t border-[rgba(255,255,255,0.04)] flex items-center justify-between px-3">
                     <div className="flex gap-4">
-                        <span className="text-[9px] font-mono text-[#555555]">Signal: <span className="text-[#3D8B6E]">Stable</span></span>
-                        <span className="text-[9px] font-mono text-[#555555]">Port: <span className="text-[#E8E8E8]">443</span></span>
+                        <span className="text-[9px] font-mono text-[#555555]">Status: <span className="text-[#3D8B6E]">Live</span></span>
+                        <span className="text-[9px] font-mono text-[#555555]">Protocol: <span className="text-[#E8E8E8]">HTTPS</span></span>
                     </div>
                 </div>
             </div>

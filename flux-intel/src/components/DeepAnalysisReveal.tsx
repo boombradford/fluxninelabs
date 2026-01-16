@@ -2,7 +2,7 @@
 
 import { motion } from 'framer-motion';
 import { clsx } from 'clsx';
-import React, { useEffect } from 'react';
+import React from 'react';
 import ResearchStream from './ResearchStream';
 
 interface DeepAnalysisRevealProps {
@@ -13,10 +13,6 @@ interface DeepAnalysisRevealProps {
 
 export const DeepAnalysisReveal = ({ status, children, className }: DeepAnalysisRevealProps) => {
     const isReady = status === 'complete';
-
-    useEffect(() => {
-        console.log('[Flux] DeepAnalysisReveal:', status);
-    }, [status]);
 
     return (
         <div className={clsx("relative min-h-[400px]", className)}>
