@@ -1,0 +1,5 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 256" role="img" aria-label="Flux Nine Labs">
+  <rect width="256" height="256" rx="48" fill="#0b0f14"/>
+  <circle cx="128" cy="128" r="84" fill="#f06c5b"/>
+  <path d="M96 88h80v20h-60v18h54v20h-54v40h-20z" fill="#0b0f14"/>
+</svg>
