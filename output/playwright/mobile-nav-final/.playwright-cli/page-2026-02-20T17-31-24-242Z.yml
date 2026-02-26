@@ -1,0 +1,140 @@
+- generic [ref=e2]:
+  - region "Notifications (F8)":
+    - list
+  - region "Notifications alt+T"
+  - main [ref=e3]:
+    - link "Skip to main content" [ref=e4] [cursor=pointer]:
+      - /url: "#main-content"
+    - banner [ref=e6]:
+      - navigation "Main navigation" [ref=e8]:
+        - link "Flux Nine Labs - Return to top" [ref=e9] [cursor=pointer]:
+          - /url: "#"
+          - img [ref=e10]
+          - generic [ref=e11]: Flux Nine Labs
+        - navigation "Primary navigation" [ref=e12]:
+          - link "Focus" [ref=e13] [cursor=pointer]:
+            - /url: "#focus"
+          - link "Dashboards" [ref=e14] [cursor=pointer]:
+            - /url: "#work"
+          - link "Contact" [ref=e15] [cursor=pointer]:
+            - /url: "#contact"
+        - link "Talk with Flux Nine Labs" [ref=e16] [cursor=pointer]:
+          - /url: "#contact"
+          - generic [ref=e17]: Talk with us
+    - region "AI systems built for real work." [ref=e18]:
+      - generic [ref=e21]:
+        - heading "AI systems built for real work." [level=1] [ref=e22]:
+          - generic [ref=e23]:
+            - generic [ref=e24]: AI
+            - generic [ref=e25]: systems
+            - generic [ref=e26]: built
+          - generic [ref=e27]:
+            - generic [ref=e28]: for
+            - generic [ref=e29]: real work.
+        - paragraph [ref=e30]: We build AI systems that eliminate repetitive work and unify your data. Custom, Private, and Secure.
+        - generic [ref=e31]:
+          - link "Talk through your workflow" [ref=e32] [cursor=pointer]:
+            - /url: "#contact"
+          - link "Open live dashboard demo (opens in new tab)" [ref=e33] [cursor=pointer]:
+            - /url: https://rivet-dash-spark.lovable.app
+            - text: View live dashboard
+            - img [ref=e34]
+    - region "Practical systems, built with you" [ref=e45]:
+      - generic [ref=e46]:
+        - generic [ref=e48]:
+          - generic [ref=e49]:
+            - generic [ref=e50]: "01"
+            - text: How we help
+          - heading "Practical systems, built with you" [level=2] [ref=e51]
+          - paragraph [ref=e52]: We keep it direct and human. We listen first, meet your team where they are, and build solutions that reduce friction in the work you already do every day.
+        - generic [ref=e53]:
+          - generic [ref=e54]:
+            - img [ref=e56]
+            - heading "Reliable, fast deployment" [level=3] [ref=e60]
+            - paragraph [ref=e61]: We prioritize solutions your team can use immediately, from small automation wins to production-ready systems.
+          - generic [ref=e62]:
+            - img [ref=e64]
+            - heading "Hands-on education" [level=3] [ref=e67]
+            - paragraph [ref=e68]: We train with your team in context so people understand the system, not just where to click.
+          - generic [ref=e69]:
+            - img [ref=e71]
+            - heading "On-call support" [level=3] [ref=e78]
+            - paragraph [ref=e79]: When you need help, we stay available to debug, improve, and keep momentum in your day-to-day work.
+    - region "From small automations to unified data products" [ref=e82]:
+      - generic [ref=e83]:
+        - generic [ref=e85]:
+          - generic [ref=e86]:
+            - generic [ref=e87]: "02"
+            - text: Dashboard systems
+          - heading "From small automations to unified data products" [level=2] [ref=e88]
+          - paragraph [ref=e89]: Our core specialty is bringing scattered data into one clear environment that encourages exploration. Teams can expand the spec over time and keep digging into the numbers as new questions come up.
+        - generic [ref=e90]:
+          - generic [ref=e92]:
+            - generic [ref=e93]:
+              - img [ref=e95]
+              - generic [ref=e99]:
+                - paragraph [ref=e100]: Live demo
+                - heading "Rivet Dash Spark" [level=3] [ref=e101]
+            - paragraph [ref=e102]: A live dashboard experience showing how interactive data views can stay clear while still allowing deeper drill-down and iteration.
+            - link "Open demo project" [ref=e103] [cursor=pointer]:
+              - /url: https://rivet-dash-spark.lovable.app
+              - text: Open demo project
+              - img [ref=e104]
+          - generic [ref=e108]:
+            - heading "What this looks like in practice" [level=3] [ref=e109]
+            - list [ref=e110]:
+              - listitem [ref=e111]:
+                - generic [ref=e113]: Merge multiple data sources into one cohesive workspace
+              - listitem [ref=e114]:
+                - generic [ref=e116]: Start with a clear core spec, then expand safely as needs evolve
+              - listitem [ref=e117]:
+                - generic [ref=e119]: Build dashboards that invite deeper analysis, not dead-end reporting
+              - listitem [ref=e120]:
+                - generic [ref=e122]: Pair delivery with support so the system keeps getting better
+            - paragraph [ref=e124]: Typical work ranges from repetitive task automation and inbox workflows to fully customized multi-source dashboards.
+    - region "Tell us where work is getting stuck" [ref=e127]:
+      - generic [ref=e129]:
+        - generic [ref=e130]:
+          - generic [ref=e131]:
+            - generic [ref=e132]:
+              - generic [ref=e133]: "03"
+              - text: Contact
+            - heading "Tell us where work is getting stuck" [level=2] [ref=e134]
+          - paragraph [ref=e135]: You do not need a perfect brief. Share the current workflow, what feels repetitive or unclear, and what outcome you want. We will help shape the path and build with you.
+        - generic [ref=e137]:
+          - heading "Send a message" [level=3] [ref=e138]
+          - generic [ref=e139]:
+            - generic [ref=e140]:
+              - generic [ref=e141]:
+                - generic [ref=e142]: Name
+                - textbox "Your name" [ref=e143]
+              - generic [ref=e144]:
+                - generic [ref=e145]: Email
+                - textbox "you@company.com" [ref=e146]
+            - generic [ref=e147]:
+              - generic [ref=e148]: Company (optional)
+              - textbox "Your company" [ref=e149]
+            - generic [ref=e150]:
+              - generic [ref=e151]: How can we help?
+              - textbox "Tell us what you want to streamline or learn." [ref=e152]
+            - button "Send message" [ref=e153] [cursor=pointer]:
+              - text: Send message
+              - img [ref=e154]
+          - generic [ref=e156]:
+            - paragraph [ref=e157]: "Or email directly:"
+            - link "hello@fluxninelabs.com" [ref=e158] [cursor=pointer]:
+              - /url: mailto:hello@fluxninelabs.com
+              - img [ref=e159]
+              - text: hello@fluxninelabs.com
+    - generic [ref=e164]:
+      - generic [ref=e165]:
+        - img "Flux Nine Labs" [ref=e166]
+        - generic [ref=e167]: Flux Nine Labs
+      - generic [ref=e168]:
+        - link "Dashboard Demo" [ref=e169] [cursor=pointer]:
+          - /url: https://rivet-dash-spark.lovable.app
+        - link "Engine" [ref=e170] [cursor=pointer]:
+          - /url: https://engine.fluxninelabs.com
+        - link "Blog" [ref=e171] [cursor=pointer]:
+          - /url: /blog
+        - generic [ref=e172]: © 2026

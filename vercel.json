@@ -1,11 +1,35 @@
 {
-    "framework": "vite",
-    "buildCommand": "vite build",
-    "outputDirectory": "dist",
-    "rewrites": [
-        {
-            "source": "/(.*)",
-            "destination": "/index.html"
-        }
-    ]
+  "framework": null,
+  "buildCommand": "echo \"Static bundle: no build step\"",
+  "outputDirectory": ".",
+  "redirects": [
+    {
+      "source": "/projects/scout",
+      "destination": "https://scout.fluxninelabs.com",
+      "permanent": true
+    },
+    {
+      "source": "/projects/scout/",
+      "destination": "https://scout.fluxninelabs.com",
+      "permanent": true
+    }
+  ],
+  "rewrites": [
+    {
+      "source": "/about",
+      "destination": "/about.html"
+    },
+    {
+      "source": "/articles",
+      "destination": "/articles/index.html"
+    },
+    {
+      "source": "/articles/:slug",
+      "destination": "/articles/:slug.html"
+    },
+    {
+      "source": "/((?!assets/|projects/|articles/|favicon.jpg|manifest.json|robots\\.txt|sitemap\\.xml|llms\\.txt|about\\.html).*)",
+      "destination": "/index.html"
+    }
+  ]
 }

@@ -1,3 +1,0 @@
-# Ignore parent directory files
-../*
-!../flux-intel/**

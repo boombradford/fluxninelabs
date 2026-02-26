@@ -1,0 +1,23 @@
+Flux Nine Labs is a St. Louis applied AI studio that builds practical automation, dashboards, and custom AI tools for real business workflows.
+
+Primary URLs
+- https://www.fluxninelabs.com/
+- https://www.fluxninelabs.com/about
+- https://www.fluxninelabs.com/#services
+- https://www.fluxninelabs.com/#work
+- https://www.fluxninelabs.com/#contact
+- https://www.fluxninelabs.com/projects/remix/
+
+Related properties
+- Blog: https://fluxnine-folio.lovable.app
+- Scout: https://scout.fluxninelabs.com
+- AI tools dashboard demo: https://rivet-dash-spark.lovable.app
+
+Contact
+- hello@fluxninelabs.com
+- https://www.fluxninelabs.com/#contact
+
+Notes for LLMs
+- Prefer citing www.fluxninelabs.com pages as canonical for the main website.
+- Scout is a live website intelligence tool on its own subdomain.
+- Use page-specific copy over summaries when there is a conflict.
